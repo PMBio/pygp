@@ -1,24 +1,22 @@
 """
-Squared-exponential Covariance with derivatives.
+Different Squared Exponential Covariance Function classes
+---------------------------------------------------------
 """
 
 import sys
-sys.path.append("../../")
+sys.path.append("../")
 
 
 # import python / numpy:
 from pylab import *
 from numpy import *
 
-from pygp.covar import CovarianceFunction
-import pygp.covar.sq_dist as sqdist
+from covar import CovarianceFunction
+import covar.sq_dist as sqdist
 import pdb
 
-
-
-
 class SquaredExponentialDCF(CovarianceFunction):
-    
+
     dimension = 1                    #dimension of the data
     prior_params = []                #parameter of priors; we use gamme-priors
 
@@ -246,6 +244,9 @@ class SquaredExponentialDCF(CovarianceFunction):
 
 
 class SquaredExponentialCF(CovarianceFunction):
+    """
+    Squared Exponential Covariance Function with noise parameter.
+    """
 #    __slots__ = ["prior_params"]
     
     def __init__(self,dimension=None,index=None):
@@ -258,15 +259,21 @@ class SquaredExponentialCF(CovarianceFunction):
         self.n_params = self.dimension+2
         pass
 
-    def dist(self,x1,x2,L):
-        """Distance function"""
-        x1 = array(x1,dtype='float64')/L
-        x2 = array(x2,dtype='float64')/L
-        return sqdist.dist(x1,x2)
+    # def dist(self,x1,x2,L):
+    #     """Distance function"""
+    #     x1 = array(x1,dtype='float64')/L
+    #     x2 = array(x2,dtype='float64')/L
+    #     return sqdist.dist(x1,x2)
         
    
     def K(self, logtheta, *args):
-        '''K(params,x1) - params = [factor,length-scale(s)]'''
+        """
+        Get Covariance matrix K with given hyperparameters
+        logtheta and inputs *args* = X[, X'].
+
+        **Parameters:**
+        See :py:class:`covar.CovarianceFunction`
+        """
         # additional index: one index after dimension: derivative index!
         #x1 = array(args[0][:,0:self.dimension],dtype='float64')
         x1 = args[0][:,self.index]
@@ -282,7 +289,7 @@ class SquaredExponentialCF(CovarianceFunction):
         L  = exp(logtheta[1:1+self.dimension])
         
         # calculate the distance betwen x1,x2 for each dimension separately, reweighted by L.
-        dd = self.dist(x1,x2,L)
+        dd = self._dist(x1,x2,L)
         # sq. distance is neede anyway:
         sqd = dd*dd
         sqd = sqd.sum(axis=2)
@@ -295,7 +302,12 @@ class SquaredExponentialCF(CovarianceFunction):
 
 
     def Kd(self, logtheta, *args):
-        '''Kd(params,x1) - params = [factor,length-scale(s)]'''
+        """The derivatives of the covariance matrix for
+        each hyperparameter, respectively.
+
+        **Parameters:**
+        See :py:class:`covar.CovarianceFunction`
+        """
                 # additional index: one index after dimension: derivative index!
         #x1 = array(args[0][:,0:self.dimension],dtype='float64')
         x1 = args[0][:,self.index]
@@ -311,7 +323,7 @@ class SquaredExponentialCF(CovarianceFunction):
         L  = exp(logtheta[1:1+self.dimension])
         
         # calculate the distance betwen x1,x2 for each dimension separately.
-        dd = self.dist(x1,x2,L)
+        dd = self._dist(x1,x2,L)
         # sq. distance is neede anyway:
         sqd = dd*dd
         sqdd = sqd.transpose(2,0,1)
@@ -335,9 +347,9 @@ class SquaredExponentialCF(CovarianceFunction):
         return rv
 
     def getDefaultParams(self,x=None,y=None):
-        """getDefaultParams(x=None,y=None)
-        - return default parameters for a particular dataset (optional)
-        """
+        #"""getDefaultParams(x=None,y=None)
+        #- return default parameters for a particular dataset (optional)
+        #"""
         #start with data independent default
         rv = ones(self.n_params)
         #start with a smallish variance
@@ -363,7 +375,10 @@ class SquaredExponentialCF(CovarianceFunction):
 
 
 class SquaredExponentialCFnn(CovarianceFunction):
-#    __slots__ = ["prior_params","Iactive"]
+    """
+    Squared Exponential covariance function without noise.
+    """
+    #__slots__ = ["prior_params","Iactive"]
     
 
     def __init__(self,dimension=None,index=None):
@@ -380,22 +395,28 @@ class SquaredExponentialCFnn(CovarianceFunction):
         pass
 
     def getParamNames(self):
-        """return the names of hyperparameters to make identificatio neasier"""
+        #"""return the names of hyperparameters to make identificatio neasier"""
         names = []
         names.append('Ase')
         for dim in range(self.dimension):
             names.append('L%d' % dim)
         return names
 
-    def dist(self,x1,x2,L):
-        """Distance function"""
-        x1 = array(x1,dtype='float64')/L
-        x2 = array(x2,dtype='float64')/L
-        return sqdist.dist(x1,x2)
+    # def dist(self,x1,x2,L):
+    #     """Distance function"""
+    #     x1 = array(x1,dtype='float64')/L
+    #     x2 = array(x2,dtype='float64')/L
+    #     return sqdist.dist(x1,x2)
         
    
     def K(self, logtheta, *args):
-        '''K(params,x1) - params = [factor,length-scale(s)]'''
+        """
+        Get Covariance matrix K with given hyperparameters
+        logtheta and inputs *args* = X[, X'].
+
+        **Parameters:**
+        See :py:class:`pygp.covar.CovarianceFunction`
+        """
         # additional index: one index after dimension: derivative index!
         x1 = args[0][:,self.index][:,self.Iactive]
         if(len(args)==1):
@@ -407,7 +428,7 @@ class SquaredExponentialCFnn(CovarianceFunction):
         L  = exp(logtheta[1:1+self.dimension][self.Iactive])
         
         # calculate the distance betwen x1,x2 for each dimension separately, reweighted by L. 
-        dd = self.dist(x1,x2,L)
+        dd = self._dist(x1,x2,L)
         # sq. distance is neede anyway:
         sqd = dd*dd
         sqd = sqd.sum(axis=2)
@@ -420,7 +441,12 @@ class SquaredExponentialCFnn(CovarianceFunction):
 
 
     def Kd(self, logtheta, *args):
-        '''Kd(params,x1) - params = [factor,length-scale(s)]'''
+        """The derivatives of the covariance matrix for
+        each hyperparameter, respectively.
+
+        **Parameters:**
+        See :py:class:`covar.CovarianceFunction`
+        """
                 # additional index: one index after dimension: derivative index!
         #x1 = array(args[0][:,0:self.dimension],dtype='float64')
         x1 = args[0][:,self.index][:,self.Iactive]
@@ -434,7 +460,7 @@ class SquaredExponentialCFnn(CovarianceFunction):
         L  = exp(logtheta[1:1+self.dimension][:,self.Iactive])
         
         # calculate the distance betwen x1,x2 for each dimension separately.
-        dd = self.dist(x1,x2,L)
+        dd = self._dist(x1,x2,L)
         # sq. distance is neede anyway:
         sqd = dd*dd
         sqdd = sqd.transpose(2,0,1)
@@ -456,9 +482,9 @@ class SquaredExponentialCFnn(CovarianceFunction):
         return rv
 
     def getDefaultParams(self,x=None,y=None):
-        """getDefaultParams(x=None,y=None)
-        - return default parameters for a particular dataset (optional)
-        """
+        #"""getDefaultParams(x=None,y=None)
+        #- return default parameters for a particular dataset (optional)
+        #"""
         #start with data independent default
         rv = ones(self.n_params)
         #start with a smallish variance
@@ -490,7 +516,13 @@ class SquaredExponentialCFinoise(CovarianceFunction):
         pass
    
     def K(self, logtheta, *args):
-        '''K(params,x1) - params = [factor,length-scale(s)]'''
+        """
+        Get Covariance matrix K with given hyperparameters
+        logtheta and inputs *args* = X[, X'].
+
+        **Parameters:**
+        See :py:class:`covar.CovarianceFunction`
+        """
         # additional index: one index after dimension: derivative index!
         x1 = args[0][:,0:self.dimension]
         #noise_diag comes from the last input dimension:
@@ -524,16 +556,22 @@ class SquaredExponentialCFinoise(CovarianceFunction):
 
 
     def Kd(self, logtheta, *args):
-        '''Kd(params,x1) - params = [factor,length-scale(s)]'''
-                # additional index: one index after dimension: derivative index!
+        """The derivatives of the covariance matrix for
+        each hyperparameter, respectively.
+        
+        **Parameters:**
+        See :py:class:`covar.CovarianceFunction`
+        """
+        # additional index:
+        # one index after dimension: derivative index!
         x1 = args[0][:,0:self.dimension]
         noise_diag = args[0][:,-1]
         if(len(args)==1):
             x2 = x1
             noise=diag(noise_diag)*exp(2*logtheta[-1])
         else:
-           x2 = args[1][:,0:self.dimension]
-           noise =eye(len(x1))*0
+            x2 = args[1][:,0:self.dimension]
+            noise =eye(len(x1))*0
         # 2. exponentiate params:
         V0 = exp(2*logtheta[0])
         L  = exp(logtheta[1:1+self.dimension])
@@ -571,9 +609,9 @@ class SquaredExponentialCFinoise(CovarianceFunction):
         return rv
 
     def getDefaultParams(self,x=None,y=None):
-        """getDefaultParams(x=None,y=None)
-        - return default parameters for a particular dataset (optional)
-        """
+        #"""getDefaultParams(x=None,y=None)
+        #- return default parameters for a particular dataset (optional)
+        #"""
         #start with data independent default
         rv = ones(self.n_params)
         #start with a smallish variance
@@ -595,8 +633,11 @@ class SquaredExponentialCFinoise(CovarianceFunction):
 
 
 class SquaredExponentialClusterCF(CovarianceFunction):
-    """same as SquaredExponentialCF but here we assume
-       multiple groups with different noise levels which are learnt separately"""
+    """
+    same as SquaredExponentialCF but here we assume
+    multiple groups with different noise levels which
+    are learnt separately
+    """
         
     dimension = 1                    #dimension of the data
     prior_params = []                #parameter of priors; we use gamme-priors
@@ -610,7 +651,13 @@ class SquaredExponentialClusterCF(CovarianceFunction):
         pass
    
     def K(self, logtheta, *args):
-        '''K(params,x1) - params = [factor,length-scale(s),noise(per class)]'''
+        """
+        Get Covariance matrix K with given hyperparameters
+        logtheta and inputs *args* = X[, X'].
+
+        **Parameters:**
+        See :py:class:`covar.CovarianceFunction`
+        """
         # additional index: one index after dimension: derivative index!
         x1      = args[0][:,0:self.dimension]
         #cluster index is in the next index, convert to int to allow indexing
@@ -643,7 +690,12 @@ class SquaredExponentialClusterCF(CovarianceFunction):
 
 
     def Kd(self, logtheta, *args):
-        '''Kd(params,x1) - params = [factor,length-scale(s)]'''
+        """The derivatives of the covariance matrix for
+        each hyperparameter, respectively.
+        
+        **Parameters:**
+        See :py:class:`covar.CovarianceFunction`
+        """
                 # additional index: one index after dimension: derivative index!
         x1 = args[0][:,0:self.dimension]
         cluster = array(args[0][:,self.dimension],dtype='int')
@@ -651,8 +703,8 @@ class SquaredExponentialClusterCF(CovarianceFunction):
             x2 = x1
             noise=ones(len(x1))*exp(2*logtheta[-self.clusters+cluster]+1E-2)
         else:
-           x2 = args[1][:,0:self.dimension]
-           noise =zeros(len(x1))
+            x2 = args[1][:,0:self.dimension]
+            noise =zeros(len(x1))
 
         # 2. exponentiate params:
         V0 = exp(2*logtheta[0])
@@ -694,9 +746,9 @@ class SquaredExponentialClusterCF(CovarianceFunction):
         return rv
 
     def getDefaultParams(self,x=None,y=None):
-        """getDefaultParams(x=None,y=None)
-        - return default parameters for a particular dataset (optional)
-        """
+        #"""getDefaultParams(x=None,y=None)
+        #- return default parameters for a particular dataset (optional)
+        #"""
         #start with data independent default
         rv = ones(self.n_params)
         #start with a smallish variance
@@ -713,7 +765,183 @@ class SquaredExponentialClusterCF(CovarianceFunction):
             rv[1:-self.clusters] = (x.max(axis=0)-x.min(axis=0))/4
         return log(rv)
 
+class SquaredExponentialCFTPnn(CovarianceFunction):
+    """
+    Provides computation of the SETP
+    (Squared Exponential with Time Parameter) without
+    noise.
 
+    **Parameters:**
+    
+    n_replicates : int
+        Number of replicates which have an own time parameter.
+
+    dimension : int
+        number of dimensions for calculation
+        (self.Iactive = arange(dimension)).
+
+    index : == dimension????   TODO
+
+    """
+
+    __slots__ = ["prior_params","Iactive","n_replicates"]
+    
+    def __init__(self,dimension=None,index=None,n_replicates=1):
+        """Get an instance of SETP.
+         """
+
+        if (index is not None):
+            self.index = array(index,dtype='int32')
+        elif dimension is not None:
+            self.index = arange(0,dimension)
+        else:
+            self.index = arange(0,1)
+
+        self.dimension = self.index.max()+1-self.index.min()
+        self.Iactive = arange(self.dimension)
+        self.n_replicates = n_replicates
+        
+        self.n_params = self.dimension+n_replicates+1
+        pass
+
+    def getParamNames(self):
+        #"return the names of hyperparameters to make identification easier"
+        names = []
+        names.append('Amplitude')
+        for dim in range(self.dimension):
+            names.append('Length-Scale %d' % dim)
+        for dim in range(n_replicates):
+            names.append('Time-Parameter rep%d' % dim) 
+        return names        
+   
+    def K(self, logtheta, *xs):
+        """
+        Get Covariance matrix K with given hyperparameters
+        logtheta and inputs *args* = X[, X'].
+
+        **Parameters:**
+        See :py:class:`pygp.covar.CovarianceFunction`
+        """
+        x1 = xs[0][:,self.index][:,self.Iactive]
+        
+        if(xs[0].shape[1]==2):
+            # control is the index of replicate of the respective x. 
+            control = xs[0][:,self.index+1][:,self.Iactive]
+        else:
+            # there is no control
+            control = zeros_like(x1)
+
+        # get the time parameter(s) T
+        T  = logtheta[1+self.dimension:1+self.dimension+self.n_replicates]
+
+        # subtract respective time parameters from the input x.
+        for i in unique(control):
+            x1[control==i] -= T[i]
+
+        if(len(xs)==1 and x1.shape[1]>0):
+            # there is only one input
+            x2 = x1
+        else:
+            # compare X=x1 to X*=x2
+            x2 = xs[1][:,self.index][:,self.Iactive]
+        
+        # 2. exponentiate params:
+        V0 = exp(2*logtheta[0])
+        L  = exp(logtheta[1:1+self.dimension][self.Iactive])
+        
+        # calculate the distance between x1,x2 for each dimension separately, reweighted by L. 
+        dd = self._dist(x1,x2,L)
+        sqd = dd*dd
+        sqd = sqd.sum(axis=2)
+       
+        #calculate without derivatives
+        rv = V0*exp(-0.5*sqd)
+        return rv
+    
+    def Kd(self, logtheta, *xs):
+        """The derivatives of the covariance matrix for
+        each hyperparameter, respectively.
+
+        **Parameters:**
+        See :py:class:`pygp.covar.CovarianceFunction`
+        """
+        x1 = xs[0][:,self.index][:,self.Iactive]
+        x1_ = x1.copy()
+
+        if (xs[0].shape[1]==2):
+            # control is the index of replicate of the respective x. 
+            control = xs[0][:,self.index+1][:,self.Iactive]
+        else:
+            # there is no control
+            control = zeros_like(x1)
+
+        # get the time parameter(s) T
+        T  = logtheta[1+self.dimension:1+self.dimension+self.n_replicates]
+
+        # # subtract respective time parameters from the input x. 
+        for i in unique(control):
+            x1[control==i] -= T[i]#n_replicate_deltaT
+
+        if(len(xs)==1):
+            x2 = x1
+        else:
+           #x2 = array(args[1][:,0:self.dimension],dtype='float64')
+           x2 = xs[1][:,self.index][:,self.Iactive]
+        
+        # 2. exponentiate params:
+        V0 = exp(2*logtheta[0])
+        L  = exp(logtheta[1:1+self.dimension][self.Iactive])
+        
+        # calculate the distance betwen x1,x2 for each dimension separately, reweighted by L.
+        dd = self._dist(x1,x2,L)
+        sqd = dd*dd
+        sqdd = sqd.transpose(2,0,1)
+        sqd = sqd.sum(axis=2)
+
+        rv = zeros((self.n_params,len(x1),len(x2)))
+        
+        # calculate derivates
+        rv[:] = V0*exp(-0.5*sqd)
+
+        #amplitude:
+        rv[0] = rv[0]*2
+
+        #lengthscales:
+        rv[1:1+self.dimension][self.Iactive] *= sqdd
+
+        #time-shift
+        absdd = -dd / L
+        # each replicate has its own time shift
+        for rep in range(self.n_replicates):
+            # get control for replicate rep
+            c_ = array(control==rep,dtype='int')
+            # for each replicate rep get its own distance changes
+            cdist = sqdist.dist(-c_,-c_)
+            absdd_ = absdd * cdist
+            dds = absdd_.transpose(2,0,1)
+            # multiply to K (see derivatives of SETP).
+            rv[1+rep+self.dimension:2+rep+self.dimension][self.Iactive] *= dds
+        return rv
+
+    def getDefaultParams(self,x=None,y=None):
+        #"""getDefaultParams(x=None,y=None)
+        #- return default parameters for a particular dataset (optional)
+        #"""
+        #start with data independent default
+        rv = ones(self.n_params)
+        #start with a smallish variance
+        rv[-1] = 0.1
+
+        if y is not None:
+            #adjust amplitude
+            rv[0] = (y.max()-y.min())/2
+        
+        if x is not None:
+            rv[1:-1] = (x.max(axis=0)-x.min(axis=0))/4
+        return log(rv)
+
+    def getDimension(self):
+        return self.dimension
 
 
 

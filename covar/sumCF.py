@@ -1,15 +1,27 @@
 """
-Covariance function: sum of covariances
+Sum Covariance function
+-----------------------
 """
 
+import sys
+sys.path.append('../')
 
-from pygp.covar import CovarianceFunction
+from covar import CovarianceFunction
 import scipy as S
 import pdb
 
 
 
 class SumCovariance(CovarianceFunction):
+    """
+    Sum Covariance function. This function adds
+    up the given CFs and returns the resulting sum.
+
+    *covars* : set of CFs of type :py:class:`covar.CovarianceFunction`
+    
+        Covariance functions to be summed up.
+    """
+
 #    __slots__ = ["n_params_list","covars","covars_logtheta_I"]
 
     def __init__(self,covars):
@@ -53,8 +65,17 @@ class SumCovariance(CovarianceFunction):
             covar.setActiveDimensions(**kwargin)
 
     def K(self,logtheta,*args):
-        "kernel"
-        #1. check logtheta has correct length
+        """
+        Get Covariance matrix K with given hyperparameters
+        logtheta and inputs *args* = X[, X']. The result
+        will be the sum covariance of all covariance
+        functions combined in this sum covariance.
+
+        **Parameters:**
+        See :py:class:`covar.CovarianceFunction` 
+        """
+
+#1. check logtheta has correct length
         assert logtheta.shape[0]==self.n_params, 'K: logtheta has wrong shape'
         #2. create sum of covarainces..
         [x1,x2] = self.parse_args(*args)
@@ -70,7 +91,12 @@ class SumCovariance(CovarianceFunction):
 
 
     def Kd(self,logtheta, *args):
-        "derivative kernel"
+        '''The derivatives of the covariance matrix for
+        each hyperparameter, respectively.
+
+        **Parameters:**
+        See :py:class:`covar.CovarianceFunction`
+        '''
         #1. check logtheta has correct length
         assert logtheta.shape[0]==self.n_params, 'K: logtheta has wrong shape'
         [x1,x2] = self.parse_args(*args)

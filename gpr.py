@@ -1,27 +1,31 @@
 """
-Class for Gaussian Process Regression 
+Module for Gaussian Process Regression 
+--------------------------------------
 
-This class is a lot modelled after Karl Rasmussen Gaussian process package for Matlab
-(http://TOOD).
+This module is a lot modelled after Karl Rasmussen Gaussian process
+package for Matlab (http://TOOD).
 
 methods and classes
 
-solv_chol: 
- - solve cholesky decomposition
+solve_chol : solve cholesky decomposition
+
 sampleHyper:
- - sample from the posterior distribution of GP hyperparmeters (Hyrbid Monte Carlo)
+    sample from the posterior distribution of
+    GP hyperparmeters (Hyrbid Monte Carlo)
+
 optHyper:
- - use a gradient based optimised to optimise GP hyperparameters subject to prior parameters
+    use a gradient based optimiser to optimise
+    GP hyperparameters subject to prior parameters
 
 class GroupGP:
- - group multiple GP objects for joint optimisation of hyperparameters
+    group multiple GP objects for joint optimisation of hyperparameters
 
-class GP:
- - basic class for GP regression
-  * claculation of log marginal likelihood
-  * prediction
-  * data rescaling
-  * transformation into log space 
+class GP: basic class for GP regression:
+    * claculation of log marginal likelihood
+    * prediction
+    * data rescaling
+    * transformation into log space
+
 """
 
 
@@ -30,12 +34,18 @@ from pylab import *
 from numpy import * 
 import scipy.optimize.optimize as OPT
 import logging as LG
-from mlib.stats.lnpriors import *
+#from mlib.stats.lnpriors import *
+from lnpriors import *
 import pdb
 
 
 def solve_chol(A,B):
-    #x = A\(A'\B);
+    """
+    Solve cholesky decomposition::
+    
+        return A\(A'\B)
+
+    """
     X = linalg.solve(A,linalg.solve(A.transpose(),B))
     return X
 
@@ -111,119 +121,33 @@ def sampleHyper(gpr,logtheta,Ifilter=None,priors=None,Nsamples=100,eps=1E-2,Nlea
     return X
 
     
-            
 
-def optHyper_old(gpr,logtheta,Ifilter=None,optimizer='fmin_l_bfgs_b',priors=None,maxiter=100,gradcheck=False):
+def optHyper(gpr,logtheta,Ifilter=None,priors=None,maxiter=100,gradcheck=False,**kw_args):
     """
-    old and significantly slower version.
-    This version does not perform filtering but rather masks out the derivatives which is very inefficient.
-    optimize hyperparemters of gp gpr starting from gpr
+    Optimize hyperparemters of gp gpr starting from gpr
     optHyper(gpr,logtheta,filter=None,prior=None)
-    gpr: GP regression classe
-    logtheta: starting piont for optimization
-    Ifilter  : filter index vector
-    prior   : non-default prior, otherwise assume first index amplitude, last noise, rest:lengthscales
-    """
-    if priors is None:        # use a very crude default prior if we don't get anything else:
-        priors = defaultPriors(gpr,logtheta)
 
-    def fixlogtheta(logtheta,limit=1E3):
-        """make a valid logtheta which is non-infinite and non-0"""
-        rv      = logtheta.copy()
-        I_upper = logtheta>limit
-        I_lower = logtheta<-limit
-        rv[I_upper] = +limit
-        rv[I_lower] = -limit
-        return rv
-
-    def checklogtheta(logtheta,limit=1E3):
-        """make a valid logtheta which is non-infinite and non-0"""
-        I_upper = logtheta>limit
-        I_lower = logtheta<-limit
-        return not (I_upper.any() or I_lower.any())
-        
-    #TODO: mean-function
-    def f(logtheta):
-        #logtheta_ = fixlogtheta(logtheta)
-        logtheta_ = logtheta
-        if not checklogtheta(logtheta):
-            print logtheta
-            #make optimzier/sampler search somewhere else
-            return 1E6
-
-        rv =  gpr.lMl(logtheta_,lml=True,dlml=False,priors=priors)
-        LG.debug("L("+str(logtheta_)+")=="+str(rv))
-        if isnan(rv):
-            return 1E6
-        return rv
-    def df(logtheta):
-        #logtheta_ = fixlogtheta(logtheta)
-        logtheta_ = logtheta
-        if not checklogtheta(logtheta):
-            #make optimzier/sampler search somewhere else
-            print logtheta
-            return zeros_like(logtheta_)
-        rv =  gpr.lMl(logtheta_,lml=False,dlml=True,priors=priors)
-        LG.debug("dL("+str(logtheta_)+")=="+str(rv))
-        #mask out filtered dimensions
-        if not Ifilter is None:
-            rv = rv*Ifilter
-        if isnan(rv).any():
-            In = isnan(rv)
-            rv[In] = 1E6
-        return rv
-
-    plotit = True
-    plotit = False
-    if(plotit):
-        X = arange(0.001,0.05,0.001)
-        Y = zeros(size(X))
-        dY = zeros(size(X))
-        k=2
-        theta = logtheta
-        for i in range(len(X)):
-            theta[k] = log(X[i])
-            Y[i] = f(theta)
-            dY[i] = df(theta)[k]
-        plot(X,Y)
-        hold(True);
-        plot(X,dY)
-        show()
-
-    #start-parameters
-    theta0 = logtheta
-
-    LG.info("startparameters for opt:"+str(exp(logtheta)))
-    if gradcheck:
-        LG.info("check_grad:" + str(OPT.check_grad(f,df,theta0)))
-        raw_input()
-    LG.info("start optimization")
-    #opt_params=OPT.fmin_cg (f, theta0, fprime = df, args = (), gtol = 1.0000000000000001e-005, maxiter =maxiter, full_output = 1, disp = 1, retall = 0)
-    #opt_params=OPT.fmin_ncg (f, theta0, fprime = df, fhess_p=None, fhess=None, args=(), avextol=1.0000000000000001e-04, epsilon=1.4901161193847656e-08, maxiter=maxiter, full_output=1, disp=1, retall=0)
-
-    if optimizer=='fmin_bfgs':
-        opt_params=OPT.fmin_bfgs(f, theta0, fprime=df, args=(), gtol=1.0000000000000001e-04, norm=inf, epsilon=1.4901161193847656e-08, maxiter=maxiter, full_output=1, disp=(0), retall=0)
-    elif optimize=='fmin_l_bfgs_b':
-        opt_params=OPT.fmin_l_bfgs_b(f, theta0, fprime=df, args=(), gtol=1E-4, maxfun=maxiter, full_output=1, disp=(0), retall=0)
+    **Parameters:**
     
+    gpr : :py:class:`gpr.GP`
+        GP regression class
 
-    rv = opt_params[0]
-    LG.info("old parameters:")
-    LG.info(str(exp(logtheta)))
-    LG.info("optimized parameters:")
-    LG.info(str(exp(rv)))
-    LG.info("grad:"+str(df(rv)))
-    return rv
-        
-    
+    logtheta : [double]
+        starting hyperparameters for optimization
 
-def optHyper(gpr,logtheta,Ifilter=None,priors=None,maxiter=100,gradcheck=False):
-    """optimize hyperparemters of gp gpr starting from gpr
-    optHyper(gpr,logtheta,filter=None,prior=None)
-    gpr: GP regression classe
-    logtheta: starting piont for optimization
-    Ifilter  : filter index vector
-    prior   : non-default prior, otherwise assume first index amplitude, last noise, rest:lengthscales
+    Ifilter : [boolean]
+        Index vector, indicating which hyperparameters shall
+        be optimized. For instance::
+
+            logtheta = [1,2,3]
+            Ifilter = [0,1,0]
+
+        means that only the second entry (which equals 2 in this example) of
+        logtheta will be optimized and the others remain untouched.
+
+    prior : [:py:class:`lnpriors`]
+        non-default prior, otherwise assume
+        first index amplitude, last noise, rest:lengthscales
     """
     if priors is None:        # use a very crude default prior if we don't get anything else:
         priors = defaultPriors(gpr,logtheta)
@@ -246,13 +170,15 @@ def optHyper(gpr,logtheta,Ifilter=None,priors=None,maxiter=100,gradcheck=False):
     #TODO: mean-function
     def f(x):
         #logtheta_ = fixlogtheta(logtheta)
- #       pdb.set_trace()
+#        pdb.set_trace()
+        logtheta_ = logtheta
         logtheta_[Ifilter] = x
         if not checklogtheta(logtheta):
             print logtheta
             #make optimzier/sampler search somewhere else
             return 1E6
-        rv =  gpr.lMl(logtheta_,lml=True,dlml=False,priors=priors)
+
+        rv =  gpr.lMl(logtheta_,lml=True,dlml=False,priors=priors,**kw_args)
         LG.debug("L("+str(logtheta_)+")=="+str(rv))
         if isnan(rv):
             return 1E6
@@ -260,12 +186,13 @@ def optHyper(gpr,logtheta,Ifilter=None,priors=None,maxiter=100,gradcheck=False):
     def df(x):
         #logtheta_ = fixlogtheta(logtheta)
 #        pdb.set_trace()
+        logtheta_ = logtheta
         logtheta_[Ifilter] = x
         if not checklogtheta(logtheta):
             #make optimzier/sampler search somewhere else
             print logtheta
             return zeros_like(logtheta_)
-        rv =  gpr.lMl(logtheta_,lml=False,dlml=True,priors=priors)
+        rv =  gpr.lMl(logtheta_,lml=False,dlml=True,priors=priors,**kw_args)
         LG.debug("dL("+str(logtheta_)+")=="+str(rv))
         #mask out filtered dimensions
 #        if not Ifilter is None:
@@ -299,8 +226,7 @@ def optHyper(gpr,logtheta,Ifilter=None,priors=None,maxiter=100,gradcheck=False):
 
     #start-parameters
     x0 = logtheta[Ifilter]
-    #copy of logtheta
-    logtheta_  = logtheta.copy()
+
 
     LG.info("startparameters for opt:"+str(exp(logtheta)))
     if gradcheck:
@@ -310,19 +236,19 @@ def optHyper(gpr,logtheta,Ifilter=None,priors=None,maxiter=100,gradcheck=False):
 
 
     opt_result=OPT.fmin_bfgs(f, x0, fprime=df, args=(), gtol=1.0000000000000001e-04, norm=inf, epsilon=1.4901161193847656e-08, maxiter=maxiter, full_output=1, disp=(0), retall=0)
-    
-    logthetaO = logtheta.copy()
-    logthetaO[Ifilter] = opt_result[0]
+    opt_params = logtheta
+    opt_params[Ifilter] = opt_result[0]
+    rv = opt_params
 
     LG.info("old parameters:")
     LG.info(str(exp(logtheta)))
     LG.info("optimized parameters:")
-    LG.info(str(exp(logthetaO)))
-    LG.info("grad:"+str(df(logthetaO[Ifilter])))
-    return logthetaO
+    LG.info(str(exp(rv)))
+    LG.info("grad:"+str(df(rv)))
+    return rv
 
 def defaultPriors(gpr,logtheta):
-    """creat some crude default priros based on a logtheta and gpr(we might query the covariance function)"""
+    """create some crude default priros based on a logtheta and gpr(we might query the covariance function)"""
     priors = []
     for i in range(size(logtheta)):
         #priors.append([lngammapdf,[10,0.1]])
@@ -335,10 +261,17 @@ def defaultPriors(gpr,logtheta):
     
 
 class GroupGP(object):
-#    __slots__ = ["N","GPs"]
+    __slots__ = ["N","GPs"]
 
-    """GroupGP:
-       - class to bundle one or more GPs for joint optimization of hyper parameters"""
+    """
+    Class to bundle one or more GPs for joint
+    optimization of hyperparameters.
+
+    **Parameters:**
+
+    GPs : [:py:func:`GP.lMl`]
+        Array, holding al GP classes to be optimized together
+    """
 
     def __init__(self,GPs=None):
         if GPs is None:
@@ -348,29 +281,45 @@ class GroupGP(object):
         self.GPs = GPs
         
 
-    def lMl(self,logtheta,lml=True,dlml=True,**lml_kwargs):
-        """lMl(logtehtas,lml=Ture,dlml=true,clml=True,cdlml=True,priors=None)"""
+    def lMl(self,logtheta,**lml_kwargs):
+        """
+        Returns the log Marginal likelyhood for the given logtheta
+        and the lMl_kwargs:
+
+        logtheta : [double]
+            Array of hyperparameters, which define the covariance function
+
+        lMl_kwargs : lml, dlml, clml, sdlml, priors, Ifilter
+            See :py:class:`gpr.GP.lMl`
+    
+        """
+        #lMl(logtehtas,lml=Ture,dlml=true,clml=True,cdlml=True,priors=None)
         #just call them all and add up:
         R = []
         #calculate them for all N
-        R1 = 0
-        R2 = 0
+        R = 0
         for n in range(self.N):
-            if lml and dlml:
-                [o1,o2] = self.GPs[n].lMl(logtheta,lml=lml,dlml=dlml,**lml_kwargs)
-                R1 = R1 + o1
-                R2 = R2 + o2
-            else:
-                o1 = self.GPs[n].lMl(logtheta,lml=lml,dlml=dlml,**lml_kwargs)
-                R1 = R1 + o1
-        if lml and dlml:
-            return [R1,R2]
-        else:
-            return R1
+            L = self.GPs[n].lMl(logtheta,**lml_kwargs)
+            R = R+ L
+        return R
 
     def setData(self,x,t):
-        """set data
-        - since this is a group GP method we assume that the first index indeciates for which GP the dataset is meant to be"""
+        """
+        set inputs x and targets t with **Parameters:**
+
+        x : [double]
+            trainging input
+
+        t : [double]
+            training targets
+            
+        rescale_dim : int
+            dimensions to be rescaled (default all real)
+
+        process : boolean
+            subtract mean and rescale inputs
+
+        """
         for n in range(self.N):
             xn = x[n]
             tn = t[n]
@@ -380,32 +329,63 @@ class GroupGP(object):
 
 
 class GP(object):
-#    __slots__ = ["x","t","n","mean","Smean","rescale","covar", \
-#                 "cached_alpha","cached_L","cached_lMl","cached_dlMl","logtheta","Nlogtheta","priors","nrX","minX","scaleX","logtheta_samples","IlogthetaK"]
-
-    """Gaussian Process regression class
-    -basic GP class
     """
+    Gaussian Process regression class. Holds all information
+    for the GP regression to take place.
+
+    **Parameters:**
+
+    covar_func : :py:class:`covar`
+        The covariance function, which calculates the covariance
+        of the outputs
+
+    Smean : boolean
+        Subtract mean of Data
+
+    x : [double]
+        training inputs (might be high dimensional,
+        depending on which covariance function is chosen)
+        Note: x must be of dimension `(-1,1)`
+
+    y : [double]
+        training targets
+
+    Detailed descriptions of the fields of this class:
     
-##     #Data
-##     x              = array([])            #inputs
-##     t              = array([])            #targets
-##     n              = 0                    #size of training data
-##     mean           = 0                    #mean of the data
-##     #Settings:
-##     Smean          = True                 #subtract mean from ther data
-##     rescale        = True                 #rescale the dataset to standard dimensions
-##     #Covariance:
-##     covar          = None                  #Covariance function
-##     #caching of covariance-stuff:
-##     alpha          = None                 #cached alpha
-##     L              = None                 #chol(K)
-##     Nlogtheta      = 0                    #total number of hyperparameters for set kernel etc.
-##     logtheta       = NAN                  #logtheta from cached problem.
-##     logtheta_samples= None                #samples from the hyperparameters which if av. will be used for predictions
-##     IlogthetaK                            #index of logtheta for kernel parameters
+    ================================ ============ ===========================================
+    Data                             Type/Default Explanation
+    ================================ ============ ===========================================
+    x                                array([])    inputs
+    t                                array([])    targets
+    n                                0            size of training data
+    mean                             0            mean of the data
+
+    **Settings:**
+    Smean                            True         subtract mean from ther data
+    rescale                          True         rescale the dataset to standard dimensions
+
+    **Covariance:**
+    covar                            None         Covariance function
+
+    **caching of covariance-stuff:** 
+    alpha                            None         cached alpha
+    L                                None         chol(K)
+    Nlogtheta                        0            total number of hyperparameters
+                                                  for set kernel etc.
+    logtheta                         NAN          logtheta from cached problem.
+    logtheta_samples                 None         samples from the hyperparameters
+                                                  which if av. will be used
+                                                  for predictions
+    IlogthetaK                                    index of logtheta for kernel parameters
+    =============================== ============ ===========================================
+    """
+
+    __slots__ = ["x","t","n","mean","Smean","rescale","covar", \
+                 "cached_alpha","cached_L","cached_lMl","cached_dlMl","logtheta","Nlogtheta","priors","nrX","minX","scaleX","logtheta_samples","IlogthetaK"]
+
     
-    def __init__(self, covar=None, Smean=True,rescale=True,x=None,y=None,logtheta=NAN):
+    def __init__(self, covar=None, Smean=True,rescale=True,
+                 x=None,y=None,logtheta=NAN,rescale_dim=None):
         '''GP(covar_func,Smean=True,x=None,y=None)
         covar_func: Covariance
         Smean:      subtract mean of Data
@@ -419,13 +399,14 @@ class GP(object):
         self.covar   = covar
         self.logtheta = logtheta
         #default object: IlogthetaK is just all of logtheta
+        self.IlogthetaK = ones([self.covar.getNparams()],dtype='bool')
         if covar is not None:
-            self.IlogthetaK = ones([self.covar.getNparams()],dtype='bool')
             self.Nlogtheta  = self.covar.getNparams()
         self.logtheta_samples = None
         pass
 
     def getData(self):
+        """ Returns the data, currently set for this GP"""
         return [self.x,self.t]
 
     def invalidate_cache(self):
@@ -435,10 +416,16 @@ class GP(object):
         pass
     
     def setData(self,x,t,process=True):
-        """setData(x,t)
+        """
+        setData(x,t) with **Parameters:**
+
         x : inputs
+
         t : targets
-        process: subtrct mean and rescale
+
+        rescale_dim: dimensions to be rescaled (default all real)
+
+        process: subtract mean and rescale input
         """
         self.x = x
         #squeeeze targets; this should only be a vector
@@ -483,14 +470,38 @@ class GP(object):
         
         
     def lMl(self,logtheta,lml=True,dlml=True,clml=True,cdlml=True,priors=None,Ifilter_dlml=None):
-        '''[lMl,dlMl] = lMl(logtheta,lml=True,dlml=True,clml=True,cdlml=True,priors=None)
-        - lml/dlml: return lml/dlml or both
-        - clml/cdlml: calcualte the quantities for caching (default both)
-        - priors:    structure of priors with parameters for each of the dimensions
-        - Ifilter_dlml: index structure 0/1 false/true of parameters for which we calcualte the deriatives
-        - these are passed onto the lower level covariance functions, reducing the computationally complexity
-        '''
+        """
+        Returns the log Marginal likelyhood for the given logtheta.
+
+        **Parameters:**
+
+        logtheta : [double]
+            Array of hyperparameters, which define the covariance function
+
+        lml : boolean
+            return the log marginal likelihood
+
+        dlml : boolean
+            return the derivative of the log marginal likelihood
+
+        clml : boolean
+            calculate the quantities for caching
+
+        sdlml : boolean
+            calculate the quantities for caching
+
+        priors : [:py:class:`lnpriors`]
+            the priors for each hyperparameter, respectively
+            
+        Ifilter_dlml : [boolean]
+            Filter of which parameters will be the derivative calculated
+
+        these are passed onto the lower level covariance functions,
+        reducing the computationally complexity
+        """
+
         #is the lml/dlml cached ?
+
         if (logtheta==self.logtheta).all() and (self.cached_lMl is not None):
             lMl = self.cached_lMl
             dlMl= self.cached_dlMl
@@ -510,8 +521,206 @@ class GP(object):
                 [L,alpha] = self.getCovariances(logtheta)
             except Exception,e:
                 LG.error("exception caught (%s)" % (str(exp(logtheta))))
-                pdb.set_trace()
                 lMl = self.cached_lMl+5000
+                dlMl = self.cached_dlMl
+                
+                self.logtheta = logtheta
+                self.cached_lMl = lMl
+                self.cached_dlMl = dlMl
+                clml=False
+                cdlml=False
+                print e 
+
+            if(clml):
+                lMl = 0.5*dot(alpha,self.t) + sum(log(L.diagonal())) + 0.5*self.n*log(2*pi)
+                lMl = lMl - sum(pvalues[:,0])
+                self.cached_lMl = lMl
+            if(cdlml):
+                Kd = self.covar.Kd(logtheta[self.IlogthetaK],self.x)
+
+    #            dlMl= zeros(self.covar.getNparams())
+    #            W   = linalg.solve(L.transpose(),(linalg.solve(L,eye(self.n)))) - dot(alpha,alpha)
+    #            #dlMl[:]= 0.5*((Kd[:,:,:]*W).sum(axis=1)).sum(axis=1)
+    #            for i in range(size(logtheta)):
+    #                dlMl[i]= 0.5*((Kd[i,:,:]*W).sum()).sum()
+
+                K = self.covar.K(logtheta[self.IlogthetaK],self.x)    
+                D = Kd
+                try:
+                    iC = linalg.inv(K)
+                    #rv0 = -0.5*trace(dot(D,iC),axis1=1,axis2=2)
+                    #much faster:
+                    rv0 = -0.5*(D*iC).sum(axis=1).sum(axis=1)
+
+                    R = dot(D,dot(iC,self.t))
+                    L = dot(self.t,iC)
+                    rv1 = 0.5*dot(R,L)
+                    rv = rv1 + rv0
+                    dlMl = -rv
+                    dlMl = dlMl - pvalues[:,1]
+                    self.cached_dlMl=dlMl
+                except Exception, e:
+                    lMl+=5000
+                    dlMl = self.cached_dlMl
+        #return appropriate stuff:
+        if lml and not dlml:
+            return lMl
+        elif dlml and not lml:
+            return dlMl
+        else:
+            return [lMl,dlMl]
+
+    def getCovariances(self,logtheta):
+        """
+        Return the Cholesky decompositions L and alpha::
+
+            L     = chol(K)
+            alpha = solve(L,t)
+            return [L,Alpha] = getCovariances()
+        """
+#        print str(logtheta)
+        if (logtheta==self.logtheta).all() and (self.cached_L is not None):
+            return [self.cached_L,self.cached_alpha]
+        else:
+            #recalculate it:
+            if size(logtheta)!=self.covar.getNparams():
+                LG.error("wrong number of parameters for covariance Function")
+            #this is all along the lines of Karl rasmussen's code:
+            self.logtheta = logtheta.copy()
+            K = self.covar.K(logtheta[self.IlogthetaK],self.x)
+            self.cached_L = linalg.cholesky(K)
+            self.cached_alpha = solve_chol(self.cached_L.transpose(),self.t)
+            return [self.cached_L,self.cached_alpha]
+        #::
+        
+    def rescaleInputs(self,xstar):
+        """
+        rescale prediction targets, i.e. invert
+        the scaling transformation of inputs
+        """
+        x_ = xstar[:,self.nrX]
+        XS = xstar.copy()
+        XS[:,self.nrX] = (x_-self.minX)*self.scaleX - 5
+        return XS
+        
+        
+    def predict(self,logtheta,xstar,mean=True,rescale=True,var=True):
+        '''
+        Predict mean and variance for given **Parameters:**
+
+        logtheta : [double]
+            hyperparameters in logSpace
+
+        xstar    : [double]
+            prediction inputs
+
+        mean     : boolean
+            add mean to the prediction(True)
+
+        rescale  : boolean
+            rescale in the same way as training data has(True)
+
+        var      : boolean
+            return predicted variance
+        '''
+        #NOTE: this not quite optimal if we are only interested in the variance
+
+        #1. rescale xsta
+        if(self.rescale & rescale):
+            #1. rescale range
+            xstar = self.rescaleInputs(xstar)
+
+        [L,alpha] = self.getCovariances(logtheta)
+        
+        
+        Kstar       = self.covar.K(logtheta[self.IlogthetaK],self.x,xstar)
+        
+        mu = dot(Kstar.transpose(),alpha)
+        S2 = 0
+        if(mean):
+            mu = mu + self.mean
+        if(var):            
+            Kss         = self.covar.K(logtheta[self.IlogthetaK],xstar)
+            v    = linalg.solve(L,Kstar)
+            S2   = Kss.diagonal() - sum(v*v,0).transpose()
+            S2   = abs(S2)
+            #test
+            #K = self.covar.K(logtheta[self.IlogthetaK],self.x)
+            #Ki = linalg.inv(K)
+            #v_    = dot(Ki,Kstar)
+            #S2_ = Kss.diagonal() - dot(Kstar.T,dot(Ki,Kstar))
+        return [mu,S2]
+        
+    def predictM(self,logtheta,xstar,mean=True):
+        '''
+        same as predict but only does mean prediction and ignores variance
+
+        **Parameters:**
+
+        See :py:func:`gpr.GP.predict`
+        '''
+        
+        [L,alpha] = self.getCovariances(logtheta)
+        
+        Kstar       = self.covar.K(logtheta[self.IlogthetaK],self.x,xstar)
+        
+        mu = dot(Kstar.transpose(),alpha)
+        if(mean):
+            mu = mu + self.mean
+        v    = linalg.solve(L,Kstar)
+        return mu
+    
+class GPex(GP):
+    """
+    Gaussian Process regression class. Holds all information
+    for the GP regression to take place. Additionally it provides
+    an indicator Iexp, indicating which hyperpriors shall be exponentiated
+    for the optimizer.
+
+    **Parameters:**
+
+    See :py:class:`gpr.GP`
+    """
+    
+    def lMl(self,logtheta,lml=True,dlml=True,clml=True,cdlml=True,priors=None,Iexp=None,Ifilter_dlml=None):
+        """
+        **Parameters:**
+
+        Iexp : [boolean]
+            indicator which hyperparmeters are exponentiated
+
+        others :
+            See :py:func:`gpr.GP.lMl`
+
+        """
+
+        if Iexp is None:
+            Iexp = ones(logtheta.shape,dtype='bool')
+        
+        if (logtheta==self.logtheta).all() and (self.cached_lMl is not None):
+            lMl = self.cached_lMl
+            dlMl= self.cached_dlMl
+        else:
+            
+            #else calculate
+            pvalues = zeros([size(logtheta),2])
+            # exponentiate parameters, those we need
+            theta = logtheta.copy()
+            theta[Iexp] = exp(logtheta[Iexp])
+            if priors is not None:
+                for i in range(size(logtheta)):
+                    pvalues[i,:] = priors[i][0](theta[i],priors[i][1])
+                #*exp(loghteta) to get chainrule right
+                pvalues[Iexp,1]*=theta[Iexp]
+                
+            try:   
+                [L,alpha] = self.getCovariances(logtheta)
+            except Exception,e:
+                LG.error("exception caught (%s)" % (str(exp(logtheta))))
+                #if self.cached_lMl is not None:
+                lMl = self.cached_lMl+5000
+                # else:
+                #     lMl = 5000
                 dlMl = self.cached_dlMl
                 
                 self.logtheta = logtheta
@@ -552,84 +761,3 @@ class GP(object):
             return dlMl
         else:
             return [lMl,dlMl]
-
-    def getCovariances(self,logtheta):
-        """[L,Alpha] =getCovariances()
-        L     = chol(K)
-        alpha = solve(L,t)"""
-#        print str(logtheta)
-        if (logtheta==self.logtheta).all() and (self.cached_L is not None):
-            return [self.cached_L,self.cached_alpha]
-        else:
-            #recalculate it:
-            if size(logtheta)!=self.covar.getNparams():
-                LG.error("wron number of parameters for covariance Function")
-            #this is all along the lines of Karl rasmussen's code:
-            self.logtheta = logtheta.copy()
-            K = self.covar.K(logtheta[self.IlogthetaK],self.x)
-            self.cached_L = linalg.cholesky(K)
-            self.cached_alpha = solve_chol(self.cached_L.transpose(),self.t)
-            return [self.cached_L,self.cached_alpha]
-        #::
-        
-    def rescaleInputs(self,xstar):
-        """rescale prediction targets, i.e. inver the scaling transformation of inputs"""
-        x_ = xstar[:,self.nrX]
-        XS = xstar.copy()
-        XS[:,self.nrX] = (x_-self.minX)*self.scaleX - 5
-        return XS
-        
-        
-    def predict(self,logtheta,xstar,mean=True,rescale=True,var=True):
-        '''preidct(logtheta,xstar,mean)
-        logtheta: covarParams in logSpace
-        xstar   : prediction inputs
-        mean    : add mean to the prediction(True)
-        rescale : rescale in the same way as training data has(True)
-        var     : return predicted variance'''
-
-        #NOTE: this not quite optimal if we are only interested in the variance
-
-        #1. rescale xsta
-        if(self.rescale & rescale):
-            #1. rescale range
-            xstar = self.rescaleInputs(xstar)
-
-        [L,alpha] = self.getCovariances(logtheta)
-        
-        
-        Kstar       = self.covar.K(logtheta[self.IlogthetaK],self.x,xstar)
-        
-        mu = dot(Kstar.transpose(),alpha)
-        S2 = 0
-        if(mean):
-            mu = mu + self.mean
-        if(var):            
-            Kss         = self.covar.K(logtheta[self.IlogthetaK],xstar)
-            v    = linalg.solve(L,Kstar)
-            S2   = Kss.diagonal() - sum(v*v,0).transpose()
-            S2   = abs(S2)
-            #test
-            #K = self.covar.K(logtheta[self.IlogthetaK],self.x)
-            #Ki = linalg.inv(K)
-            #v_    = dot(Ki,Kstar)
-            #S2_ = Kss.diagonal() - dot(Kstar.T,dot(Ki,Kstar))
-        return [mu,S2]
-        
-    def predictM(self,logtheta,xstar,mean=True):
-        '''predictM(logtheta,xstar,mean)
-        same as predict but only does mean prediction and ignores variance
-        logtheta: covarParams in logSpace
-        xstar   : prediction inputs
-        mean    : add mean to the prediction(True)'''
-        
-        [L,alpha] = self.getCovariances(logtheta)
-        
-        Kstar       = self.covar.K(logtheta[self.IlogthetaK],self.x,xstar)
-        
-        mu = dot(Kstar.transpose(),alpha)
-        if(mean):
-            mu = mu + self.mean
-        v    = linalg.solve(L,Kstar)
-        return mu
-    

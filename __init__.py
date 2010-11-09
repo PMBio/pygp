@@ -1,6 +1,6 @@
 """
 Python package for Gaussian process regression in python
-
+========================================================
 
 demo_gpr.py explains how to perform basic regression tasks.
 demo_gpr_robust.py shows how to apply EP for robust Gaussian process regression.
