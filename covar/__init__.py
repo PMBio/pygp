@@ -16,11 +16,13 @@ For example to use the squared exponential CF with noise this should work for yo
 
 """
 
-__all__ = ["sederiv","sq_dist","sumCF","productCF","noiseCF"]
+__all__ = ["se","sq_dist","combinators","noiseCF"]
 
 # import python / numpy:
 from pylab import *
 from numpy import * 
+
+import sq_dist
 
 class CovarianceFunction(object):
     """
@@ -29,83 +31,88 @@ class CovarianceFunction(object):
     **Important:** *All Covariance Functions have
     to inherit from this class in order to work
     properly with this GP framework.*
-
     """
-    __slots__= ["n_params","dimension","index","Iactive"]
+    __slots__= ["n_hyperparameters",
+                "dimensions",
+                "dimension_indices",
+                "active_dimension_indices"]
 
-    
     def __init__(self):
-        self.n_params = nan
-        self.dimension = 1
-        self.Iactive = arange(self.dimension)
+        self.n_hyperparameters = nan
+        self.n_dimensions = 1
+        self.active_dimension_indices = arange(self.dimensions)
         pass
 
-    def K(self,logtheta,*args):
+    def K(self, modelparameters, *args):
         """
         Get Covariance matrix K with given hyperparameters
         logtheta and inputs *args* = X[, X'].
 
         **Parameters:**
 
-        logtheta : [amplitude,length-scale(s)
-        [,time-parameter(s)], noise]
+        modelparameters : dict = {'covar': hyperparameters, ...}
 
-           The hyperparameters for which the covariance
-           matrix shall be computed.
+            The hyperparameters for which the covariance
+            matrix shall be computed. :py:func:`hyperparameters` are the
+            hyperparameters for the respective covariance function.
+            For instance, the :py:class:`covar.se.SECF` holds hyperparameters
+            like :py:func`[Amplitude, Length-Scale(s)]`.
 
         args : X[, X']
         
-            The interpolation inputs, which shall be
-            used as covariance inputs.
+            The (interpolation) inputs, which shall be
+            the pointwise covariance calculated for.
         """
         print "implement K"
         pass
         
-    def Kd(self, logtheta, *args):
+    def Kd(self, modelparameters, *args):
         """
         Get Derivatives of Covariance matrix K for each given
         hyperparameter resepctively. Output matrix with
         derivatives will have the same order, as the
-        hyperparameters *logtheta* have.
+        hyperparameters have.
 
         **Parameters:**
 
-        logtheta : [amplitude,length-scale(s)
-        [,time-parameter(s)], noise]
+        modelparameters : dict = {'covar': hyperparameters, ...}
 
-           The hyperparameters for which the derivative
-           covariance matrix shall be computed.
+            The hyperparameters for which the derivative
+            covariance matrix shall be computed.
 
         args : X[, X']
 
-            The interpolation inputs, which shall be
-            used as covariance inputs.
+            The (interpolation) inputs, which shall be
+            the pointwise covariance calculated for.
         """
         print "please implement Kd"
     	pass
-    
-    def _dist(self,x1,x2,L):
+
+    def _pointwise_distance(self,x1,x2,L=None):
         """
-        Pointwise distance between vector x1 and x2,
-        normalized (divided) by L.
+        Pointwise distance between vector x1 and x2. Optionally normalized (divided) by L
         """
-        x1 = array(x1,dtype='float64')/L
-        x2 = array(x2,dtype='float64')/L
+        if L != None:
+            x1 = array(x1,dtype='float64')/L
+            x2 = array(x2,dtype='float64')/L
         return sq_dist.dist(x1,x2)
 
-    def getNparams(self):
-        return self.n_params;
-
-    def getParamNames(self):
-        """return the names of hyperparameters to make
-        identification easier"""
+    def get_hyperparameter_names(self):
+        """
+        return the names of hyperparameters to make
+        identification easier
+        """
         return []
+
+    def get_number_of_parameters(self):
+        return self.n_hyperparameters
     
-    def getDefaultParams(self,x=None,y=None):
-        #"Default implementation: no parameters for CV"
+    def get_default_hyperparameters(self,x=None,y=None):
         return array([])
+
+    def get_n_dimensions(self):
+        return self.n_dimensions
     
-    def setActiveDimensions(self,Iactive = None,**kwargin):
-        #"set active subset dimensions"
-        self.Iactive = Iactive
+    def set_active_dimensions(self,active_dimension_indices = None):
+        self.active_dimension_indices = active_dimension_indices
         pass

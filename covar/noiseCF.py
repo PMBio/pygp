@@ -20,17 +20,15 @@ class NoiseCovariance(CovarianceFunction):
     """Covariance function for Gaussian observation noise"""
 
     def __init__(self):
-        self.n_params = 1
+        self.n_hyperparameters = 1
 
-    
-
-    def getParamNames(self):
+    def get_hyperparameter_names(self):
         #"""return the names of hyperparameters to make identificatio neasier"""
         names = []
         names.append('Sigma')
         return names
 
-    def K(self,logtheta,*args):
+    def K(self,modelparameters,*args):
         """
         Get Covariance matrix K with given hyperparameters logtheta and inputs *args* = X[, X']. Note that this covariance function will only get noise as hyperparameter!
 
@@ -38,6 +36,7 @@ class NoiseCovariance(CovarianceFunction):
         See :py:class:`covar.CovarianceFunction` 
         """
         x1 = args[0]
+        logtheta = modelparameters['covar']
 
         #noise is only presenet if have a single argument
         if(len(args)==1):
@@ -49,7 +48,7 @@ class NoiseCovariance(CovarianceFunction):
 
         return noise
 
-    def Kd(self,logtheta,*args):
+    def Kd(self,modelparameters,*args):
         '''The derivatives of the covariance matrix for each hyperparameter, respectively.
 
         **Parameters:**
@@ -57,9 +56,9 @@ class NoiseCovariance(CovarianceFunction):
         '''
         #1. calculate kernel
         #no noise
-        _K = self.K(logtheta,*args)
+        _K = self.K(modelparameters,*args)
 
-        rv = zeros([self.n_params,_K.shape[0],_K.shape[1]])
+        rv = zeros([self.n_hyperparameters,_K.shape[0],_K.shape[1]])
         rv[:] = _K
         #from exp.
         rv[0]*= 2

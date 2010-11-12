@@ -1,9 +1,9 @@
 import sys
 sys.path.append('./../')
+sys.path.append('./')
 
-
-import sys
-sys.path.append('/kyb/agbs/stegle/work/ibg/lib')
+#import sys
+#sys.path.append('/kyb/agbs/stegle/work/ibg/lib')
 
 import pdb
 from pylab import *
@@ -11,8 +11,8 @@ from numpy import *
 
 from pyio.csvex import *
 
-from pygp.covar import *
-import pygp.gpr as GPR
+from covar import *
+import gpr as GPR
 
 import sys
 from lnpriors import *
@@ -64,8 +64,11 @@ if 0:
     X = X_
     logtheta = log([1,1,0.1,sigma])
 
+SECF = se.SECF(dim)
+SEnoise = noiseCF.NoiseCovariance()
 
-covar = sederiv.SquaredExponentialCF(dim)
+covar = combinators.SumCovariance((SECF,SEnoise))
+
 gpr = GPR.GP(covar,Smean=True,x=x,y=y)
 
 if 1:
@@ -78,15 +81,16 @@ if 1:
     #noise
     priors.append([lngammapdf,[1,1]])
       
-    I_filter =ones_like(logtheta)
+    I_filter=array(ones_like(logtheta),dtype='bool')
     #maybe we should filter optimzing theta
-    logthetaO=GPR.optHyper(gpr,logtheta,I_filter,priors=priors)
-    print "optimized hyperparameters:" + str(exp(logthetaO))
+    modelparameters = {'covar':logtheta}
+    opt_model_params=GPR.optHyper(gpr,modelparameters,I_filter,priors=priors)
+    print "optimized hyperparameters:" + str(exp(opt_model_params['covar']))
 else:
-    logthetaO=logtheta
+    opt_model_params=modelparameters
 
 #predict
-[M,S] = gpr.predict(logthetaO,X)
+[M,S] = gpr.predict(opt_model_params,X)
 
 
 hold(True)

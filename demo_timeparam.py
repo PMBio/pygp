@@ -12,7 +12,7 @@ import gpr as GPR
 
 import pdb
 
-def raiseGPon(x,y,interpolInterval,logtheta,covar,priors=None,opt=True):
+def raiseGPon(x,y,interpolInterval,logtheta,covar,Iexp,priors=None,opt=True):
     """ raise GP Regression on input input, output y on the interpolation interval interpolInterval with hyperparemters logtheta log(amplitude,lengthscale,timeshift,noise)"""
     # append replicate param
     xrep = SP.concatenate([SP.repeat(i,len(x)/2) for i in range(2)]).reshape(-1,1)
@@ -24,11 +24,11 @@ def raiseGPon(x,y,interpolInterval,logtheta,covar,priors=None,opt=True):
     
     if opt:
         logtheta0 = GPR.optHyper(gprtp,logtheta,SP.ones_like(logtheta),
-                                 priors=priors,Iexp=SP.array([1,1,0,0,1]))
+                                 priors=priors,Iexp=Iexp)
     else:
         logtheta0 = logtheta
 
-    [M,S] = GPR.predict(logtheta0,interpolInterval)
+    [M,S] = gprtp.predict(logtheta0,interpolInterval)
     
     return [M,S,logtheta0]
 
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     # plot random gprs (3) (with deltaT)
 
     # create inputs (Note: x is to have shape (-1,1))
-    x = SP.arange(0,20,1)
+    x = SP.concatenate((SP.arange(0,10,1),SP.arange(1,11,1)))
     x = x.reshape(-1,1)
 
     # create covariance function (noise + setp)
@@ -71,15 +71,18 @@ if __name__ == '__main__':
     priors.append([LNP.lngauss,[0,1]])
     priors.append([LNP.lngammapdf,[1,1]])
 
+    Iexp = SP.array([1,1,0,0,1],dtype='bool')
+
     # design
     shapesData = ['g:+','b:+','r:+']
     shapesMean = ['g-','b-','r-']
     colors = ['green','blue','red']
 
     # logthetas: mean of each prior
-    logtheta = SP.array([SP.log(p[1][0]*p[1][1]) for p in priors])
-    # Time hyper parameter is nonlog
-    logtheta[2:4] = SP.exp(logtheta[2:4])
+    logtheta = SP.array([p[1][0]*p[1][1] for p in priors])
+
+    #Time hyper parameter is nonlog
+    logtheta[Iexp] = SP.log(logtheta[Iexp])
     
     # plots and logthetas for legend
     plots=[]
@@ -92,11 +95,11 @@ if __name__ == '__main__':
     for i in range(3):
         # get logtheta
         # create training data set y
-        y = (10*(i+1))*SP.random.randn(x.shape[0])
+        y = SP.concatenate((i+1)*SP.sin(x.reshape(-1,2)))
         # plot training data set
         PL.plot(x,y,marker='+',color=colors[i],markersize=12)
         # raise GP regression on training data x,y
-        [M,S,logtheta0] = raiseGPon(x,y,X,logtheta,covar,priors=priors,opt=True)
+        [M,S,logtheta0] = raiseGPon(x,y,X,logtheta,covar,Iexp,priors=priors,opt=True)
         # append to plots for legend
         plots.append(plotMeanAndSDV(M,S,color=colors[i],shape=shapesMean[i]))
         logthetaOs.append(logtheta0)
