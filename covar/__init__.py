@@ -16,7 +16,8 @@ For example to use the squared exponential CF with noise this should work for yo
 
 """
 
-__all__ = ["se","sq_dist","combinators","noiseCF"]
+
+__all__ = ["se","sq_dist","combinators","noise","linear"]
 
 # import python / numpy:
 from pylab import *
