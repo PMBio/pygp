@@ -44,7 +44,6 @@ def _solve_chol(A,B):
 
 
 
-
     
 
 def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args):
