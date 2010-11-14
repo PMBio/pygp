@@ -42,7 +42,7 @@ class SumCovariance(CovarianceFunction):
 
         self.covars = covars
 
-    def parse_args(self,*args):
+    def _parse_args(self,*args):
         x1 = args[0]
         if(len(args)==1):
             x2 = x1
@@ -64,7 +64,7 @@ class SumCovariance(CovarianceFunction):
         for covar in self.covars:
             covar.set_active_dimensions(**kwargin)
 
-    def K(self,modelparameters,*args):
+    def K(self,logtheta,*args):
         """
         Get Covariance matrix K with given hyperparameters
         logtheta and inputs *args* = X[, X']. The result
@@ -74,17 +74,15 @@ class SumCovariance(CovarianceFunction):
         **Parameters:**
         See :py:class:`covar.CovarianceFunction` 
         """
-        logtheta = modelparameters['covar']
 #1. check logtheta has correct length
         assert logtheta.shape[0]==self.n_hyperparameters, 'K: logtheta has wrong shape'
         #2. create sum of covarainces..
-        [x1,x2] = self.parse_args(*args)
+        [x1,x2] = self._parse_args(*args)
         #K = S.zeros([x1.shape[0],x2.shape[0]])
         for nc in xrange(len(self.covars)):
             covar = self.covars[nc]
-            modelparameters_copy = modelparameters.copy()
-            modelparameters_copy['covar'] = logtheta[self.covars_logtheta_I[nc]]
-            K_ = covar.K(modelparameters_copy,*args)
+            _logtheta = logtheta[self.covars_logtheta_I[nc]]
+            K_ = covar.K(_logtheta,*args)
             if (nc==0):
                 K = K_
             else:
@@ -92,7 +90,7 @@ class SumCovariance(CovarianceFunction):
         return K
 
 
-    def Kd(self,modelparameters, *args):
+    def Kd(self,logtheta, *args):
         '''The derivatives of the covariance matrix for
         each hyperparameter, respectively.
 
@@ -100,16 +98,14 @@ class SumCovariance(CovarianceFunction):
         See :py:class:`covar.CovarianceFunction`
         '''
         #1. check logtheta has correct length
-        logtheta=modelparameters['covar']
         assert logtheta.shape[0]==self.n_hyperparameters, 'K: logtheta has wrong shape'
-        [x1,x2] = self.parse_args(*args)
+        [x1,x2] = self._parse_args(*args)
         #rv      = S.zeros([self.n_params,x1.shape[0],x2.shape[0]])
         rv = None
         for nc in xrange(len(self.covars)):
             covar = self.covars[nc]
-            modelparameters_copy = modelparameters.copy()
-            modelparameters_copy['covar'] = logtheta[self.covars_logtheta_I[nc]]
-            _Kd = covar.Kd(modelparameters_copy,*args)
+            _logtheta = logtheta[self.covars_logtheta_I[nc]]
+            _Kd = covar.Kd(_logtheta,*args)
             if rv is None:
                 #create results structure
                 rv = S.zeros([self.n_hyperparameters,_Kd.shape[1],_Kd.shape[2]])
@@ -144,7 +140,7 @@ class ProductCovariance(CovarianceFunction):
             self.covars_logtheta_I[n] = _ilogtheta
 
 
-    def parse_args(self,*args):
+    def _parse_args(self,*args):
         x1 = args[0]
         if(len(args)==1):
             x2 = x1
@@ -167,26 +163,25 @@ class ProductCovariance(CovarianceFunction):
         return names
 
 
-    def K(self,modelparameters,*args):
+    def K(self,logtheta,*args):
         "kernel"
-        logtheta = modelparameters['covar']
         #1. check logtheta has correct length
         assert logtheta.shape[0]==self.n_hyperparameters, 'K: logtheta has wrong shape'
         #2. create sum of covarainces..
-        [x1,x2] = self.parse_args(*args)
+        [x1,x2] = self._parse_args(*args)
         K = S.ones([x1.shape[0],x2.shape[0]])
         for nc in xrange(len(self.covars)):
             covar = self.covars[nc]
-            K     *=  covar.K(logtheta[self.covars_logtheta_I[nc]],*args)
+            _logtheta = logtheta[self.covars_logtheta_I[nc]]
+            K     *=  covar.K(_loghteta,*args)
         return K
 
 
-    def Kd(self,modelparameters, *args):
+    def Kd(self,logtheta, *args):
         "derivative kernel"
-        logtheta = modelparameters['covar']
         #1. check logtheta has correct length
         assert logtheta.shape[0]==self.n_hyperparameters, 'K: logtheta has wrong shape'
-        [x1,x2] = self.parse_args(*args)
+        [x1,x2] = self._parse_args(*args)
         rv      = S.ones([self.n_hyperparameters,x1.shape[0],x2.shape[0]])
         for nc in xrange(len(self.covars)):
             covar = self.covars[nc]

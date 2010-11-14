@@ -9,8 +9,7 @@ or :py:class:`produtCF` with the py:class:`noiseCF`, if you want noise to be mod
 
 import sys
 sys.path.append("../")
-
-from scipy import *
+import scipy as SP
 
 # import super class CovarianceFunction
 from covar import CovarianceFunction
@@ -42,7 +41,7 @@ class SECF(CovarianceFunction):
         if dimension_indices != None:
             self.dimension_indices = array(dimension_indices,dtype='int32')
         elif n_dimensions:
-            self.dimension_indices = arange(0,n_dimensions)
+            self.dimension_indices = SP.arange(0,n_dimensions)
         self.n_dimensions = self.dimension_indices.max()+1-self.dimension_indices.min()
         self.n_hyperparameters = self.n_dimensions+1
         pass
@@ -58,7 +57,7 @@ class SECF(CovarianceFunction):
     def get_number_of_parameters(self):
         return self.n_dimensions+1;
 
-    def K(self, modelparameters, *args):
+    def K(self, logtheta, *args):
         """
         Get Covariance matrix K with given hyperparameters
         and inputs *args* = X[, X'].
@@ -71,19 +70,18 @@ class SECF(CovarianceFunction):
             x2 = x1
         else:
            x2 = args[1][:,self.dimension_indices]#[:,self.Iactive]
-        logtheta = modelparameters['covar']
         # 2. exponentiate params:
-        V0 = exp(2*logtheta[0])
-        L  = exp(logtheta[1:1+self.n_dimensions])#[self.Iactive])
+        V0 = SP.exp(2*logtheta[0])
+        L  = SP.exp(logtheta[1:1+self.n_dimensions])#[self.Iactive])
         # calculate the distance betwen x1,x2 for each dimension separately, reweighted by L. 
         dd = self._pointwise_distance(x1,x2,L)
         sqd = dd*dd
         sqd = sqd.sum(axis=2)
         #3. calculate the whole covariance matrix:
-        rv = V0*exp(-0.5*sqd)
+        rv = V0*SP.exp(-0.5*sqd)
         return rv
 
-    def Kd(self, modelparameters, *args):
+    def Kd(self, logtheta, *args):
         """
         The derivatives of the covariance matrix for
         each hyperparameter, respectively.
@@ -96,10 +94,9 @@ class SECF(CovarianceFunction):
             x2 = x1
         else:
            x2 = args[1][:,self.dimension_indices]#[:,self.Iactive]
-        logtheta = modelparameters["covar"]
         # 2. exponentiate params:
-        V0 = exp(2*logtheta[0])
-        L  = exp(logtheta[1:1+self.n_dimensions])#[:,self.Iactive])
+        V0 = SP.exp(2*logtheta[0])
+        L  = SP.exp(logtheta[1:1+self.n_dimensions])#[:,self.Iactive])
         # calculate the distance betwen x1,x2 for each dimension separately.
         dd = self._pointwise_distance(x1,x2,L)
         # sq. distance is neede anyway:
@@ -107,10 +104,10 @@ class SECF(CovarianceFunction):
         sqdd = sqd.transpose(2,0,1)
         sqd = sqd.sum(axis=2)
         #3. calcualte withotu derivatives, need this anyway:
-        rv0 = V0*exp(-0.5*sqd)
-        rv = zeros((self.n_hyperparameters,len(x1),len(x2)))
+        rv0 = V0*SP.exp(-0.5*sqd)
+        rv = SP.zeros((self.n_hyperparameters,len(x1),len(x2)))
         #3. calcualte without derivatives, need this anyway:
-        rv[:] = V0*exp(-0.5*sqd)
+        rv[:] = V0*SP.exp(-0.5*sqd)
         #amplitude:
         rv[0] = rv[0]*2
         #lengthscales:
@@ -141,20 +138,20 @@ if __name__ == "__main__":
     A = 2
     L1 = 2
     L2 = .5
-    modelparameters = {'covar':log([A,L1,L2])}
+    logtheta = SP.log([A,L1,L2])
 
     # number of n_dimensions
     assert covar.get_n_dimensions() == 2
     # parameter names
     assert covar.get_hyperparameter_names() == ['Amplitude', '1.D Length-Scale', '2.D Length-Scale']
     # Kovariance matrices
-    K = covar.K(modelparameters,X)
+    K = covar.K(logtheta,X)
     assert ((K.diagonal() == A**2).all())
-    K = covar.K(modelparameters,X,Xprime)
+    K = covar.K(logtheta,X,Xprime)
     assert ((K.diagonal() == A**2).all())
-    Kd = covar.Kd(modelparameters,X)
+    Kd = covar.Kd(logtheta,X)
     assert Kd.shape == (covar.get_number_of_parameters(),X.shape[0],X.shape[0])
-    Kd = covar.Kd(modelparameters,X,Xprime)
+    Kd = covar.Kd(logtheta,X,Xprime)
     assert Kd.shape == (covar.get_number_of_parameters(),X.shape[0],Xprime.shape[0])
     
     # tests for SETP
@@ -166,7 +163,7 @@ if __name__ == "__main__":
     L2 = .5
     T1 = 1
     T2 = -1
-    modelparameters = {'covar':[log(A),log(L1),log(L2),T1,T2]}
+    logtheta = SP.array[log(A),log(L1),log(L2),T1,T2]
 
     # number of n_dimensions
     assert covar.get_n_dimensions() == 2
@@ -177,8 +174,8 @@ if __name__ == "__main__":
                                                 'Time-Parameter rep0',
                                                 'Time-Parameter rep1']
     # Kovariance matrices \\TODO
-    K = covar.K(modelparameters,X)
+    K = covar.K(logtheta,X)
     assert ((K.diagonal() == A**2).all())
-    K = covar.K(modelparameters,X,Xprime)
-    Kd = covar.Kd(modelparameters,X)
+    K = covar.K(logtheta,X,Xprime)
+    Kd = covar.Kd(logtheta,X)
     

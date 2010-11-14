@@ -10,8 +10,7 @@ sys.path.append("../")
 
 
 # import python / numpy:
-from pylab import *
-from numpy import *
+import scipy as SP
 
 from covar import CovarianceFunction
 
@@ -28,7 +27,7 @@ class NoiseCovariance(CovarianceFunction):
         names.append('Sigma')
         return names
 
-    def K(self,modelparameters,*args):
+    def K(self,logtheta,*args):
         """
         Get Covariance matrix K with given hyperparameters logtheta and inputs *args* = X[, X']. Note that this covariance function will only get noise as hyperparameter!
 
@@ -36,11 +35,10 @@ class NoiseCovariance(CovarianceFunction):
         See :py:class:`covar.CovarianceFunction` 
         """
         x1 = args[0]
-        logtheta = modelparameters['covar']
 
         #noise is only presenet if have a single argument
         if(len(args)==1):
-            noise = eye(x1.shape[0])*exp(2*logtheta[0])
+            noise = SP.eye(x1.shape[0])*SP.exp(2*logtheta[0])
             x2    = x1
         else:
             noise = 0 
@@ -48,7 +46,7 @@ class NoiseCovariance(CovarianceFunction):
 
         return noise
 
-    def Kd(self,modelparameters,*args):
+    def Kd(self,logtheta,*args):
         '''The derivatives of the covariance matrix for each hyperparameter, respectively.
 
         **Parameters:**
@@ -56,9 +54,9 @@ class NoiseCovariance(CovarianceFunction):
         '''
         #1. calculate kernel
         #no noise
-        _K = self.K(modelparameters,*args)
+        _K = self.K(logtheta,*args)
 
-        rv = zeros([self.n_hyperparameters,_K.shape[0],_K.shape[1]])
+        rv = SP.zeros([self.n_hyperparameters,_K.shape[0],_K.shape[1]])
         rv[:] = _K
         #from exp.
         rv[0]*= 2

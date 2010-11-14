@@ -20,8 +20,7 @@ For example to use the squared exponential CF with noise this should work for yo
 __all__ = ["se","sq_dist","combinators","noise","linear"]
 
 # import python / numpy:
-from pylab import *
-from numpy import * 
+import scipy as SP
 
 import sq_dist
 
@@ -41,10 +40,10 @@ class CovarianceFunction(object):
     def __init__(self):
         self.n_hyperparameters = nan
         self.n_dimensions = 1
-        self.active_dimension_indices = arange(self.dimensions)
+        self.active_dimension_indices = SP.arange(self.dimensions)
         pass
 
-    def K(self, modelparameters, *args):
+    def K(self, logtheta, *args):
         """
         Get Covariance matrix K with given hyperparameters
         logtheta and inputs *args* = X[, X'].
@@ -66,8 +65,16 @@ class CovarianceFunction(object):
         """
         print "implement K"
         pass
+
+    def Kdiag(self,logtheta, x1):
+        """
+        Get diagonal of a (squared) covaraince matrix
+        """
+        #default: naive implementation
+        return self.K(logtheta,x1).diagonal()
         
-    def Kd(self, modelparameters, *args):
+        
+    def Kd(self, logtheta, *args):
         """
         Get Derivatives of Covariance matrix K for each given
         hyperparameter resepctively. Output matrix with
@@ -93,9 +100,9 @@ class CovarianceFunction(object):
         """
         Pointwise distance between vector x1 and x2. Optionally normalized (divided) by L
         """
-        if L != None:
-            x1 = array(x1,dtype='float64')/L
-            x2 = array(x2,dtype='float64')/L
+        if L is not None:
+            x1 = x1.copy()/L
+            x2 = x2.copy()/L
         return sq_dist.dist(x1,x2)
 
     def get_hyperparameter_names(self):
