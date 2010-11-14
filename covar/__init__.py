@@ -43,7 +43,7 @@ class CovarianceFunction(object):
         self.active_dimension_indices = SP.arange(self.dimensions)
         pass
 
-    def K(self, logtheta, *args):
+    def K(self, logtheta, x1,x2=None):
         """
         Get Covariance matrix K with given hyperparameters
         logtheta and inputs *args* = X[, X'].
@@ -74,7 +74,7 @@ class CovarianceFunction(object):
         return self.K(logtheta,x1).diagonal()
         
         
-    def Kd(self, logtheta, *args):
+    def Kd(self, logtheta, x1):
         """
         Get Derivatives of Covariance matrix K for each given
         hyperparameter resepctively. Output matrix with

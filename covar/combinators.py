@@ -31,16 +31,23 @@ class SumCovariance(CovarianceFunction):
         self.n_params_list = []
         self.covars = []
         self.covars_logtheta_I = []
+        self.covars_covar_I = []
+
+        self.covars = covars
         i = 0
-        for covar in covars:
+        for nc in xrange(len(covars)):
+            covar = covars[nc]
             assert isinstance(covar,CovarianceFunction), 'SumCovariance is constructed from a list of covaraince functions'
-            self.n_params_list.append(covar.get_number_of_parameters())
+            Nparam = covar.get_number_of_parameters()
+            self.n_params_list.append(Nparam)
             self.covars_logtheta_I.append(S.arange(i,i+covar.get_number_of_parameters()))
+            for ip in xrange(Nparam):
+                self.covars_covar_I.append(nc)
             i+=covar.get_number_of_parameters()
         self.n_params_list = S.array(self.n_params_list)
         self.n_hyperparameters = self.n_params_list.sum()
 
-        self.covars = covars
+
 
     def _parse_args(self,*args):
         x1 = args[0]
@@ -77,8 +84,6 @@ class SumCovariance(CovarianceFunction):
 #1. check logtheta has correct length
         assert logtheta.shape[0]==self.n_hyperparameters, 'K: logtheta has wrong shape'
         #2. create sum of covarainces..
-        [x1,x2] = self._parse_args(*args)
-        #K = S.zeros([x1.shape[0],x2.shape[0]])
         for nc in xrange(len(self.covars)):
             covar = self.covars[nc]
             _logtheta = logtheta[self.covars_logtheta_I[nc]]
@@ -90,7 +95,9 @@ class SumCovariance(CovarianceFunction):
         return K
 
 
-    def Kd(self,logtheta, *args):
+
+
+    def Kd(self,logtheta, x1,i):
         '''The derivatives of the covariance matrix for
         each hyperparameter, respectively.
 
@@ -98,21 +105,12 @@ class SumCovariance(CovarianceFunction):
         See :py:class:`covar.CovarianceFunction`
         '''
         #1. check logtheta has correct length
-        assert logtheta.shape[0]==self.n_hyperparameters, 'K: logtheta has wrong shape'
-        [x1,x2] = self._parse_args(*args)
-        #rv      = S.zeros([self.n_params,x1.shape[0],x2.shape[0]])
-        rv = None
-        for nc in xrange(len(self.covars)):
-            covar = self.covars[nc]
-            _logtheta = logtheta[self.covars_logtheta_I[nc]]
-            _Kd = covar.Kd(_logtheta,*args)
-            if rv is None:
-                #create results structure
-                rv = S.zeros([self.n_hyperparameters,_Kd.shape[1],_Kd.shape[2]])
-            #copy relevant bits in
-            rv[self.covars_logtheta_I[nc]] = _Kd
-        return rv
-
+        nc = self.covars_covar_I[i]
+        covar = self.covars[nc]
+        d  = self.covars_logtheta_I[nc].min()
+        j  = i-d
+        return covar.Kd(logtheta[self.covars_logtheta_I[nc]],x1,j)
+        
 
 class ProductCovariance(CovarianceFunction):
 #    __slots__=["n_params_list","covars","covars_logtheta_I"]

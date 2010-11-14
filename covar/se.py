@@ -81,7 +81,7 @@ class SECF(CovarianceFunction):
         rv = V0*SP.exp(-0.5*sqd)
         return rv
 
-    def Kd(self, logtheta, *args):
+    def Kd(self, logtheta, x1,i):
         """
         The derivatives of the covariance matrix for
         each hyperparameter, respectively.
@@ -89,11 +89,9 @@ class SECF(CovarianceFunction):
         **Parameters:**
         See :py:class:`covar.CovarianceFunction`
         """
-        x1 = args[0][:,self.dimension_indices]#[:,self.Iactive]
-        if(len(args)==1):
-            x2 = x1
-        else:
-           x2 = args[1][:,self.dimension_indices]#[:,self.Iactive]
+        x1 = x1[:,self.dimension_indices]#[:,self.Iactive]
+        x2 = x1
+        
         # 2. exponentiate params:
         V0 = SP.exp(2*logtheta[0])
         L  = SP.exp(logtheta[1:1+self.n_dimensions])#[:,self.Iactive])
@@ -101,19 +99,16 @@ class SECF(CovarianceFunction):
         dd = self._pointwise_distance(x1,x2,L)
         # sq. distance is neede anyway:
         sqd = dd*dd
-        sqdd = sqd.transpose(2,0,1)
+        sqdd = sqd
         sqd = sqd.sum(axis=2)
         #3. calcualte withotu derivatives, need this anyway:
         rv0 = V0*SP.exp(-0.5*sqd)
-        rv = SP.zeros((self.n_hyperparameters,len(x1),len(x2)))
-        #3. calcualte without derivatives, need this anyway:
-        rv[:] = V0*SP.exp(-0.5*sqd)
-        #amplitude:
-        rv[0] = rv[0]*2
-        #lengthscales:
-        #rv[1:1+self.n_dimensions][self.Iactive] *= sqdd
-        rv[1:1+self.n_dimensions] *= sqdd
-        return rv
+
+        if i==0:
+            return 2*rv0
+        else:
+            return rv0*sqdd[:,:,i-1]
+
 
     def get_default_hyperparameters(self,x=None,y=None):
         #"""getDefaultParams(x=None,y=None)
