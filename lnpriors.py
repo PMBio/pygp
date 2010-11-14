@@ -3,9 +3,8 @@ Hyperpriors for log likelihood calculation
 ------------------------------------------
 """
 
-from pylab import *
-from numpy import *
-from scipy.special import *
+import scipy as SP
+import scipy.special as SPs
 
 
 def lngammapdf(x,params):
@@ -23,10 +22,10 @@ def lngammapdf(x,params):
         the distribution parameters k and t.
     """
     #explicitly convert to double to avoid int trouble :-)
-    k=double(params[0])
-    t=double(params[1])
+    k=SP.double(params[0])
+    t=SP.double(params[1])
 
-    lng     = (k-1)*log(x) - x/t -gammaln(k) - k*log(t)
+    lng     = (k-1)*SP.log(x) - x/t -SPs.gammaln(k) - k*SP.log(t)
     dlng    = (k-1)/x - 1/t
 
     return [lng,dlng]
@@ -47,8 +46,8 @@ def lngauss(x,params):
     params : [k, t]
         the distribution parameters k and t.
     """
-    mu = double(params[0])
-    sigma = double(params[1])
+    mu = SP.double(params[0])
+    sigma = SP.double(params[1])
 
     # selfCalculated = True
     halfLog2Pi = 0.91893853320467267 # =.5*(log(2*pi))

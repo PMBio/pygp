@@ -6,11 +6,8 @@ sys.path.append('./')
 #sys.path.append('/kyb/agbs/stegle/work/ibg/lib')
 
 import pdb
-from pylab import *
-from numpy import *
-
-from pyio.csvex import *
-
+import pylab as PL
+import scipy as SP
 from covar import *
 import gpr as GPR
 
@@ -19,9 +16,6 @@ from lnpriors import *
 import logging as LG
 
 LG.basicConfig(level=LG.INFO)
-
-
-GPR.DEBUG = True
 
 #0. generate Toy-Data; just samples from a superposition of a sin + linear trend
 xmin = 1
@@ -39,6 +33,7 @@ dy = b   +     1*cos(x)
 y += sigma*random.randn(size(y))
 
 x = x.reshape(size(x),1)
+
 
 #predictions:
 X = linspace(0,10,100)
@@ -65,7 +60,7 @@ if 0:
     logtheta = log([1,1,0.1,sigma])
 
 SECF = se.SECF(dim)
-SEnoise = noiseCF.NoiseCovariance()
+SEnoise = noise.NoiseCovariance()
 
 covar = combinators.SumCovariance((SECF,SEnoise))
 
@@ -98,12 +93,4 @@ plot(x[:,0], y, 'ro',
      X[:,0], M, 'g-',
      X[:,0], M+2*sqrt(S), 'b-',
         X[:,0], M-2*sqrt(S), 'b-')
-#show()
 
-
-D = zeros([x.shape[0],x.shape[1]+1])
-D[:,0:-1] = x
-D[:,-1] = y
-
-#write csv file
-#writeCSV("demo_gp.csv",D,",")
