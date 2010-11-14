@@ -1,5 +1,5 @@
 """
-Module for Gaussian Process Regression 
+Module for Gaussian process Regression 
 --------------------------------------
 
 This module is a lot modelled after Karl Rasmussen Gaussian process
@@ -266,35 +266,25 @@ class GP(object):
         KV = self.getCovariances(hyperparams)
         #except Exception,e:
         #    LG.error("exception caught (%s)" % (str(exp(logtheta))))
-
         logtheta = hyperparams['covar']
-        if 1:
-            Kd = SP.zeros([len(logtheta),self.x.shape[0],self.x.shape[0]])
-            for i in xrange(len(logtheta)):
-                Kd[i,:,:] = self.covar.Kd(hyperparams['covar'],self.x,i)
-        D = Kd
-        #try:
-        iC = linalg.inv(KV['K'])
-        #much faster:
-        rv0 = -0.5*(D*iC).sum(axis=1).sum(axis=1)
-        R = SP.dot(D,SP.dot(iC,self.y))
-        L = SP.dot(self.y,iC)
-        rv1 = 0.5*SP.dot(R,L)
-        rv = rv1 + rv0
+        n = self.n
+        L = KV['L']
+        alpha = KV['alpha'][:,SP.newaxis]
+        W  = linalg.solve(L.transpose(),linalg.solve(L,SP.eye(n))) - SP.dot(alpha,alpha.transpose())
 
-        #covar
-        RV['covar'] = -rv
-
+        dlMl = SP.zeros(len(logtheta))
+        for i in xrange(len(logtheta)):
+            Kd = self.covar.Kd(hyperparams['covar'],self.x,i)
+            dlMl[i] = 0.5*(W*Kd).sum()
+        RV = {'covar': dlMl}
+        
         #prior
         if priors is not None:
             plml = self._lml_prior(hyperparams,priors=priors)
             for key in RV.keys():
                 RV[key]-=plml[key][:,1]                       
         return RV
-        #except Exception, e:
-        #    lMl+=5000
-        #    dlMl = self.cached_dlMl           
-        return dlMl
+        
 
 
         
