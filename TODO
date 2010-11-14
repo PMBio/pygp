@@ -1,0 +1,10 @@
+*TODOs
+
+1) remove any playb depedendencies
+2) differentiate between public and private functions and member varaibles.
+Private stuff _XXX
+Make this differences transparent in function documentation
+3) logging 
+4) import scipy as SP instead of from numpy import *
+5) support for mean functions? 
+6) Implementation of diagional covariance matrices
