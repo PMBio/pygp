@@ -39,7 +39,7 @@ class SECF(CovarianceFunction):
     
     def __init__(self,n_dimensions=1,dimension_indices=None):
         if dimension_indices != None:
-            self.dimension_indices = array(dimension_indices,dtype='int32')
+            self.dimension_indices = SP.array(dimension_indices,dtype='int32')
         elif n_dimensions:
             self.dimension_indices = SP.arange(0,n_dimensions)
         self.n_dimensions = self.dimension_indices.max()+1-self.dimension_indices.min()
