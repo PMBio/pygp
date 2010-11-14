@@ -266,9 +266,12 @@ class GP(object):
         KV = self.getCovariances(hyperparams)
         #except Exception,e:
         #    LG.error("exception caught (%s)" % (str(exp(logtheta))))
-       
-        Kd = self.covar.Kd(hyperparams['covar'],self.x)
-        pdb.set_trace()
+
+        logtheta = hyperparams['covar']
+        if 1:
+            Kd = SP.zeros([len(logtheta),self.x.shape[0],self.x.shape[0]])
+            for i in xrange(len(logtheta)):
+                Kd[i,:,:] = self.covar.Kd(hyperparams['covar'],self.x,i)
         D = Kd
         #try:
         iC = linalg.inv(KV['K'])
