@@ -8,6 +8,9 @@ sys.path.append('./')
 import pdb
 import pylab as PL
 import scipy as SP
+import numpy.random as random
+
+
 from covar import *
 import gpr as GPR
 
@@ -17,10 +20,12 @@ import logging as LG
 
 LG.basicConfig(level=LG.INFO)
 
+random.seed(1)
+
 #0. generate Toy-Data; just samples from a superposition of a sin + linear trend
 xmin = 1
-xmax = 2.5*pi
-x = arange(xmin,xmax,0.7)
+xmax = 2.5*SP.pi
+x = SP.arange(xmin,xmax,0.7)
 
 C = 2       #offset
 b = 0.5
@@ -28,69 +33,65 @@ sigma = 0.01
 
 b = 0
 
-y  = b*x + C + 1*sin(x)
-dy = b   +     1*cos(x)
-y += sigma*random.randn(size(y))
+y  = b*x + C + 1*SP.sin(x)
+dy = b   +     1*SP.cos(x)
+y += sigma*random.randn(y.shape[0])
 
-x = x.reshape(size(x),1)
+y-= y.mean()
 
+x = x[:,SP.newaxis]
 
 #predictions:
-X = linspace(0,10,100)
-X = X.reshape(size(X),1)
-
-logtheta = log([1,1,sigma])
+X = SP.linspace(0,10,100)[:,SP.newaxis]
 
 
+#hyperparamters
 dim = 1
 
 
-#simulate fake 2d date
+priors = None
 if 0:
-    dim = 2
-    x_ = zeros([x.shape[0],2])
-    x_[:,0] = x[:,0]
-    x_[:,1] = x[:,0]+3
-    X_ = zeros([X.shape[0],2])
-    X_[:,0] = X[:,0]
-    X_[:,1] = X[:,0]+3
+    logthetaCOVAR = SP.log([1,1,sigma])
+    hyperparams = {'covar':logthetaCOVAR}
 
-    x = x_
-    X = X_
-    logtheta = log([1,1,0.1,sigma])
-
-SECF = se.SECF(dim)
-SEnoise = noise.NoiseCovariance()
-
-covar = combinators.SumCovariance((SECF,SEnoise))
-
-gpr = GPR.GP(covar,Smean=True,x=x,y=y)
-
-if 1:
-    GPR.DEBUG=2
-    priors = []
+    SECF = se.SECF(dim)
+    SEnoise = noise.NoiseCovariance()
+    covar = combinators.SumCovariance((SECF,SEnoise))
+    covar_priors = []
     #scale
-    priors.append([lngammapdf,[1,2]])
+    covar_priors.append([lngammapdf,[1,2]])
     for i in range(dim):
-        priors.append([lngammapdf,[1,1]])
+        covar_priors.append([lngammapdf,[1,1]])
     #noise
-    priors.append([lngammapdf,[1,1]])
-      
-    I_filter=array(ones_like(logtheta),dtype='bool')
-    #maybe we should filter optimzing theta
-    modelparameters = {'covar':logtheta}
-    opt_model_params=GPR.optHyper(gpr,modelparameters,I_filter,priors=priors)
-    print "optimized hyperparameters:" + str(exp(opt_model_params['covar']))
+    covar_priors.append([lngammapdf,[1,1]])
+    priors = {'covar':covar_priors}
+    Ifilter = {'covar': SP.array([1,1,1],dtype='int')}
 else:
-    opt_model_params=modelparameters
+    logthetaCOVAR = SP.log([0.2,10*sigma])
+    hyperparams = {'covar':logthetaCOVAR}
+
+    linear = linear.LinearCovariance()
+    SEnoise = noise.NoiseCovariance()
+    covar = combinators.SumCovariance((linear,SEnoise))
+    Ifilter = {'covar': SP.array([1,1],dtype='int')}
+
+
+gpr = GPR.GP(covar,x=x,y=y)
+
+
+
+opt_model_params=GPR.optHyper(gpr,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)
+
 
 #predict
 [M,S] = gpr.predict(opt_model_params,X)
 
 
-hold(True)
-plot(x[:,0], y, 'ro',
+
+PL.plot(x[:,0], y, 'ro',
      X[:,0], M, 'g-',
-     X[:,0], M+2*sqrt(S), 'b-',
-        X[:,0], M-2*sqrt(S), 'b-')
+     X[:,0], M+2*SP.sqrt(S), 'b-',
+     X[:,0], M-2*SP.sqrt(S), 'b-')
+#show()
+
 
