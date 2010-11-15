@@ -1,10 +1,19 @@
 *TODOs
 
-1) remove any playb depedendencies
+Cleanin up
+1) remove any playb depedendencies throughout
+2) update documentation to changes
 2) differentiate between public and private functions and member varaibles.
-Private stuff _XXX
-Make this differences transparent in function documentation
-3) logging 
+Private stuff _XXX, all at the end of classes
+3) logging ? 
 4) import scipy as SP instead of from numpy import *
-5) support for mean functions? 
-6) Implementation of diagional covariance matrices
+5) Fix product CF
+
+Functionality
+0) Plotting functions (saussage plot) in a module plot.py
+1) Implement shift operators as CF combinator (discuss)
+2) support for mean functions? 
+3) sq_dist using cython
+4) Implementation of diagional covariance matrices
+5) Additional covariance functions
+6) MCMC functionality

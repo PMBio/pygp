@@ -113,16 +113,19 @@ def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args)
 
     opt_RV=OPT.fmin_bfgs(f, x, fprime=df, args=(), gtol=1.0000000000000001e-04, norm=SP.inf, epsilon=1.4901161193847656e-08, maxiter=maxiter, full_output=1, disp=(0), retall=0)
 
+    #get optimized parameters out
     opt_x = X0.copy()
     opt_x[Ifilter_x] = opt_RV[0]
     opt_hyperparams = gpr._param_list_to_dict(opt_x)
+    #get the log marginal likelihood at the optimum:
+    opt_lml = opt_RV[1]
 
     LG.info("old parameters:")
     LG.info(str(hyperparams))
     LG.info("optimized parameters:")
     LG.info(str(opt_hyperparams))
     LG.info("grad:"+str(df(opt_x)))
-    return opt_hyperparams
+    return [opt_hyperparams,opt_lml]
     
 
 

@@ -48,39 +48,27 @@ X = SP.linspace(0,10,100)[:,SP.newaxis]
 #hyperparamters
 dim = 1
 
+logthetaCOVAR = SP.log([1,1,sigma])
+hyperparams = {'covar':logthetaCOVAR}
 
-priors = None
-if 0:
-    logthetaCOVAR = SP.log([1,1,sigma])
-    hyperparams = {'covar':logthetaCOVAR}
-
-    SECF = se.SECF(dim)
-    SEnoise = noise.NoiseCovariance()
-    covar = combinators.SumCovariance((SECF,SEnoise))
-    covar_priors = []
-    #scale
-    covar_priors.append([lngammapdf,[1,2]])
-    for i in range(dim):
-        covar_priors.append([lngammapdf,[1,1]])
-    #noise
+SECF = se.SEARDCF(dim)
+noise = noise.NoiseISOCF()
+covar = combinators.SumCovariance((SECF,noise))
+covar_priors = []
+#scale
+covar_priors.append([lngammapdf,[1,2]])
+for i in range(dim):
     covar_priors.append([lngammapdf,[1,1]])
-    priors = {'covar':covar_priors}
-    Ifilter = {'covar': SP.array([1,1,1],dtype='int')}
-else:
-    logthetaCOVAR = SP.log([0.2,10*sigma])
-    hyperparams = {'covar':logthetaCOVAR}
-
-    linear = linear.LinearCovariance()
-    SEnoise = noise.NoiseCovariance()
-    covar = combinators.SumCovariance((linear,SEnoise))
-    Ifilter = {'covar': SP.array([1,1],dtype='int')}
-
+#noise
+covar_priors.append([lngammapdf,[1,1]])
+priors = {'covar':covar_priors}
+Ifilter = {'covar': SP.array([1,1,1],dtype='int')}
 
 gpr = GPR.GP(covar,x=x,y=y)
 
 
 
-opt_model_params=GPR.optHyper(gpr,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)
+[opt_model_params,opt_lml]=GPR.optHyper(gpr,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)
 
 
 #predict

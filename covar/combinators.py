@@ -12,7 +12,7 @@ import pdb
 
 
 
-class SumCovariance(CovarianceFunction):
+class SumCF(CovarianceFunction):
     """
     Sum Covariance function. This function adds
     up the given CFs and returns the resulting sum.
@@ -112,7 +112,7 @@ class SumCovariance(CovarianceFunction):
         return covar.Kd(logtheta[self.covars_logtheta_I[nc]],x1,j)
         
 
-class ProductCovariance(CovarianceFunction):
+class ProductCF(CovarianceFunction):
 #    __slots__=["n_params_list","covars","covars_logtheta_I"]
 
     def __init__(self,covars):
