@@ -6,12 +6,7 @@
 Welcome to PyGP
 ===============
 
-This package provide Gaussian Process based regression. For
-demonstrations we provide the two following classes:
-
-    - :py:class:`demo_gpr` explains how to perform basic regression tasks.
-    - :py:class:`demo_gpr_robust` shows how to apply EP for robust Gaussian process regression.
-
+This package provide Gaussian Process based regression. 
 
 The different GP Regression classes provide following computations:
 
@@ -25,6 +20,7 @@ Contents:
    :maxdepth: 2
 
    Gaussian Process Regression <gpr>
+     Example demonstration of gpr <demo_gpr>
    Covariance Functions <covars>
    Hyperprior Distributions <priors>
 

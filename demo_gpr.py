@@ -1,3 +1,13 @@
+"""
+Application Example of GP regression
+====================================
+
+This Example shows the Squared Exponential CF
+(:py:class:`covar.se.SEARDCF`) combined with noise
+:py:class:`covar.noise.noiseCF` by summing them up
+(using :py:class:`covar.combinators.sumCF`).
+"""
+
 import sys
 sys.path.append('./../')
 sys.path.append('./')
@@ -11,11 +21,11 @@ import scipy as SP
 import numpy.random as random
 
 
-from covar import *
+from covar import se, noise, combinators
 import gpr as GPR
 
 import sys
-from lnpriors import *
+import lnpriors
 import logging as LG
 
 LG.basicConfig(level=LG.INFO)
@@ -56,30 +66,22 @@ noise = noise.NoiseISOCF()
 covar = combinators.SumCF((SECF,noise))
 covar_priors = []
 #scale
-covar_priors.append([lngammapdf,[1,2]])
+covar_priors.append([lnpriors.lngammapdf,[1,2]])
 for i in range(dim):
-    covar_priors.append([lngammapdf,[1,1]])
+    covar_priors.append([lnpriors.lngammapdf,[1,1]])
 #noise
-covar_priors.append([lngammapdf,[1,1]])
+covar_priors.append([lnpriors.lngammapdf,[1,1]])
 priors = {'covar':covar_priors}
 Ifilter = {'covar': SP.array([1,1,1],dtype='int')}
 
 gpr = GPR.GP(covar,x=x,y=y)
-
-
-
 [opt_model_params,opt_lml]=GPR.optHyper(gpr,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)
-
 
 #predict
 [M,S] = gpr.predict(opt_model_params,X)
-
-
 
 PL.plot(x[:,0], y, 'ro',
      X[:,0], M, 'g-',
      X[:,0], M+2*SP.sqrt(S), 'b-',
      X[:,0], M-2*SP.sqrt(S), 'b-')
 #show()
-
-

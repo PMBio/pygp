@@ -4,11 +4,11 @@
         :members:
 
     .. automodule:: covar.combinators
-        :members: SumCovariance, ProductCovariance
+        :members: SumCF, ProductCF
 
     .. automodule:: covar.se
         :members: 
-	  SECF
+	  SEARDCF
 	  
-    .. automodule:: covar.noiseCF
-        :members: NoiseCovariance
+    .. automodule:: covar.noise
+        :members: NoiseCF

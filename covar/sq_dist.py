@@ -7,7 +7,7 @@ def Bdist(*args):
     
     
     if(len(args)==1):
-        return true
+        #return true
         X  = args[0]
         Y  = args[0]
         #X = N.matrix(args[0])
@@ -48,7 +48,7 @@ def dist(*args):
     #reshape stuff and copy it.
     Xr = X.reshape((1,lx,dim))
     Yr = Y.reshape((ly,1,dim))
-    #creat repeats:
+    #create repeats:
     A =  Xr.repeat(ly,0)
     B =  Yr.repeat(lx,1)
     rv = A-B

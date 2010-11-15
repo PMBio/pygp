@@ -53,7 +53,7 @@ class SEARDCF(CovarianceFunction):
     def get_number_of_parameters(self):
         return self.n_dimensions+1;
 
-    def K(self, logtheta, x1,x2=None):
+    def K(self, logtheta, x1, x2=None):
         """
         Get Covariance matrix K with given hyperparameters
         and inputs *args* = X[, X'].
@@ -61,11 +61,7 @@ class SEARDCF(CovarianceFunction):
         **Parameters:**
         See :py:class:`covar.CovarianceFunction`
         """
-        x1 = x1[:,self.dimension_indices]#[:,self.Iactive]
-        if x2 is None:
-            x2 = x1
-        else:
-           x2 = x2[:,self.dimension_indices]#[:,self.Iactive]
+        x1, x2 = self._filter_input_dimensions(x1,x2)
         # 2. exponentiate params:
         V0 = SP.exp(2*logtheta[0])
         L  = SP.exp(logtheta[1:1+self.n_dimensions])#[self.Iactive])
@@ -77,7 +73,7 @@ class SEARDCF(CovarianceFunction):
         rv = V0*SP.exp(-0.5*sqd)
         return rv
 
-    def Kd(self, logtheta, x1,i):
+    def Kd(self, logtheta, x1, i):
         """
         The derivatives of the covariance matrix for
         each hyperparameter, respectively.
@@ -85,14 +81,12 @@ class SEARDCF(CovarianceFunction):
         **Parameters:**
         See :py:class:`covar.CovarianceFunction`
         """
-        x1 = x1[:,self.dimension_indices]#[:,self.Iactive]
-        x2 = x1
-        
+        x1 = self._filter_x(x1)
         # 2. exponentiate params:
         V0 = SP.exp(2*logtheta[0])
         L  = SP.exp(logtheta[1:1+self.n_dimensions])#[:,self.Iactive])
         # calculate the distance betwen x1,x2 for each dimension separately.
-        dd = self._pointwise_distance(x1,x2,L)
+        dd = self._pointwise_distance(x1,x1,L)
         # sq. distance is neede anyway:
         sqd = dd*dd
         sqdd = sqd

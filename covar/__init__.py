@@ -31,6 +31,18 @@ class CovarianceFunction(object):
     **Important:** *All Covariance Functions have
     to inherit from this class in order to work
     properly with this GP framework.*
+
+    **Parameters:**
+
+    n_dimensions : int
+
+        standard: n_dimension = 1. The number of dimensions this CF
+        computes.
+
+    dimension_indices : [int]
+
+        The indices of feature dimensions this CF takes into account.
+
     """
     __slots__= ["n_hyperparameters",
                 "dimensions",
@@ -47,28 +59,50 @@ class CovarianceFunction(object):
         self.n_dimensions = self.dimension_indices.max()+1-self.dimension_indices.min()
         pass
 
-    def _filter_x(self,x):
+    def _filter_x(self, x):
+        """
+        Filter out the dimensions, which not correspond to a feature.
+        (Only self.dimension_inices are needed)
+        """
         return x[:,self.dimension_indices]
+
+    def _filter_input_dimensions(self, x1, x2):
+        """
+        Filter out all dimensions, which not correspond to a feature.
+        Filter is self.dimension_indices.
+        
+        Returns : filtered x1, filtered x2
+        """
+        if x2 == None:
+            return self._filter_x(x1), self._filter_x(x1)
+        return self._filter_x(x1), self._filter_x(x2)
 
     def K(self, logtheta, x1,x2=None):
         """
         Get Covariance matrix K with given hyperparameters
-        logtheta and inputs *args* = X[, X'].
+        logtheta and inputs x1 and optional x2. If only x1 is given the covariance
+        matrix is computed with x1 against x1.
 
         **Parameters:**
 
-        modelparameters : dict = {'covar': hyperparameters, ...}
+        logtheta : [double]
 
             The hyperparameters for which the covariance
-            matrix shall be computed. :py:func:`hyperparameters` are the
+            matrix shall be computed. :py:func:`logtheta` are the
             hyperparameters for the respective covariance function.
-            For instance, the :py:class:`covar.se.SECF` holds hyperparameters
+            For instance, the :py:class:`covar.se.SEARDCF` holds hyperparameters
             like :py:func`[Amplitude, Length-Scale(s)]`.
 
-        args : X[, X']
+        x1 : [double]
         
-            The (interpolation) inputs, which shall be
+            The training input X, which shall be
             the pointwise covariance calculated for.
+
+        x2 : [double]
+        
+            The interpolation input X\`*`, which shall be
+            the pointwise covariance calculated for.
+
         """
         print "implement K"
         pass
@@ -90,15 +124,21 @@ class CovarianceFunction(object):
 
         **Parameters:**
 
-        modelparameters : dict = {'covar': hyperparameters, ...}
+        logtheta : [double]
 
             The hyperparameters for which the derivative
             covariance matrix shall be computed.
 
-        args : X[, X']
+        x1 : [double]
+        
+            The training input X, which shall be
+            the covariance derivative calculated for.
 
-            The (interpolation) inputs, which shall be
-            the pointwise covariance calculated for.
+        i : int
+
+            The index of the theta, which's partial derivative shall be
+            returned.
+
         """
         print "please implement Kd"
     	pass
@@ -129,5 +169,10 @@ class CovarianceFunction(object):
         return self.n_dimensions
     
     def set_active_dimensions(self,active_dimension_indices = None):
+        """
+        Get the active_dimensions for this covariance function, i.e.
+        the indices of the feature dimensions of the training inputs, which shall
+        be used for the covariance.
+        """
         self.active_dimension_indices = active_dimension_indices
         pass

@@ -34,7 +34,7 @@ class NoiseISOCF(CovarianceFunction):
         **Parameters:**
         See :py:class:`covar.CovarianceFunction` 
         """
-
+        
         #noise is only presenet if have a single argument
         if(x2 is None):
             noise = SP.eye(x1.shape[0])*SP.exp(2*logtheta[0])
