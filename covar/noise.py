@@ -15,7 +15,7 @@ import scipy as SP
 from covar import CovarianceFunction
 
 
-class NoiseCovariance(CovarianceFunction):
+class NoiseISOCF(CovarianceFunction):
     """Covariance function for Gaussian observation noise"""
 
     def __init__(self):

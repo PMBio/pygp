@@ -8,7 +8,7 @@ import pdb
 from covar import CovarianceFunction
 
 
-class LinearCovariance(CovarianceFunction):
+class LinearCF(CovarianceFunction):
 
     def __init__(self,n_dimensions=1,dimension_indices=None):
         if dimension_indices != None:

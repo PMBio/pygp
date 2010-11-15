@@ -14,7 +14,7 @@ import scipy as SP
 # import super class CovarianceFunction
 from covar import CovarianceFunction
 
-class SECF(CovarianceFunction):
+class SEARDCF(CovarianceFunction):
     """
     Standart Squared Exponential Covariance function.
 
