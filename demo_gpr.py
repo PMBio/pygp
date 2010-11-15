@@ -53,7 +53,7 @@ hyperparams = {'covar':logthetaCOVAR}
 
 SECF = se.SEARDCF(dim)
 noise = noise.NoiseISOCF()
-covar = combinators.SumCovariance((SECF,noise))
+covar = combinators.SumCF((SECF,noise))
 covar_priors = []
 #scale
 covar_priors.append([lngammapdf,[1,2]])

@@ -37,11 +37,18 @@ class CovarianceFunction(object):
                 "dimension_indices",
                 "active_dimension_indices"]
 
-    def __init__(self):
-        self.n_hyperparameters = nan
-        self.n_dimensions = 1
-        self.active_dimension_indices = SP.arange(self.dimensions)
+    def __init__(self,n_dimensions=1,dimension_indices=None):
+        self.n_hyperparameters = SP.nan
+        self.n_dimensions = n_dimensions
+        if dimension_indices != None:
+            self.dimension_indices = SP.array(dimension_indices,dtype='int32')
+        elif n_dimensions:
+            self.dimension_indices = SP.arange(0,n_dimensions)
+        self.n_dimensions = self.dimension_indices.max()+1-self.dimension_indices.min()
         pass
+
+    def _filter_x(self,x):
+        return x[:,self.dimension_indices]
 
     def K(self, logtheta, x1,x2=None):
         """
@@ -74,7 +81,7 @@ class CovarianceFunction(object):
         return self.K(logtheta,x1).diagonal()
         
         
-    def Kd(self, logtheta, x1):
+    def Kd(self, logtheta, x1,i):
         """
         Get Derivatives of Covariance matrix K for each given
         hyperparameter resepctively. Output matrix with

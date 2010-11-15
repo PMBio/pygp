@@ -37,12 +37,8 @@ class SEARDCF(CovarianceFunction):
     #            "dimension_indices",
     #            "active_dimension_indices"]
     
-    def __init__(self,n_dimensions=1,dimension_indices=None):
-        if dimension_indices != None:
-            self.dimension_indices = SP.array(dimension_indices,dtype='int32')
-        elif n_dimensions:
-            self.dimension_indices = SP.arange(0,n_dimensions)
-        self.n_dimensions = self.dimension_indices.max()+1-self.dimension_indices.min()
+    def __init__(self,*args,**kw_args):
+        CovarianceFunction.__init__(self,*args,**kw_args)
         self.n_hyperparameters = self.n_dimensions+1
         pass
 
@@ -57,7 +53,7 @@ class SEARDCF(CovarianceFunction):
     def get_number_of_parameters(self):
         return self.n_dimensions+1;
 
-    def K(self, logtheta, *args):
+    def K(self, logtheta, x1,x2=None):
         """
         Get Covariance matrix K with given hyperparameters
         and inputs *args* = X[, X'].
@@ -65,11 +61,11 @@ class SEARDCF(CovarianceFunction):
         **Parameters:**
         See :py:class:`covar.CovarianceFunction`
         """
-        x1 = args[0][:,self.dimension_indices]#[:,self.Iactive]
-        if(len(args)==1):
+        x1 = x1[:,self.dimension_indices]#[:,self.Iactive]
+        if x2 is None:
             x2 = x1
         else:
-           x2 = args[1][:,self.dimension_indices]#[:,self.Iactive]
+           x2 = x2[:,self.dimension_indices]#[:,self.Iactive]
         # 2. exponentiate params:
         V0 = SP.exp(2*logtheta[0])
         L  = SP.exp(logtheta[1:1+self.n_dimensions])#[self.Iactive])
