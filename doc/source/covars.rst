@@ -4,7 +4,7 @@
         :members:
 
     .. automodule:: covar.combinators
-        :members: SumCF, ProductCF
+        :members: SumCF, ProductCF, ShiftCF
 
     .. automodule:: covar.se
         :members: 

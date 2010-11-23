@@ -74,14 +74,13 @@ covar_priors.append([lnpriors.lngammapdf,[1,1]])
 priors = {'covar':covar_priors}
 Ifilter = {'covar': SP.array([1,1,1],dtype='int')}
 
-gpr = GPR.GP(covar,x=x,y=y)
+gpr = GPR.GP(covar,x=x,y=y) 
 [opt_model_params,opt_lml]=GPR.optHyper(gpr,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)
 
 #predict
 [M,S] = gpr.predict(opt_model_params,X)
 
-PL.plot(x[:,0], y, 'ro',
-     X[:,0], M, 'g-',
-     X[:,0], M+2*SP.sqrt(S), 'b-',
-     X[:,0], M-2*SP.sqrt(S), 'b-')
+import gpr_plot
+gpr_plot.plot_training_data(x,y)
+gpr_plot.plot_sausage(X,M,SP.sqrt(S))
 #show()

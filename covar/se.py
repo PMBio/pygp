@@ -99,6 +99,9 @@ class SEARDCF(CovarianceFunction):
         else:
             return rv0*sqdd[:,:,i-1]
 
+    def Kd_dx(self,logthteta,x):
+        dd = self._pointwise_distance(x1,x1,L**2)
+        return self.K(self,logtheta,x) * dd
 
     def get_default_hyperparameters(self,x=None,y=None):
         #"""getDefaultParams(x=None,y=None)

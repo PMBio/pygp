@@ -59,24 +59,6 @@ class CovarianceFunction(object):
         self.n_dimensions = self.dimension_indices.max()+1-self.dimension_indices.min()
         pass
 
-    def _filter_x(self, x):
-        """
-        Filter out the dimensions, which not correspond to a feature.
-        (Only self.dimension_inices are needed)
-        """
-        return x[:,self.dimension_indices]
-
-    def _filter_input_dimensions(self, x1, x2):
-        """
-        Filter out all dimensions, which not correspond to a feature.
-        Filter is self.dimension_indices.
-        
-        Returns : filtered x1, filtered x2
-        """
-        if x2 == None:
-            return self._filter_x(x1), self._filter_x(x1)
-        return self._filter_x(x1), self._filter_x(x2)
-
     def K(self, logtheta, x1,x2=None):
         """
         Get Covariance matrix K with given hyperparameters
@@ -115,7 +97,7 @@ class CovarianceFunction(object):
         return self.K(logtheta,x1).diagonal()
         
         
-    def Kd(self, logtheta, x1,i):
+    def Kd(self, logtheta, x1, i):
         """
         Get Derivatives of Covariance matrix K for each given
         hyperparameter resepctively. Output matrix with
@@ -142,6 +124,43 @@ class CovarianceFunction(object):
         """
         print "please implement Kd"
     	pass
+
+    def Kd_dx(self,logtheta,x):
+        """
+        return the derivative after the input x of the CF.
+        Default: return K(logtheta,x).
+
+        **Parameters:**
+        logtheta : [double]
+
+            The hyperparameters for which the derivative
+            covariance matrix shall be computed.
+
+        x : [double]
+        
+            The training input X, which shall be
+            the covariance derivative calculated for.
+
+        """
+        return self.K(logtheta,x,None)
+
+    def _filter_x(self, x):
+        """
+        Filter out the dimensions, which not correspond to a feature.
+        (Only self.dimension_inices are needed)
+        """
+        return x[:,self.dimension_indices]
+
+    def _filter_input_dimensions(self, x1, x2):
+        """
+        Filter out all dimensions, which not correspond to a feature.
+        Filter is self.dimension_indices.
+        
+        Returns : filtered x1, filtered x2
+        """
+        if x2 == None:
+            return self._filter_x(x1), self._filter_x(x1)
+        return self._filter_x(x1), self._filter_x(x2)
 
     def _pointwise_distance(self,x1,x2,L=None):
         """

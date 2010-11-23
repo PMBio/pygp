@@ -30,22 +30,6 @@ import logging as LG
 import copy
 import pdb
 
-   
-
-def _solve_chol(A,B):
-    """
-    Solve cholesky decomposition::
-    
-        return A\(A'\B)
-
-    """
-    X = linalg.solve(A,linalg.solve(A.transpose(),B))
-    return X
-
-
-
-    
-
 def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args):
     """
     Optimize hyperparemters of gp gpr starting from gpr
@@ -127,8 +111,15 @@ def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args)
     LG.info("grad:"+str(df(opt_x)))
     return [opt_hyperparams,opt_lml]
     
+def _solve_chol(A,B):
+    """
+    Solve cholesky decomposition::
+    
+        return A\(A'\B)
 
-
+    """
+    X = linalg.solve(A,linalg.solve(A.transpose(),B))
+    return X
 
 class GP(object):
     """
@@ -140,9 +131,6 @@ class GP(object):
     covar_func : :py:class:`covar`
         The covariance function, which calculates the covariance
         of the outputs
-
-    Smean : boolean
-        Subtract mean of Data
 
     x : [double]
         training inputs (might be high dimensional,
@@ -176,11 +164,12 @@ class GP(object):
                                                   for predictions
     ================================ ============ ===========================================
     """
-
+    # Smean : boolean
+    # Subtract mean of Data    
     __slots__ = ["x","y","n","covar", \
                  "_covar_cache","_param_struct"]
     
-    def __init__(self, covar=None, x=None,y=None):
+    def __init__(self, covar_func=None, x=None,y=None):
         '''GP(covar_func,Smean=True,x=None,y=None)
         covar_func: Covariance
         x/y:        training input/targets
@@ -188,7 +177,7 @@ class GP(object):
         if not (x is None):
             self.setData(x,y)
         # Store the constructor parameters
-        self.covar   = covar
+        self.covar   = covar_func
         self._invalidate_cache()
         # create a prototype of the parameter dictionary
         # additional fields will follow
@@ -254,10 +243,19 @@ class GP(object):
     def dlMl(self,hyperparams,priors=None):
         """
         Returns the log Marginal likelyhood for the given logtheta.
+
         **Parameters:**
 
-        Ideriv: indicator which derivativse to calculate (default: all)
+        hyperparams : dict {'covar':CF_hyperparameters, ...}
+            The hyperparameters which shall be optimized and derived
+
+        priors : [:py:class:`lnpriors`]
+            The hyperparameters which shall be optimized and derived
+
         """
+        # Ideriv : 
+        #      indicator which derivativse to calculate (default: all)
+
         if not isinstance(hyperparams,dict):
             hyperparams = self._param_list_to_dict(hyperparams)
 
@@ -299,7 +297,7 @@ class GP(object):
             K 
             L     = chol(K)
             alpha = solve(L,t)
-            return [covar_struct] = getCvoriances(hyperparmas)
+            return [covar_struct] = getCovariances(hyperpam)
         """
         if self._is_cached(hyperparams):
             pass
@@ -402,8 +400,8 @@ class GPex(GP):
     """
     Gaussian Process regression class. Holds all information
     for the GP regression to take place. Additionally it provides
-    an indicator Iexp, indicating which hyperpriors shall be exponentiated
-    for the optimizer.
+    an indicator Iexp, indicating which hyperpriors shall
+    be exponentiated for the optimizer.
 
     **Parameters:**
 
