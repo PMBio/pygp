@@ -10,8 +10,8 @@ This package provide Gaussian Process based regression.
 
 The different GP Regression classes provide following computations:
 
-    - :py:class:`gpr` Basic gp regression package
-    - :py:class:`gpr_ep` GP regression with EP likelihood models
+   - :py:class:`gpr` Basic gp regression package
+   - :py:class:`gpr_ep` GP regression with EP likelihood models
 
 
 Contents:
@@ -20,10 +20,11 @@ Contents:
    :maxdepth: 2
 
    Gaussian Process Regression <gpr>
-     Example demonstration of gpr <demo_gpr>
+      Example demonstration of gpr <demo_gpr>
+      Example demonstration of gpr with input shift <demo_gpr_shiftx>
    Covariance Functions <covars>
    Hyperprior Distributions <priors>
-
+   
 Indices and tables
 ==================
 

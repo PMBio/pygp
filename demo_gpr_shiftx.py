@@ -3,9 +3,9 @@ Application Example of GP regression
 ====================================
 
 This Example shows the Squared Exponential CF
-(:py:class:`covar.se.SEARDCF`) combined with noise
-:py:class:`covar.noise.noiseCF` by summing them up
-(using :py:class:`covar.combinators.sumCF`).
+(:py:class:`covar.se.SEARDCF`) preprocessed by shiftCF(:py:class`covar.combinators.ShiftCF) and combined with noise
+:py:class:`covar.noise.NoiseISOCF` by summing them up
+(using :py:class:`covar.combinators.SumCF`).
 """
 
 import sys
@@ -97,6 +97,7 @@ gpr = GPR.GP(covar,x=x,y=y)
 [M,S] = gpr.predict(opt_model_params,X)
 
 import gpr_plot
-#gpr_plot.plot_training_data(x,y)
+T = opt_model_params['covar'][2:4]
 gpr_plot.plot_sausage(X,M,SP.sqrt(S))
+gpr_plot.plot_training_data_with_shiftx(x,y,shift=T,replicate_indices=replicate_indices)
 #show()

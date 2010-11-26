@@ -11,4 +11,4 @@
 	  SEARDCF
 	  
     .. automodule:: covar.noise
-        :members: NoiseCF
+        :members: NoiseISOCF
