@@ -215,9 +215,9 @@ class GP(object):
 
     
 
-    def lMl(self,hyperparams,priors=None):
+    def lMl(self,hyperparams,priors=None,**kw_args):
         """
-        Calc the log Marginal likelyhood for the given logtheta.
+        Calc the log Marginal likelihood for the given logtheta.
 
         **Parameters:**
         """
@@ -235,14 +235,14 @@ class GP(object):
 
         #account for prior
         if priors is not None:
-            plml = self._lml_prior(hyperparams,priors=priors)
+            plml = self._lml_prior(hyperparams,priors=priors,**kw_args)
             lMl -= SP.array([p[:,0].sum() for p in plml.values()]).sum()
         return lMl
         
 
-    def dlMl(self,hyperparams,priors=None):
+    def dlMl(self,hyperparams,priors=None,**kw_args):
         """
-        Returns the log Marginal likelyhood for the given logtheta.
+        Returns the log Marginal likelihood for the given logtheta.
 
         **Parameters:**
 
@@ -280,15 +280,10 @@ class GP(object):
         
         #prior
         if priors is not None:
-            plml = self._lml_prior(hyperparams,priors=priors)
+            plml = self._lml_prior(hyperparams,priors=priors,**kw_args)
             for key in RV.keys():
                 RV[key]-=plml[key][:,1]                       
         return RV
-        
-
-
-        
-
 
     def getCovariances(self,hyperparams):
         """
@@ -366,20 +361,27 @@ class GP(object):
         self._covar_cache = None
         pass
 
-    def _lml_prior(self,hyperparams,priors={}):
+    def _lml_prior(self,hyperparams,priors={},exp_indices={}):
         """calculate the prior contribution to the log marginal likelihood"""
         if priors is None:
             priors = {}
+        if exp_indices is None:
+            exp_indices={}
         RV = {}
         for key,value in hyperparams.iteritems():
             pvalues = SP.zeros([len(value),2])
             if key in priors:
-                plist  = priors[key]
-                theta = SP.exp(hyperparams[key])
+                if key in exp_indices:
+                    Iexp = exp_indices[key]
+                else:
+                    Iexp = SP.array(SP.ones_like(hyperparams[key]), dtype='bool')
+                plist = priors[key]
+                theta = hyperparams[key]
+                theta[Iexp] = SP.exp(theta[Iexp])
                 for i in xrange(len(theta)):
                     pvalues[i,:] = plist[i][0](theta[i],plist[i][1])
                 #chain rule
-                pvalues[:,1]*=theta
+                pvalues[Iexp,1]*=theta[Iexp]
             RV[key] = pvalues
         return RV
 

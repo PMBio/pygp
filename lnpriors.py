@@ -30,7 +30,7 @@ def lngammapdf(x,params):
 
     return [lng,dlng]
 
-def lngauss(x,params):
+def lngausspdf(x,params):
     """
     Returns the ``log normal distribution`` in interval x,
     given mean mu and variance sigma.
@@ -48,26 +48,9 @@ def lngauss(x,params):
     """
     mu = SP.double(params[0])
     sigma = SP.double(params[1])
-
-    # selfCalculated = True
     halfLog2Pi = 0.91893853320467267 # =.5*(log(2*pi))
-    #N = -(((x-mu)**2)/(2*(sigma**2))) - log(sigma) - halfLog2Pi
-    N = log(exp((-((x-mu)**2)/(2*(sigma**2))))/sigma)- halfLog2Pi
-    # else:
-    #     N = array(log(normpdf(x,mu,sigma)))
+    N = SP.log(SP.exp((-((x-mu)**2)/(2*(sigma**2))))/sigma)- halfLog2Pi
     dN = -(x-mu)/(sigma**2)
-
-    # if N.shape != ():
-    #     N[exp(N) < .1] = -1e4
-    #     dN[exp(N) < .1] = 0
-    # else:
-    #     if exp(N) < .1:
-    #         N = -1e4
-    #         dN = 0
-
-    # if __name__ == '__main__':
-    #     pdb.set_trace()
-
     return [N,dN]
 
 def lnzeropdf(x,params):

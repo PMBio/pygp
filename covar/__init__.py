@@ -193,5 +193,5 @@ class CovarianceFunction(object):
         the indices of the feature dimensions of the training inputs, which shall
         be used for the covariance.
         """
-        self.active_dimension_indices = active_dimension_indices
+        self.dimension_indices = active_dimension_indices
         pass

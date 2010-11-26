@@ -167,22 +167,22 @@ class ProductCF(CovarianceFunction):
         See :py:class:`covar.CovarianceFunction`
         '''
         #1. check logtheta has correct length
-        assert logtheta.shape[0]==self.n_hyperparameters,'K: logtheta has wrong shape'
-        nc = self.covars_covar_I[i]
-        covar = self.covars[nc]
-        d  = self.covars_logtheta_I[nc].min()
-        j  = i-d
-        return covar.Kd(logtheta[self.covars_logtheta_I[nc]],x1,j)
-    # rv = SP.ones([self.n_hyperparameters,x1.shape[0],x2.shape[0]])
-        # for nc in xrange(len(self.covars)):
-        #     covar = self.covars[nc]
-        #     #get kernel and derivative
-        #     K_ = covar.K(logtheta[self.covars_logtheta_I[nc]],*args)
-        #     Kd_= covar.Kd(logtheta[self.covars_logtheta_I[nc]],*args)
-        #     #for the parmeters of this covariance multiply derivative
-        #     rv[self.covars_logtheta_I[nc]] *= Kd_
-        #     #for all remaining ones kernel
-        #     rv[~self.covars_logtheta_I[nc]] *= K_
+        # assert logtheta.shape[0]==self.n_hyperparameters,'K: logtheta has wrong shape'
+        # nc = self.covars_covar_I[i]
+        # covar = self.covars[nc]
+        # d  = self.covars_logtheta_I[nc].min()
+        # j  = i-d
+        # return covar.Kd(logtheta[self.covars_logtheta_I[nc]],x1,j)
+        rv = SP.ones([self.n_hyperparameters,x1.shape[0],x2.shape[0]])
+        for nc in xrange(len(self.covars)):
+            covar = self.covars[nc]
+            #get kernel and derivative
+            K_ = covar.K(logtheta[self.covars_logtheta_I[nc]],*args)
+            Kd_= covar.Kd(logtheta[self.covars_logtheta_I[nc]],*args)
+            #for the parmeters of this covariance multiply derivative
+            rv[self.covars_logtheta_I[nc]] *= Kd_
+            #for all remaining ones kernel
+            rv[~self.covars_logtheta_I[nc]] *= K_
         return rv
 
 
@@ -254,12 +254,10 @@ class ShiftCF(CovarianceFunction):
         #2. shift inputs of covarainces..
         # get time shift parameter
         covar_n_hyper = self.covar.get_number_of_parameters()
-
         # shift inputs
-        T  = logtheta[covar_n_hyper+1:covar_n_hyper+self.n_replicates]
-        x = self._shift_x(x,T)
-        
-        K = self.covar.K(loghteta[:covar_n_hyper],self.x1,self.x2)
+        T  = logtheta[covar_n_hyper:covar_n_hyper+self.n_replicates]
+        shift_x1 = self._shift_x(x1.copy(),T)
+        K = self.covar.K(logtheta[:covar_n_hyper],shift_x1,x2)
         return K
 
 
@@ -287,16 +285,15 @@ class ShiftCF(CovarianceFunction):
  #1. check logtheta has correct length
         assert logtheta.shape[0]==self.n_hyperparameters, 'K: logtheta has wrong shape'
         covar_n_hyper = self.covar.get_number_of_parameters()
-
-        # shift inputs
-        T  = logtheta[covar_n_hyper+1:covar_n_hyper+self.n_replicates]
-        x = self._shift_x(x, T)
-        
-        Kd_dx = self.covar.Kd_dx(logtheta[:covar_n_hyper],x)
-
-        c = SP.array(control==i,dtype='int')
-        cdist = self._pointwise_distance(-c,-c)
-        
+        T  = logtheta[covar_n_hyper:covar_n_hyper+self.n_replicates]
+        shift_x = self._shift_x(x.copy(), T)        
+        if i >= covar_n_hyper:
+            # shift inputs
+            Kd_dx = self.covar.Kd_dx(logtheta[:covar_n_hyper],shift_x)
+            c = SP.array(self.replicate_indices==(i-covar_n_hyper),dtype='int')[:,SP.newaxis]
+            cdist = self._pointwise_distance(-c,-c)
+            cdist = cdist.transpose(2,0,1)
+            return Kd_dx * cdist
         # for nc in xrange(len(self.covars)):
         #     covar = self.covars[nc]
         #     #get kernel and derivative
@@ -306,12 +303,11 @@ class ShiftCF(CovarianceFunction):
         #     rv[self.covars_logtheta_I[nc]] *= Kd_
         #     #for all remaining ones kernel
         #     rv[~self.covars_logtheta_I[nc]] *= K_
-
-        return Kd_dx * cdist
+        else:
+            return self.covar.Kd(logtheta[:covar_n_hyper],shift_x,i)
 
     def _shift_x(self, x, T):
-        control = self.replicate_indices
         # subtract respective T
-        for i in unique(control):
-            x[control==i] -= T[i]
+        for i in SP.unique(self.replicate_indices):
+            x[self.replicate_indices==i] -= T[i]
         return x
