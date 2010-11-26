@@ -2,7 +2,7 @@
 Covariance Functions
 ====================
 
-We implemented several different covariance functions (CFs) you can work with. To use GP-regression with these covariance functions it is highly recommended to model the noise of the data in one extra covariance function (:py:class:`noiseCF.NoiseCovariance`) and add this noise CF to the CF you are calculating by putting them all together in one :py:class:`sumCF.SumCovariance`.
+We implemented several different covariance functions (CFs) you can work with. To use GP-regression with these covariance functions it is highly recommended to model the noise of the data in one extra covariance function (:py:class:`covar.noise.NoiseISOCF`) and add this noise CF to the CF you are calculating by putting them all together in one :py:class:`covar.combinators.SumCF`.
 
 For example to use the squared exponential CF with noise this should work for you::
 
@@ -70,7 +70,7 @@ class CovarianceFunction(object):
         logtheta : [double]
 
             The hyperparameters for which the covariance
-            matrix shall be computed. :py:func:`logtheta` are the
+            matrix shall be computed. *logtheta* are the
             hyperparameters for the respective covariance function.
             For instance, the :py:class:`covar.se.SEARDCF` holds hyperparameters
             like :py:func`[Amplitude, Length-Scale(s)]`.

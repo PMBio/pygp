@@ -20,8 +20,11 @@ Contents:
    :maxdepth: 2
 
    Gaussian Process Regression <gpr>
+   
       Example demonstration of gpr <demo_gpr>
+
       Example demonstration of gpr with input shift <demo_gpr_shiftx>
+
    Covariance Functions <covars>
    Hyperprior Distributions <priors>
    

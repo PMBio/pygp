@@ -3,8 +3,8 @@ Squared Exponential Covariance functions
 ========================================
 
 This class provides some ready-to-use implemented squared exponential covariance functions (SEs).
-These SEs do not model noise, so combine them by a py:class:`sumCF`
-or :py:class:`produtCF` with the py:class:`noiseCF`, if you want noise to be modelled by this GP.
+These SEs do not model noise, so combine them by a :py:class:`covar.combinators.SumCF`
+or :py:class:`covar.combinators.ProductCF` with the :py:class:`covar.noise.NoiseISOCF`, if you want noise to be modelled by this GP.
 """
 
 import sys
@@ -56,7 +56,7 @@ class SEARDCF(CovarianceFunction):
     def K(self, logtheta, x1, x2=None):
         """
         Get Covariance matrix K with given hyperparameters
-        and inputs *args* = X[, X'].
+        and inputs X=x1 and X\`*`=x2.
 
         **Parameters:**
         See :py:class:`covar.CovarianceFunction`

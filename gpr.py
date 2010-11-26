@@ -1,9 +1,9 @@
 """
-Module for Gaussian process Regression 
+Module for Gaussian process Regression
 --------------------------------------
 
 This module is a lot modelled after Karl Rasmussen Gaussian process
-package for Matlab (http://TOOD).
+package for Matlab (http://TODO).
 
 Methods and Classes
 
@@ -33,7 +33,6 @@ import pdb
 def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args):
     """
     Optimize hyperparemters of gp gpr starting from gpr
-    optHyper(gpr,logtheta,filter=None,prior=None)
 
     **Parameters:**
     
@@ -53,7 +52,7 @@ def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args)
         means that only the second entry (which equals 2 in this example) of
         logtheta will be optimized and the others remain untouched.
 
-    prior : [:py:class:`lnpriors`]
+    priors : [:py:class:`lnpriors`]
         non-default prior, otherwise assume
         first index amplitude, last noise, rest:lengthscales
     """
@@ -220,6 +219,26 @@ class GP(object):
         Calc the log Marginal likelihood for the given logtheta.
 
         **Parameters:**
+
+        hyperparams : {'covar':CF_hyperparameters, ... }
+            The hyperparameters for the log marginal likelihood.
+
+        priors : [:py:class:`lnpriors`]
+            the prior beliefs for the hyperparameter values
+
+        Iexp : [bool]
+            Denotes which priors shall be exponentiated before being added to the lMl. Default is all true.
+
+        Ifilter : [bool]
+            Denotes which hyperparameters shall be optimized. Thus ::
+
+                Ifilter = [0,1,0]
+
+            has the meaning that only the second hyperparameter shall be optimized.
+
+        kw_args :
+            All other arguments, explicitly annotated when necessary.
+            
         """
         if not isinstance(hyperparams,dict):
             hyperparams = self._param_list_to_dict(hyperparams)
@@ -246,7 +265,7 @@ class GP(object):
 
         **Parameters:**
 
-        hyperparams : dict {'covar':CF_hyperparameters, ...}
+        hyperparams : {'covar':CF_hyperparameters, ...}
             The hyperparameters which shall be optimized and derived
 
         priors : [:py:class:`lnpriors`]

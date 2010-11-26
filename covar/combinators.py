@@ -204,7 +204,7 @@ class ShiftCF(CovarianceFunction):
         The indices of the respective replicates, corresponding to
         the inputs. For instance: An input::
 
-            x1 = [-1,0,1,2,-1,0,1,2,-1,0,1,2]
+            x1 = [-1,0,1,2,  -1,0,1,2,  -1,0,1,2]
             
         with three replicates has::
 

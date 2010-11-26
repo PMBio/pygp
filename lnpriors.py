@@ -10,12 +10,13 @@ import scipy.special as SPs
 def lngammapdf(x,params):
     """
     Returns the ``log gamma (x,k,t)`` distribution and its derivation with::
+
         lngamma     = (k-1)*log(x) - x/t -gammaln(k) - k*log(t)
         dlngamma    = (k-1)/x - 1/t
 
     **Parameters:**
 
-    x : vector of ints
+    x : [double]
         the interval in which the distribution shall be computed.
 
     params : [k, t]
@@ -32,15 +33,16 @@ def lngammapdf(x,params):
 
 def lngausspdf(x,params):
     """
-    Returns the ``log normal distribution`` in interval x,
-    given mean mu and variance sigma.
+    Returns the ``log normal distribution`` and its derivation in interval x,
+    given mean mu and variance sigma::
 
-    [N(params), d/dx N(params)] = N(mu,sigma|x).
-    Note: Give mu and sigma as mean and variance, the result will be logarithmic!
+        [N(params), d/dx N(params)] = N(mu,sigma|x).
+
+    **Note**: Give mu and sigma as mean and variance, the result will be logarithmic!
 
     **Parameters:**
 
-    x : vector of ints
+    x : [double]
         the interval in which the distribution shall be computed.
 
     params : [k, t]
