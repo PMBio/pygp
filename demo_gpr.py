@@ -20,7 +20,6 @@ import pylab as PL
 import scipy as SP
 import numpy.random as random
 
-
 from covar import se, noise, combinators
 import gpr as GPR
 
@@ -81,6 +80,6 @@ gpr = GPR.GP(covar,x=x,y=y)
 [M,S] = gpr.predict(opt_model_params,X)
 
 import gpr_plot
-gpr_plot.plot_training_data(x,y)
 gpr_plot.plot_sausage(X,M,SP.sqrt(S))
+gpr_plot.plot_training_data(x,y)
 #show()

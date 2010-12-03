@@ -1,11 +1,8 @@
 """
-Modulde for composite Gaussian processes models that bombine multiple GPs into one model
+Grouping GP regression classes
+==============================
 
-
-class **GroupGP**:
-    group multiple GP objects for joint optimisation of hyperparameters
-
-
+Module for composite Gaussian processes models that combine multiple GPs into one model
 """
 
 from gpr import *
@@ -20,7 +17,7 @@ class GroupGP(object):
 
     **Parameters:**
 
-    GPs : [:py:func:`GP.lMl`]
+    GPs : [:py:class:`gpr.GP`]
         Array, holding al GP classes to be optimized together
     """
 
@@ -30,11 +27,8 @@ class GroupGP(object):
             return None
         self.N = len(GPs)
         self.GPs = GPs
-        
 
-        
-
-    def lMl(self,modelparameters,**lml_kwargs):
+    def lMl(self,hyperparams,**lml_kwargs):
         """
         Returns the log Marginal likelyhood for the given logtheta
         and the lMl_kwargs:
@@ -52,18 +46,18 @@ class GroupGP(object):
         #calculate them for all N
         R = 0
         for n in range(self.N):
-            L = self.GPs[n].lMl(modelparameters,**lml_kwargs)
+            L = self.GPs[n].lMl(hyperparams,**lml_kwargs)
             R = R+ L
         return R
 
-    def setData(self,x,t):
+    def setData(self,x,y):
         """
-        set inputs x and targets t with **Parameters:**
+        set inputs x and outputs y with **Parameters:**
 
         x : [double]
             trainging input
 
-        t : [double]
+        y : [double]
             training targets
             
         rescale_dim : int
@@ -75,7 +69,7 @@ class GroupGP(object):
         """
         for n in range(self.N):
             xn = x[n]
-            tn = t[n]
-            self.GPs[n].setData(xn,tn)
+            yn = y[n]
+            self.GPs[n].setData(xn,yn)
             
         

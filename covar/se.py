@@ -12,9 +12,11 @@ sys.path.append("../")
 import scipy as SP
 
 # import super class CovarianceFunction
-from covar import CovarianceFunction
+#from covar import CovarianceFunction
+# import super class CF_Kd_dx
+from covar import CF_Kd_dx
 
-class SEARDCF(CovarianceFunction):
+class SEARDCF(CF_Kd_dx):
     """
     Standart Squared Exponential Covariance function.
 
@@ -23,7 +25,7 @@ class SEARDCF(CovarianceFunction):
     - dimension : int
         The dimension of this SE. For instance a 2D SE has
         hyperparameters like::
-
+        
           covar_hyper = [Amplitude,1stD Length-Scale, 2ndD Length-Scale]
 
     - dimension_indices : [int]
@@ -38,12 +40,15 @@ class SEARDCF(CovarianceFunction):
     #            "active_dimension_indices"]
     
     def __init__(self,*args,**kw_args):
-        CovarianceFunction.__init__(self,*args,**kw_args)
+        CF_Kd_dx.__init__(self,*args,**kw_args)
         self.n_hyperparameters = self.n_dimensions+1
         pass
 
     def get_hyperparameter_names(self):
-        """return the names of hyperparameters to make identification easier"""
+        """
+        return the names of hyperparameters to
+        make identification easier
+        """
         names = []
         names.append('Amplitude')
         for dim in self.dimension_indices:
@@ -51,6 +56,9 @@ class SEARDCF(CovarianceFunction):
         return names
    
     def get_number_of_parameters(self):
+        """
+        Return the number of hyperparameters this CF holds.
+        """
         return self.n_dimensions+1;
 
     def K(self, logtheta, x1, x2=None):
@@ -84,8 +92,9 @@ class SEARDCF(CovarianceFunction):
         x1 = self._filter_x(x1)
         # 2. exponentiate params:
         V0 = SP.exp(2*logtheta[0])
-        L  = SP.exp(logtheta[1:1+self.n_dimensions])#[:,self.Iactive])
-        # calculate the distance betwen x1,x2 for each dimension separately.
+        L  = SP.exp(logtheta[1:1+self.n_dimensions])
+        # calculate the distance between
+        # x1,x2 for each dimension separately.
         dd = self._pointwise_distance(x1,x1,L)
         # sq. distance is neede anyway:
         sqd = dd*dd
@@ -99,15 +108,35 @@ class SEARDCF(CovarianceFunction):
         else:
             return rv0*sqdd[:,:,i-1]
 
+    def Kdiag(self,logtheta, x1):
+        """
+        Get diagonal of the (squared) covariance matrix.
+
+        **Parameters:**
+        See :py:class:`covar.CovarianceFunction`
+        """
+        #default: naive implementation
+        LG.debug("SEARDCF: Kdiag: Default unefficient implementation!")
+        return self.K(logtheta,x1).diagonal()
+    
+
     def Kd_dx(self,logtheta,x):
+        """
+        The partial derivative of the covariance matrix with
+        respect to x, given hyperparameters `logtheta`.
+
+        **Parameters:**
+        See :py:class:`covar.CovarianceFunction`
+        """
         L = SP.exp(logtheta[1:1+self.n_dimensions])
-        dd = -(self._pointwise_distance(x,x,(L**2)).transpose(2,0,1))
-        return self.K(logtheta,x) * dd
+        dd = self._pointwise_distance(x,x,-(L**2))
+        return self.K(logtheta,x) * dd.transpose(2,0,1)
 
     def get_default_hyperparameters(self,x=None,y=None):
-        #"""getDefaultParams(x=None,y=None)
-        #- return default parameters for a particular dataset (optional)
-        #"""
+        """
+        Return default parameters for a particular
+        dataset (optional).
+        """
         #start with data independent default
         rv = ones(self.n_hyperparameters)
         #start with a smallish variance
@@ -119,52 +148,3 @@ class SEARDCF(CovarianceFunction):
             rv[1:-1] = (x.max(axis=0)-x.min(axis=0))/4
         return log(rv)
 
-if __name__ == "__main__":
-    # tests for SECF:
-    covar = SECF(n_dimensions = 2, dimension_indices = [1,2])
-    X = arange(0,9).reshape(-1,3)
-    Xprime = arange(0,12).reshape(-1,3)
-    A = 2
-    L1 = 2
-    L2 = .5
-    logtheta = SP.log([A,L1,L2])
-
-    # number of n_dimensions
-    assert covar.get_n_dimensions() == 2
-    # parameter names
-    assert covar.get_hyperparameter_names() == ['Amplitude', '1.D Length-Scale', '2.D Length-Scale']
-    # Kovariance matrices
-    K = covar.K(logtheta,X)
-    assert ((K.diagonal() == A**2).all())
-    K = covar.K(logtheta,X,Xprime)
-    assert ((K.diagonal() == A**2).all())
-    Kd = covar.Kd(logtheta,X)
-    assert Kd.shape == (covar.get_number_of_parameters(),X.shape[0],X.shape[0])
-    Kd = covar.Kd(logtheta,X,Xprime)
-    assert Kd.shape == (covar.get_number_of_parameters(),X.shape[0],Xprime.shape[0])
-    
-    # tests for SETP
-    covar = SETP(n_dimensions = 2, dimension_indices = [1,2], n_replicates = 2)
-    X = array([[1,2,3,0],[4,5,6,0],[2,3,4,1]])
-    Xprime = linspace(0,6,20).reshape(-1,2)
-    A = 2
-    L1 = 2
-    L2 = .5
-    T1 = 1
-    T2 = -1
-    logtheta = SP.array[log(A),log(L1),log(L2),T1,T2]
-
-    # number of n_dimensions
-    assert covar.get_n_dimensions() == 2
-    # parameter names
-    assert covar.get_hyperparameter_names() == ['Amplitude',
-                                                '1.D Length-Scale',
-                                                '2.D Length-Scale',
-                                                'Time-Parameter rep0',
-                                                'Time-Parameter rep1']
-    # Kovariance matrices \\TODO
-    K = covar.K(logtheta,X)
-    assert ((K.diagonal() == A**2).all())
-    K = covar.K(logtheta,X,Xprime)
-    Kd = covar.Kd(logtheta,X)
-    

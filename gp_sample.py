@@ -1,13 +1,27 @@
-"""helper function to sample from a Gaussian process"""
+"""
+Sample from Gaussian Processes
+==============================
+
+Helper functions to sample from a Gaussian process"""
 import scipy as SP
 
-
 def GP_sample_prior(covar,X,logtheta,ns=1):
-    """create samples form a GP prior
-    X: inputs to sample from
-    covar: covariance function
-    logtheta: hyper parameters
-    ns: number of samples
+    """
+    Create samples form a GP prior
+
+    **Parameters:**
+    
+    X : [double]
+        inputs to sample from.
+
+    covar : :py:class:`covar.CovarianceFunction`
+        Covariance function to sample from.
+
+    logtheta : [double]
+        Hyperparameters
+
+    ns : int
+        Number of samples
     """
     K = covar.K(logtheta,X) 
 
@@ -17,9 +31,16 @@ def GP_sample_prior(covar,X,logtheta,ns=1):
 
 def GP_sample_posterior(covar,X,logtheta,x,y,ns=1):
     """
-    x: training inputs
-    y: trainint targets
-    else like GP_sample_prior
+    Sample from the posterior distribution of a GP
+    
+    x : [double]
+        training inputs
+
+    y : [double]
+        training targets
+
+    other :
+        See :py:func:`gp_sample.GP_sample_prior`
     """
 
     KXx = covar.K(logtheta,x,X)

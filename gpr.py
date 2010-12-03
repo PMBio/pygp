@@ -3,20 +3,20 @@ Module for Gaussian process Regression
 --------------------------------------
 
 This module is a lot modelled after Karl Rasmussen Gaussian process
-package for Matlab (http://TODO).
+package for Matlab (http://www.gaussianprocess.org/gpml/).
 
 Methods and Classes
 
-func *optHyper*:
-    use a gradient based optimiser to optimise
-    GP hyperparameters subject to prior parameters
+.. func *optHyper*:
+   use a gradient based optimiser to optimise
+   GP hyperparameters subject to prior parameters
 
 
-class **GP**: basic class for GP regression:
-    * claculation of log marginal likelihood
-    * prediction
-    * data rescaling
-    * transformation into log space
+.. class **GP**: basic class for GP regression:
+   * claculation of log marginal likelihood
+   * prediction
+   * data rescaling
+   * transformation into log space
 
 """
 
@@ -39,8 +39,9 @@ def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args)
     gpr : :py:class:`gpr.GP`
         GP regression class
 
-    hyperparams : [double]
-        starting hyperparameters for optimization
+    hyperparams : {'covar':logtheta, ...}
+        Dictionary filled with starting hyperparameters
+        for optimization. logtheta are the CF hyperparameters.
 
     Ifilter : [boolean]
         Index vector, indicating which hyperparameters shall
@@ -49,8 +50,9 @@ def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args)
             logtheta = [1,2,3]
             Ifilter = [0,1,0]
 
-        means that only the second entry (which equals 2 in this example) of
-        logtheta will be optimized and the others remain untouched.
+        means that only the second entry (which equals 2 in
+        this example) of logtheta will be optimized
+        and the others remain untouched.
 
     priors : [:py:class:`lnpriors`]
         non-default prior, otherwise assume
@@ -89,9 +91,6 @@ def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args)
     x  = X0.copy()[Ifilter_x]
         
     LG.info("startparameters for opt:"+str(x))
-    if gradcheck:
-        LG.info("check_grad:" + str(OPT.check_grad(f,df,x)))
-        raw_input()
     LG.info("start optimization")
 
     opt_RV=OPT.fmin_bfgs(f, x, fprime=df, args=(), gtol=1.0000000000000001e-04, norm=SP.inf, epsilon=1.4901161193847656e-08, maxiter=maxiter, full_output=1, disp=(0), retall=0)
@@ -102,6 +101,10 @@ def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args)
     opt_hyperparams = gpr._param_list_to_dict(opt_x)
     #get the log marginal likelihood at the optimum:
     opt_lml = opt_RV[1]
+
+    if gradcheck:
+        LG.info("check_grad:" + str(OPT.check_grad(f,df,opt_x[Ifilter_x])))
+        raw_input()
 
     LG.info("old parameters:")
     LG.info(str(hyperparams))
@@ -216,7 +219,8 @@ class GP(object):
 
     def lMl(self,hyperparams,priors=None,**kw_args):
         """
-        Calc the log Marginal likelihood for the given logtheta.
+        Calculate the log Marginal likelihood
+        for the given logtheta.
 
         **Parameters:**
 
@@ -226,18 +230,18 @@ class GP(object):
         priors : [:py:class:`lnpriors`]
             the prior beliefs for the hyperparameter values
 
-        Iexp : [bool]
-            Denotes which priors shall be exponentiated before being added to the lMl. Default is all true.
-
         Ifilter : [bool]
-            Denotes which hyperparameters shall be optimized. Thus ::
+            Denotes which hyperparameters shall be optimized.
+            Thus ::
 
                 Ifilter = [0,1,0]
 
-            has the meaning that only the second hyperparameter shall be optimized.
+            has the meaning that only the second
+            hyperparameter shall be optimized.
 
         kw_args :
-            All other arguments, explicitly annotated when necessary.
+            All other arguments, explicitly annotated
+            when necessary.
             
         """
         if not isinstance(hyperparams,dict):
@@ -380,22 +384,17 @@ class GP(object):
         self._covar_cache = None
         pass
 
-    def _lml_prior(self,hyperparams,priors={},exp_indices={}):
+    def _lml_prior(self,hyperparams,priors={}):
         """calculate the prior contribution to the log marginal likelihood"""
         if priors is None:
             priors = {}
-        if exp_indices is None:
-            exp_indices={}
         RV = {}
         for key,value in hyperparams.iteritems():
             pvalues = SP.zeros([len(value),2])
             if key in priors:
-                if key in exp_indices:
-                    Iexp = exp_indices[key]
-                else:
-                    Iexp = SP.array(SP.ones_like(hyperparams[key]), dtype='bool')
                 plist = priors[key]
                 theta = hyperparams[key]
+                Iexp = self.covar.get_Iexp(theta)
                 theta[Iexp] = SP.exp(theta[Iexp])
                 for i in xrange(len(theta)):
                     pvalues[i,:] = plist[i][0](theta[i],plist[i][1])
@@ -415,103 +414,3 @@ class GP(object):
                     return False
             #otherwise they are cached:
             return True
-
-           
-class GPex(GP):
-    """
-    Gaussian Process regression class. Holds all information
-    for the GP regression to take place. Additionally it provides
-    an indicator Iexp, indicating which hyperpriors shall
-    be exponentiated for the optimizer.
-
-    **Parameters:**
-
-    See :py:class:`gpr.GP`
-    """
-    
-    def lMl(self,hyperparams,lml=True,dlml=True,clml=True,cdlml=True,priors=None,Ifilter_dlml=None,Iexp=None):
-        """
-        **Parameters:**
-
-        Iexp : [boolean]
-            indicator which hyperparmeters are exponentiated
-
-        others :
-            See :py:func:`gpr.GP.lMl`
-
-        """
-
-        if Iexp is None:
-            Iexp = ones(logtheta.shape,dtype='bool')
-
-        logtheta = hyperparams['covar']
-        
-        if (logtheta==self.logtheta).all() and (self.cached_lMl is not None):
-            lMl = self.cached_lMl
-            dlMl= self.cached_dlMl
-        else:
-            
-            #else calculate
-            pvalues = zeros([size(logtheta),2])
-            # exponentiate parameters, those we need
-            theta = logtheta.copy()
-            theta[Iexp] = exp(logtheta[Iexp])
-            if priors is not None:
-                for i in range(size(logtheta)):
-                    pvalues[i,:] = priors[i][0](theta[i],priors[i][1])
-                #*exp(loghteta) to get chainrule right
-                pvalues[Iexp,1]*=theta[Iexp]
-                
-            try:   
-                [L,alpha] = self.getCovariances(logtheta)
-            except Exception,e:
-                LG.error("exception caught (%s)" % (str(exp(logtheta))))
-                #if self.cached_lMl is not None:
-                lMl = self.cached_lMl+5000
-                # else:
-                #     lMl = 5000
-                dlMl = self.cached_dlMl
-                
-                self.logtheta = logtheta
-                self.cached_lMl = lMl
-                self.cached_dlMl = dlMl
-                clml=False
-                cdlml=False
-                print e 
-
-            if(clml):
-                lMl = 0.5*SP.dot(alpha,self.y) + sum(log(L.diagonal())) + 0.5*self.n*log(2*pi)
-                lMl = lMl - sum(pvalues[:,0])
-                self.cached_lMl = lMl
-            if(cdlml):
-                hyperparams_copy = hyperparams.copy()
-                hyperparams_copy['covar'] = logtheta[self.IlogthetaK]
-        
-                Kd = self.covar.Kd(hyperparams_copy,self.x)
-                K = self.covar.K(hyperparams_copy,self.x)    
-                D = Kd
-                try:
-                    iC = linalg.inv(K)
-                    #rv0 = -0.5*trace(dot(D,iC),axis1=1,axis2=2)
-                    #much faster:
-                    rv0 = -0.5*(D*iC).sum(axis=1).sum(axis=1)
-
-                    R = dot(D,dot(iC,self.y))
-                    L = dot(self.y,iC)
-                    rv1 = 0.5*SP.dot(R,L)
-                    rv = rv1 + rv0
-                    dlMl = -rv
-                    dlMl = dlMl - pvalues[:,1]
-                    self.cached_dlMl=dlMl
-                except Exception, e:
-                    lMl+=5000
-                    dlMl = self.cached_dlMl
-        #return appropriate stuff:
-        if lml and not dlml:
-            return lMl
-        elif dlml and not lml:
-            return dlMl
-        else:
-            return [lMl,dlMl]
-
-

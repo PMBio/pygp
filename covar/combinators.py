@@ -1,12 +1,17 @@
 """
 Covariance Function Combinators
 -------------------------------
+
+Each combinator is a covariance function (CF) itself. It combines one or several covariance function(s) into another. For instance, :py:class:`combinators.SumCF` combines all given CFs into one sum; use this class to add noise.
+
 """
 
 import sys
 sys.path.append('../')
 
 from covar import CovarianceFunction
+from covar import CF_Kd_dx
+
 import scipy as SP
 import pdb
 
@@ -17,9 +22,9 @@ class SumCF(CovarianceFunction):
     Sum Covariance function. This function adds
     up the given CFs and returns the resulting sum.
 
-    *covars* : set of CFs of type :py:class:`covar.CovarianceFunction`
+    *covars* : [:py:class:`covar.CovarianceFunction`]
     
-        Covariance functions to be summed up.
+        Covariance functions to sum up.
     """
 
 #    __slots__ = ["n_params_list","covars","covars_logtheta_I"]
@@ -38,7 +43,7 @@ class SumCF(CovarianceFunction):
         
         for nc in xrange(len(covars)):
             covar = covars[nc]
-            assert isinstance(covar,CovarianceFunction), 'SumCF is constructed from a list of covaraince functions'
+            assert isinstance(covar,CovarianceFunction), 'SumCF: SumCF is constructed from a list of covaraince functions'
             Nparam = covar.get_number_of_parameters()
             self.n_params_list.append(Nparam)
             self.covars_logtheta_I.append(SP.arange(i,i+covar.get_number_of_parameters()))
@@ -50,7 +55,7 @@ class SumCF(CovarianceFunction):
         self.n_hyperparameters = self.n_params_list.sum()
 
     def get_hyperparameter_names(self):
-        """return the names of hyperparameters to make identificatio neasier"""
+        """return the names of hyperparameters to make identification easier"""
         names = []
         for covar in self.covars:
             names = SP.concatenate((names,covar.get_hyperparameter_names()))
@@ -66,7 +71,7 @@ class SumCF(CovarianceFunction):
         **Parameters:**
         See :py:class:`covar.CovarianceFunction` 
         """
-#1. check logtheta has correct length
+        #1. check logtheta has correct length
         assert logtheta.shape[0]==self.n_hyperparameters, 'K: logtheta has wrong shape'
         #2. create sum of covarainces..
         for nc in xrange(len(self.covars)):
@@ -80,19 +85,29 @@ class SumCF(CovarianceFunction):
         return K
 
     def Kd(self,logtheta, x1, i):
-        '''The derivatives of the covariance matrix for
-        i-th hyperparameter.
+        '''
+        The partial derivative of the covariance matrix with
+        respect to i-th hyperparameter.
 
         **Parameters:**
         See :py:class:`covar.CovarianceFunction`
         '''
         #1. check logtheta has correct length
+        assert logtheta.shape[0]==self.n_hyperparameters, 'K: logtheta has wrong shape'
         nc = self.covars_covar_I[i]
         covar = self.covars[nc]
         d  = self.covars_logtheta_I[nc].min()
         j  = i-d
         return covar.Kd(logtheta[self.covars_logtheta_I[nc]],x1,j)
         
+    def get_Iexp(self,logtheta):
+        Iexp = []
+        for nc in xrange(len(self.covars)):
+            covar = self.covars[nc]
+            _logtheta = logtheta[self.covars_logtheta_I[nc]]
+            Iexp = SP.concatenate((Iexp,covar.get_Iexp(_logtheta)))
+        return SP.array(Iexp,dtype='bool')
+
 
 class ProductCF(CovarianceFunction):
     """
@@ -101,23 +116,23 @@ class ProductCF(CovarianceFunction):
     
     **Parameters:**
     
-    covars : {CFs of type :py:class:`covar.CovarianceFunction`}
+    covars : [CFs of type :py:class:`covar.CovarianceFunction`]
     
         Covariance functions to be multiplied.
         
     """
     #    __slots__=["n_params_list","covars","covars_logtheta_I"]
     
-    def __init__(self,covars):
-        #1. check that all covars are covariance functions
-        #2. get number of params
-
+    def __init__(self,covars,*args,**kw_args):
+        CovarianceFunction.__init__(self,*args,**kw_args)
+        #get number of params
         self.n_params_list = []
         self.covars = []
         self.covars_logtheta_I = []
         i = 0
+        #check that all covars are covariance functions
         for covar in covars:
-            assert isinstance(covar,CovarianceFunction), 'ProductCF is constructed from a list of covaraince functions'
+            assert isinstance(covar,CovarianceFunction), 'ProductCF: ProductCF is constructed from a list of covaraince functions'
             self.n_params_list.append(covar.get_number_of_parameters())
             self.covars_logtheta_I.append(SP.arange(i,i+covar.get_number_of_parameters()))
             i+=covar.get_number_of_parameters()
@@ -149,7 +164,7 @@ class ProductCF(CovarianceFunction):
         See :py:class:`covar.CovarianceFunction` 
         """
         #1. check logtheta has correct length
-        assert logtheta.shape[0]==self.n_hyperparameters, 'K: logtheta has wrong shape'
+        assert logtheta.shape[0]==self.n_hyperparameters, 'ProductCF: K: logtheta has wrong shape'
         #2. create sum of covarainces..
         K = SP.ones([x1.shape[0],x2.shape[0]])
         for nc in xrange(len(self.covars)):
@@ -167,7 +182,7 @@ class ProductCF(CovarianceFunction):
         See :py:class:`covar.CovarianceFunction`
         '''
         #1. check logtheta has correct length
-        # assert logtheta.shape[0]==self.n_hyperparameters,'K: logtheta has wrong shape'
+        assert logtheta.shape[0]==self.n_hyperparameters,'ProductCF: K: logtheta has wrong shape'
         # nc = self.covars_covar_I[i]
         # covar = self.covars[nc]
         # d  = self.covars_logtheta_I[nc].min()
@@ -185,6 +200,13 @@ class ProductCF(CovarianceFunction):
             rv[~self.covars_logtheta_I[nc]] *= K_
         return rv
 
+    def get_Iexp(self,logtheta):
+        Iexp = []
+        for nc in xrange(len(self.covars)):
+            covar = self.covars[nc]
+            _logtheta = logtheta[self.covars_logtheta_I[nc]]
+            Iexp = SP.concatenate((Iexp,covar.get_Iexp(_logtheta)))
+        return SP.array(Iexp,dtype='bool')
 
 class ShiftCF(CovarianceFunction):
     """
@@ -202,25 +224,27 @@ class ShiftCF(CovarianceFunction):
     replicate_indices : [int]
 
         The indices of the respective replicates, corresponding to
-        the inputs. For instance: An input::
+        the inputs. For instance: An input with three replicates:
 
-            x1 = [-1,0,1,2,  -1,0,1,2,  -1,0,1,2]
+        ===================== ========= ========= =========
+        /                     rep1      rep2      rep3
+        ===================== ========= ========= =========
+        input = [             -1,0,1,2, -1,0,1,2, -1,0,1,2]
+        replicate_indices = [ 0,0,0,0,  1,1,1,1,  2,2,2,2]
+        ===================== ========= ========= =========
+
             
-        with three replicates has::
-
-            replicate_indices = [0,0,0,0,1,1,1,1,2,2,2,2]
-
         Thus, the replicate indices represent
         which inputs correspond to which replicate.
         
     """
 #    __slots__=["n_params_list","covars","covars_logtheta_I"]
 
-    def __init__(self,covar,replicate_indices):
+    def __init__(self,covar,replicate_indices,*args,**kw_args):
+        CovarianceFunction.__init__(self,*args,**kw_args)
         #1. check that covar is covariance function
+        assert isinstance(covar,CF_Kd_dx),'ShiftCF: ShiftCF is constructed from a CF_Kd_dx, which provides the partial derivative for the covariance matrix K with respect to input X'
         #2. get number of params
-        assert isinstance(covar,CovarianceFunction),'ShiftCF is constructed from a covaraince function'
-
         self.replicate_indices = replicate_indices
         self.n_replicates = len(SP.unique(replicate_indices))
         self.n_hyperparameters = covar.get_number_of_parameters() + self.n_replicates
@@ -250,7 +274,7 @@ class ShiftCF(CovarianceFunction):
         Others see :py:class:`covar.CovarianceFunction` 
         """
         #1. check logtheta has correct length
-        assert logtheta.shape[0]==self.n_hyperparameters, 'K: logtheta has wrong shape'
+        assert logtheta.shape[0]==self.n_hyperparameters, 'ShiftCF: K: logtheta has wrong shape'
         #2. shift inputs of covarainces..
         # get time shift parameter
         covar_n_hyper = self.covar.get_number_of_parameters()
@@ -282,32 +306,37 @@ class ShiftCF(CovarianceFunction):
             hyperparameter shal be returned. 
             
         """
- #1. check logtheta has correct length
-        assert logtheta.shape[0]==self.n_hyperparameters, 'K: logtheta has wrong shape'
+        #1. check logtheta has correct length
+        assert logtheta.shape[0]==self.n_hyperparameters, 'ShiftCF: K: logtheta has wrong shape'
         covar_n_hyper = self.covar.get_number_of_parameters()
         T  = logtheta[covar_n_hyper:covar_n_hyper+self.n_replicates]
         shift_x = self._shift_x(x.copy(), T)        
         if i >= covar_n_hyper:
-            # shift inputs
             Kd_dx = self.covar.Kd_dx(logtheta[:covar_n_hyper],shift_x)
-            c = SP.array(self.replicate_indices==(i-covar_n_hyper),dtype='int')[:,SP.newaxis]
+            c = SP.array(self.replicate_indices==(i-covar_n_hyper),
+                         dtype='int')[:,SP.newaxis]
             cdist = self._pointwise_distance(-c,-c)
             cdist = cdist.transpose(2,0,1)
             return Kd_dx * cdist
-        # for nc in xrange(len(self.covars)):
-        #     covar = self.covars[nc]
-        #     #get kernel and derivative
-        #     K_ = covar.K(logtheta[self.covars_logtheta_I[nc]],*args)
-        #     Kd_= covar.Kd(logtheta[self.covars_logtheta_I[nc]],*args)
-        #     #for the parmeters of this covariance multiply derivative
-        #     rv[self.covars_logtheta_I[nc]] *= Kd_
-        #     #for all remaining ones kernel
-        #     rv[~self.covars_logtheta_I[nc]] *= K_
         else:
             return self.covar.Kd(logtheta[:covar_n_hyper],shift_x,i)
 
+    def get_Iexp(self, logtheta):
+        """
+        Return indices of which hyperparameters are to be exponentiated
+        for optimization. Here we do not want
+        
+        **Parameters:**
+        See :py:class:`covar.CovarianceFunction`
+        """
+        covar_n_hyper = self.covar.get_number_of_parameters()
+        Iexp = SP.concatenate((self.covar.get_Iexp(logtheta[:covar_n_hyper]),
+                               SP.zeros(self.n_replicates)))
+        Iexp = SP.array(Iexp,dtype='bool')
+        return Iexp
+        
     def _shift_x(self, x, T):
-        # subtract respective T
+        # subtract T, respectively
         for i in SP.unique(self.replicate_indices):
             x[self.replicate_indices==i] -= T[i]
         return x

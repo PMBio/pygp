@@ -10,52 +10,79 @@ import pylab as PL
 import scipy as S
 
 def plot_training_data(x,y,
+                       shift=None,
+                       replicate_indices=None,
                        format_data={'alpha':1,
                                     'color':'r',
                                     'marker':'.',
                                     'linestyle':'',
                                     'markersize':12}):
-    PL.plot(S.array(x).reshape(-1),
-            S.array(y).reshape(-1),**format_data)
+    """
+    Plot training data input x and output y into the
+    active figure (See Pylab for the details of figure).
 
-def plot_training_data_with_shiftx(x,y,
-                               shift=[],
-                               replicate_indices=[],
-                               format_data={'alpha':1,
-                                    'color':'r',
-                                    'marker':'.',
-                                    'linestyle':'',
-                                    'markersize':12}):
+    Instance plot without replicate groups:
+    
+    .. image:: ../images/plotTraining.png
+       :height: 8cm
+       
+    Instance plot with two replicate groups:
+    
+    .. image:: ../images/plotTrainingShiftX.png
+       :height: 8cm
+
+    **Parameters:**
+
+    x : [double]
+        Input x (e.g. time).
+
+    y : [double]
+        Output y (e.g. expression).
+
+    shift : [double]
+        The shift of each replicate group.
+        
+    replicate_indices : [int]
+        Indices of replicates for each x, rexpectively
+
+    format_data : {format}
+        Format of the data points. See Matplotlib for details. 
+    """
     x = S.array(x).reshape(-1)
     y = S.array(y).reshape(-1)
 
-    if shift is None:
-        shift=[]
-        replicate_indices=[]
-
-    assert len(shift)==len(S.unique(replicate_indices)), 'We need one shift per replicate to plot properly'
-
-    _format_data = format_data.copy()
-    _format_data['alpha'] = .2
-    PL.plot(x,y,**_format_data)
-
     x_shift = x.copy()
 
-    for i in S.unique(replicate_indices):
-        x_shift[replicate_indices==i] -= shift[i]
+    if shift is not None and replicate_indices is not None:
+        assert len(shift)==len(S.unique(replicate_indices)), 'Need one shift per replicate to plot properly'
 
-    for i in xrange(len(x)):
-        PL.annotate("",xy=(x_shift[i],y[i]),
-                    xytext=(x[i],y[i]),
-                    arrowprops=dict(facecolor=format_data['color'], alpha=.3,shrink=.2,frac=.3))
+        _format_data = format_data.copy()
+        _format_data['alpha'] = .2
+        PL.plot(x,y,**_format_data)
+
+        for i in S.unique(replicate_indices):
+            x_shift[replicate_indices==i] -= shift[i]
+
+        for i in xrange(len(x)):
+            PL.annotate("",xy=(x_shift[i],y[i]),
+                        xytext=(x[i],y[i]),
+                        arrowprops=dict(facecolor
+                                        =format_data['color'],
+                                        alpha=.3,
+                                        shrink=.2,
+                                        frac=.3))
 
 
     PL.plot(x_shift,y,
             **format_data)
 
 def plot_sausage(X,mean,std,format_fill={'alpha':0.2,'facecolor':'k'},format_line={'alpha':1, 'color':'g'}):
-    """plot saussage plot of GP
+    """
+    plot saussage plot of GP. I.e:
 
+    .. image:: ../images/sausage.png
+      :height: 8cm
+      
     **Parameters:**
 
     X : [double]
@@ -67,6 +94,11 @@ def plot_sausage(X,mean,std,format_fill={'alpha':0.2,'facecolor':'k'},format_lin
     std : [double]
         Pointwise standard deviation.
 
+    format_fill : {format}
+        The format of the fill. See Matplotlib for details.
+
+    format_line : {format}
+        The format of the mean line. See Matplotlib for details.
     """
     Xp = S.concatenate((X,X[::-1]))
     Yp = S.concatenate(((mean+2*std),(mean-2*std)[::-1]))
