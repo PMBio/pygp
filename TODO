@@ -2,7 +2,7 @@
 
 Cleanin up
 1) Fix product CF
-2) logging ?
+2) logging
 3) update documentation to changes
 *) differentiate between public and private functions and member varaibles.
 *) import scipy as SP instead of from numpy import *
@@ -14,6 +14,10 @@ Functionality
 *) Implement shift operators as CF combinator (discuss)
 1) support for mean functions? 
 2) Implementation of diagional covariance matrices
+3) Shift_X update (look at optimzed point)
+4) Own Covariance class, which provides derivative w.r.t X
+5) Let Iexp be given by CF
+
 
 3) sq_dist using cython
 4) Additional covariance functions
