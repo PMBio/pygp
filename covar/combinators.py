@@ -125,25 +125,26 @@ class ProductCF(CovarianceFunction):
     
     def __init__(self,covars,*args,**kw_args):
         CovarianceFunction.__init__(self,*args,**kw_args)
-        #get number of params
         self.n_params_list = []
         self.covars = []
         self.covars_logtheta_I = []
+        self.covars_covar_I = []
+
+        self.covars = covars
         i = 0
-        #check that all covars are covariance functions
-        for covar in covars:
+        
+        for nc in xrange(len(covars)):
+            covar = covars[nc]
             assert isinstance(covar,CovarianceFunction), 'ProductCF: ProductCF is constructed from a list of covaraince functions'
-            self.n_params_list.append(covar.get_number_of_parameters())
+            Nparam = covar.get_number_of_parameters()
+            self.n_params_list.append(Nparam)
             self.covars_logtheta_I.append(SP.arange(i,i+covar.get_number_of_parameters()))
+            for ip in xrange(Nparam):
+                self.covars_covar_I.append(nc)
             i+=covar.get_number_of_parameters()
+            
         self.n_params_list = SP.array(self.n_params_list)
         self.n_hyperparameters = self.n_params_list.sum()
-        self.covars = covars
-        #convert the param lists to indicator vector to mak them easily invertable
-        for n in xrange(len(covars)):
-            _ilogtheta = SP.zeros((self.n_hyperparameters),dtype='bool')
-            _ilogtheta[self.covars_logtheta_I[n]]=True
-            self.covars_logtheta_I[n] = _ilogtheta
 
     def get_hyperparameter_names(self):
         """return the names of hyperparameters to make identificatio neasier"""
@@ -166,11 +167,14 @@ class ProductCF(CovarianceFunction):
         #1. check logtheta has correct length
         assert logtheta.shape[0]==self.n_hyperparameters, 'ProductCF: K: logtheta has wrong shape'
         #2. create sum of covarainces..
-        K = SP.ones([x1.shape[0],x2.shape[0]])
+        if x2 is None:
+            K = SP.ones([x1.shape[0],x1.shape[0]])
+        else:
+            K = SP.ones([x1.shape[0],x2.shape[0]])
         for nc in xrange(len(self.covars)):
             covar = self.covars[nc]
             _logtheta = logtheta[self.covars_logtheta_I[nc]]
-            K     *=  covar.K(_loghteta,x1,x2)
+            K     *=  covar.K(_logtheta,x1,x2)
         return K
 
 
@@ -188,17 +192,26 @@ class ProductCF(CovarianceFunction):
         # d  = self.covars_logtheta_I[nc].min()
         # j  = i-d
         # return covar.Kd(logtheta[self.covars_logtheta_I[nc]],x1,j)
-        rv = SP.ones([self.n_hyperparameters,x1.shape[0],x2.shape[0]])
-        for nc in xrange(len(self.covars)):
-            covar = self.covars[nc]
-            #get kernel and derivative
-            K_ = covar.K(logtheta[self.covars_logtheta_I[nc]],*args)
-            Kd_= covar.Kd(logtheta[self.covars_logtheta_I[nc]],*args)
-            #for the parmeters of this covariance multiply derivative
-            rv[self.covars_logtheta_I[nc]] *= Kd_
-            #for all remaining ones kernel
-            rv[~self.covars_logtheta_I[nc]] *= K_
-        return rv
+        # rv = SP.ones([self.n_hyperparameters,x1.shape[0],x2.shape[0]])
+        # for nc in xrange(len(self.covars)):
+        #     covar = self.covars[nc]
+        #     #get kernel and derivative
+        #     K_ = covar.K(logtheta[self.covars_logtheta_I[nc]],*args)
+        #     Kd_= covar.Kd(logtheta[self.covars_logtheta_I[nc]],*args)
+        #     #for the parmeters of this covariance multiply derivative
+        #     rv[self.covars_logtheta_I[nc]] *= Kd_
+        #     #for all remaining ones kernel
+        #     rv[~self.covars_logtheta_I[nc]] *= K_
+        nc = self.covars_covar_I[i]
+        covar = self.covars[nc]
+        d  = self.covars_logtheta_I[nc].min()
+        j  = i-d
+        Kd = covar.Kd(logtheta[self.covars_logtheta_I[nc]],x1,j)
+        for ind in xrange(len(self.covars)):
+            if(ind is not nc):
+                _logtheta = logtheta[self.covars_logtheta_I[ind]]
+                Kd *= self.covars[ind].K(_logtheta,x1)
+        return Kd
 
     def get_Iexp(self,logtheta):
         Iexp = []

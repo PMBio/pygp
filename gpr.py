@@ -83,7 +83,7 @@ def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args)
         rv = gpr._param_dict_to_list(rv)
         LG.debug("dL("+str(x_)+")=="+str(rv))
         if SP.isnan(rv).any():
-            In = isnan(rv)
+            In = SP.isnan(rv)
             rv[In] = 1E6
         return rv[Ifilter_x]
         
@@ -393,7 +393,7 @@ class GP(object):
             pvalues = SP.zeros([len(value),2])
             if key in priors:
                 plist = priors[key]
-                theta = hyperparams[key]
+                theta = copy.deepcopy(hyperparams[key])
                 Iexp = self.covar.get_Iexp(theta)
                 theta[Iexp] = SP.exp(theta[Iexp])
                 for i in xrange(len(theta)):
