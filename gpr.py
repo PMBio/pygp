@@ -247,11 +247,11 @@ class GP(object):
         if not isinstance(hyperparams,dict):
             hyperparams = self._param_list_to_dict(hyperparams)
                     
-        #try:   
-        KV = self.getCovariances(hyperparams)
-        #except Exception,e:
-        #    LG.error("exception caught (%s)" % (str(hyperparams)))
-        #    return 1E6
+        try:   
+            KV = self.getCovariances(hyperparams)
+        except linalg.LinAlgError,e:
+            LG.error("exception caught (%s)" % (str(hyperparams)))
+            return 1E6
 
         #calc:
         lMl = 0.5*SP.dot(KV['alpha'],self.y) + sum(SP.log(KV['L'].diagonal())) + 0.5*self.n*SP.log(2*SP.pi)
@@ -285,10 +285,11 @@ class GP(object):
         RV = {}
         #currently only support derivatives of covar params
         logtheta = hyperparams['covar']
-        #try:   
-        KV = self.getCovariances(hyperparams)
-        #except Exception,e:
-        #    LG.error("exception caught (%s)" % (str(exp(logtheta))))
+        try:   
+            KV = self.getCovariances(hyperparams)
+        except linalg.LinAlgError,e:
+            LG.error("exception caught (%s)" % (str(hyperparams)))
+            return {'covar':SP.zeros(len(logtheta))}
         logtheta = hyperparams['covar']
         n = self.n
         L = KV['L']
@@ -322,7 +323,7 @@ class GP(object):
         else:
             #update cache
             K = self.covar.K(hyperparams['covar'],self.x)
-            L = linalg.cholesky(K)
+            L = linalg.cholesky(K)               
             alpha = _solve_chol(L.transpose(),self.y)
             self._covar_cache = {'K': K,'L':L,'alpha':alpha,'hyperparams':copy.deepcopy(hyperparams)}
         return self._covar_cache 
