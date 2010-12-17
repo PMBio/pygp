@@ -1,7 +1,8 @@
 *TODOs
 
 Cleanin up
-1) Fix product CF
+1) GPTwoSample
+*) Fix product CF
 *) logging
 *) update documentation to changes
 *) differentiate between public and private functions and member varaibles.
