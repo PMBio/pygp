@@ -1,0 +1,302 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Module for Gaussian process Regression &mdash; PythonGPRegression v0.7.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.7.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PythonGPRegression v0.7.0 documentation" href="index.html" />
+    <link rel="next" title="Grouping GP regression classes" href="composite.html" />
+    <link rel="prev" title="Welcome to PyGP" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="composite.html" title="Grouping GP regression classes"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to PyGP"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">PythonGPRegression v0.7.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-gpr"></span><div class="section" id="module-for-gaussian-process-regression">
+<h1>Module for Gaussian process Regression<a class="headerlink" href="#module-for-gaussian-process-regression" title="Permalink to this headline">¶</a></h1>
+<p>This module is a lot modelled after Karl Rasmussen Gaussian process
+package for Matlab (<a class="reference external" href="http://www.gaussianprocess.org/gpml/">http://www.gaussianprocess.org/gpml/</a>).</p>
+<p>Methods and Classes</p>
+<dl class="class">
+<dt id="gpr.GP">
+<em class="property">class </em><tt class="descclassname">gpr.</tt><tt class="descname">GP</tt><big>(</big><em>covar_func=None</em>, <em>x=None</em>, <em>y=None</em><big>)</big><a class="headerlink" href="#gpr.GP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Gaussian Process regression class. Holds all information
+for the GP regression to take place.</p>
+<p><strong>Parameters:</strong></p>
+<dl class="docutils">
+<dt>covar_func <span class="classifier-delimiter">:</span> <span class="classifier"><a class="reference internal" href="covars.html#module-covar" title="covar"><tt class="xref py py-class docutils literal"><span class="pre">covar</span></tt></a></span></dt>
+<dd>The covariance function, which calculates the covariance
+of the outputs</dd>
+<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">[double]</span></dt>
+<dd>training inputs (might be high dimensional,
+depending on which covariance function is chosen)
+Note: x must be of dimension <cite>(-1,1)</cite></dd>
+<dt>y <span class="classifier-delimiter">:</span> <span class="classifier">[double]</span></dt>
+<dd>training targets</dd>
+</dl>
+<p>Detailed descriptions of the fields of this class:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="37%" />
+<col width="14%" />
+<col width="49%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Data</th>
+<th class="head">Type/Default</th>
+<th class="head">Explanation</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>x</td>
+<td>array([])</td>
+<td>inputs</td>
+</tr>
+<tr><td>t</td>
+<td>array([])</td>
+<td>targets</td>
+</tr>
+<tr><td>n</td>
+<td>0</td>
+<td>size of training data</td>
+</tr>
+<tr><td>mean</td>
+<td>0</td>
+<td>mean of the data</td>
+</tr>
+<tr><td><strong>Settings:</strong></td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+</tr>
+<tr><td><strong>Covariance:</strong></td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+</tr>
+<tr><td>covar</td>
+<td>None</td>
+<td>Covariance function</td>
+</tr>
+<tr><td><strong>caching of covariance-stuff:</strong></td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+</tr>
+<tr><td>alpha</td>
+<td>None</td>
+<td>cached alpha</td>
+</tr>
+<tr><td>L</td>
+<td>None</td>
+<td>chol(K)</td>
+</tr>
+<tr><td>Nlogtheta</td>
+<td>0</td>
+<td>total number of hyperparameters
+for set kernel etc.
+which if av. will be used
+for predictions</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="gpr.GP.dlMl">
+<tt class="descname">dlMl</tt><big>(</big><em>hyperparams</em>, <em>priors=None</em>, <em>**kw_args</em><big>)</big><a class="headerlink" href="#gpr.GP.dlMl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the log Marginal likelihood for the given logtheta.</p>
+<p><strong>Parameters:</strong></p>
+<dl class="docutils">
+<dt>hyperparams <span class="classifier-delimiter">:</span> <span class="classifier">{&#8216;covar&#8217;:CF_hyperparameters, ...}</span></dt>
+<dd>The hyperparameters which shall be optimized and derived</dd>
+<dt>priors <span class="classifier-delimiter">:</span> <span class="classifier">[<a class="reference internal" href="priors.html#module-lnpriors" title="lnpriors"><tt class="xref py py-class docutils literal"><span class="pre">lnpriors</span></tt></a>]</span></dt>
+<dd>The hyperparameters which shall be optimized and derived</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="gpr.GP.getCovariances">
+<tt class="descname">getCovariances</tt><big>(</big><em>hyperparams</em><big>)</big><a class="headerlink" href="#gpr.GP.getCovariances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the Cholesky decompositions L and alpha:</p>
+<div class="highlight-python"><pre>K 
+L     = chol(K)
+alpha = solve(L,t)
+return [covar_struct] = getCovariances(hyperpam)</pre>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="gpr.GP.getData">
+<tt class="descname">getData</tt><big>(</big><big>)</big><a class="headerlink" href="#gpr.GP.getData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the data, currently set for this GP</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gpr.GP.lMl">
+<tt class="descname">lMl</tt><big>(</big><em>hyperparams</em>, <em>priors=None</em>, <em>**kw_args</em><big>)</big><a class="headerlink" href="#gpr.GP.lMl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the log Marginal likelihood
+for the given logtheta.</p>
+<p><strong>Parameters:</strong></p>
+<dl class="docutils">
+<dt>hyperparams <span class="classifier-delimiter">:</span> <span class="classifier">{&#8216;covar&#8217;:CF_hyperparameters, ... }</span></dt>
+<dd>The hyperparameters for the log marginal likelihood.</dd>
+<dt>priors <span class="classifier-delimiter">:</span> <span class="classifier">[<a class="reference internal" href="priors.html#module-lnpriors" title="lnpriors"><tt class="xref py py-class docutils literal"><span class="pre">lnpriors</span></tt></a>]</span></dt>
+<dd>the prior beliefs for the hyperparameter values</dd>
+<dt>Ifilter <span class="classifier-delimiter">:</span> <span class="classifier">[bool]</span></dt>
+<dd><p class="first">Denotes which hyperparameters shall be optimized.
+Thus</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Ifilter</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+<p class="last">has the meaning that only the second
+hyperparameter shall be optimized.</p>
+</dd>
+<dt>kw_args :</dt>
+<dd>All other arguments, explicitly annotated
+when necessary.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="gpr.GP.predict">
+<tt class="descname">predict</tt><big>(</big><em>hyperparams</em>, <em>xstar</em>, <em>var=True</em><big>)</big><a class="headerlink" href="#gpr.GP.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predict mean and variance for given <strong>Parameters:</strong></p>
+<dl class="docutils">
+<dt>hyperparams <span class="classifier-delimiter">:</span> <span class="classifier">{}</span></dt>
+<dd>hyperparameters in logSpace</dd>
+<dt>xstar <span class="classifier-delimiter">:</span> <span class="classifier">[double]</span></dt>
+<dd>prediction inputs</dd>
+<dt>var <span class="classifier-delimiter">:</span> <span class="classifier">boolean</span></dt>
+<dd>return predicted variance</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="gpr.GP.setData">
+<tt class="descname">setData</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="headerlink" href="#gpr.GP.setData" title="Permalink to this definition">¶</a></dt>
+<dd><p>setData(x,t) with <strong>Parameters:</strong></p>
+<p>x : inputs: [N x D]</p>
+<p>y : targets/outputs [ N x 1]</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="gpr.optHyper">
+<tt class="descclassname">gpr.</tt><tt class="descname">optHyper</tt><big>(</big><em>gpr</em>, <em>hyperparams</em>, <em>Ifilter=None</em>, <em>maxiter=100</em>, <em>gradcheck=False</em>, <em>**kw_args</em><big>)</big><a class="headerlink" href="#gpr.optHyper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optimize hyperparemters of gp gpr starting from gpr</p>
+<p><strong>Parameters:</strong></p>
+<dl class="docutils">
+<dt>gpr <span class="classifier-delimiter">:</span> <span class="classifier"><a class="reference internal" href="#gpr.GP" title="gpr.GP"><tt class="xref py py-class docutils literal"><span class="pre">gpr.GP</span></tt></a></span></dt>
+<dd>GP regression class</dd>
+<dt>hyperparams <span class="classifier-delimiter">:</span> <span class="classifier">{&#8216;covar&#8217;:logtheta, ...}</span></dt>
+<dd>Dictionary filled with starting hyperparameters
+for optimization. logtheta are the CF hyperparameters.</dd>
+<dt>Ifilter <span class="classifier-delimiter">:</span> <span class="classifier">[boolean]</span></dt>
+<dd><p class="first">Index vector, indicating which hyperparameters shall
+be optimized. For instance:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">logtheta</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span>
+<span class="n">Ifilter</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+<p class="last">means that only the second entry (which equals 2 in
+this example) of logtheta will be optimized
+and the others remain untouched.</p>
+</dd>
+<dt>priors <span class="classifier-delimiter">:</span> <span class="classifier">[<a class="reference internal" href="priors.html#module-lnpriors" title="lnpriors"><tt class="xref py py-class docutils literal"><span class="pre">lnpriors</span></tt></a>]</span></dt>
+<dd>non-default prior, otherwise assume
+first index amplitude, last noise, rest:lengthscales</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Welcome to PyGP</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="composite.html"
+                        title="next chapter">Grouping GP regression classes</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="composite.html" title="Grouping GP regression classes"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to PyGP"
+             >previous</a> |</li>
+        <li><a href="index.html">PythonGPRegression v0.7.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Oliver Stegle, Max Zwießele.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>

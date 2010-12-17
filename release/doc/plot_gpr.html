@@ -1,0 +1,155 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Gaussian process plotting tools &mdash; PythonGPRegression v0.7.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.7.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PythonGPRegression v0.7.0 documentation" href="index.html" />
+    <link rel="next" title="Sample from Gaussian Processes" href="gp_sample.html" />
+    <link rel="prev" title="Hyperpriors for log likelihood calculation" href="priors.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="gp_sample.html" title="Sample from Gaussian Processes"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="priors.html" title="Hyperpriors for log likelihood calculation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">PythonGPRegression v0.7.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-gpr_plot"></span><div class="section" id="gaussian-process-plotting-tools">
+<h1>Gaussian process plotting tools<a class="headerlink" href="#gaussian-process-plotting-tools" title="Permalink to this headline">¶</a></h1>
+<p>Tools to plot gpr output.</p>
+<dl class="function">
+<dt id="gpr_plot.plot_sausage">
+<tt class="descclassname">gpr_plot.</tt><tt class="descname">plot_sausage</tt><big>(</big><em>X</em>, <em>mean</em>, <em>std</em>, <em>format_fill={'alpha': 0.20000000000000001</em>, <em>'facecolor': 'k'}</em>, <em>format_line={'color': 'g'</em>, <em>'alpha': 1}</em><big>)</big><a class="headerlink" href="#gpr_plot.plot_sausage" title="Permalink to this definition">¶</a></dt>
+<dd><p>plot saussage plot of GP. I.e:</p>
+<img alt="_images/sausage.png" src="_images/sausage.png" style="height: 8cm;" />
+<p><strong>Parameters:</strong></p>
+<dl class="docutils">
+<dt>X <span class="classifier-delimiter">:</span> <span class="classifier">[double]</span></dt>
+<dd>Interval X for which the saussage shall be plottet.</dd>
+<dt>mean <span class="classifier-delimiter">:</span> <span class="classifier">[double]</span></dt>
+<dd>The mean of to be plottet.</dd>
+<dt>std <span class="classifier-delimiter">:</span> <span class="classifier">[double]</span></dt>
+<dd>Pointwise standard deviation.</dd>
+<dt>format_fill <span class="classifier-delimiter">:</span> <span class="classifier">{format}</span></dt>
+<dd>The format of the fill. See Matplotlib for details.</dd>
+<dt>format_line <span class="classifier-delimiter">:</span> <span class="classifier">{format}</span></dt>
+<dd>The format of the mean line. See Matplotlib for details.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="gpr_plot.plot_training_data">
+<tt class="descclassname">gpr_plot.</tt><tt class="descname">plot_training_data</tt><big>(</big><em>x</em>, <em>y</em>, <em>shift=None</em>, <em>replicate_indices=None</em>, <em>format_data={'color': 'r'</em>, <em>'alpha': 1</em>, <em>'markersize': 12</em>, <em>'linestyle': ''</em>, <em>'marker': '.'}</em><big>)</big><a class="headerlink" href="#gpr_plot.plot_training_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot training data input x and output y into the
+active figure (See Pylab for the details of figure).</p>
+<p>Instance plot without replicate groups:</p>
+<img alt="_images/plotTraining.png" src="_images/plotTraining.png" style="height: 8cm;" />
+<p>Instance plot with two replicate groups:</p>
+<img alt="_images/plotTrainingShiftX.png" src="_images/plotTrainingShiftX.png" style="height: 8cm;" />
+<p><strong>Parameters:</strong></p>
+<dl class="docutils">
+<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">[double]</span></dt>
+<dd>Input x (e.g. time).</dd>
+<dt>y <span class="classifier-delimiter">:</span> <span class="classifier">[double]</span></dt>
+<dd>Output y (e.g. expression).</dd>
+<dt>shift <span class="classifier-delimiter">:</span> <span class="classifier">[double]</span></dt>
+<dd>The shift of each replicate group.</dd>
+<dt>replicate_indices <span class="classifier-delimiter">:</span> <span class="classifier">[int]</span></dt>
+<dd>Indices of replicates for each x, rexpectively</dd>
+<dt>format_data <span class="classifier-delimiter">:</span> <span class="classifier">{format}</span></dt>
+<dd>Format of the data points. See Matplotlib for details.</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="priors.html"
+                        title="previous chapter">Hyperpriors for log likelihood calculation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="gp_sample.html"
+                        title="next chapter">Sample from Gaussian Processes</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="gp_sample.html" title="Sample from Gaussian Processes"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="priors.html" title="Hyperpriors for log likelihood calculation"
+             >previous</a> |</li>
+        <li><a href="index.html">PythonGPRegression v0.7.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Oliver Stegle, Max Zwießele.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>
