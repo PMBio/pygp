@@ -1,2 +1,0 @@
-.. automodule:: lnpriors
-  :members:
