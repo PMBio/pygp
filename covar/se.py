@@ -14,7 +14,7 @@ import scipy as SP
 # import super class CovarianceFunction
 #from covar import CovarianceFunction
 # import super class CF_Kd_dx
-from covar import CF_Kd_dx
+from pygp.covar import CF_Kd_dx
 
 class SEARDCF(CF_Kd_dx):
     """
@@ -128,6 +128,8 @@ class SEARDCF(CF_Kd_dx):
         **Parameters:**
         See :py:class:`covar.CovarianceFunction`
         """
+
+        #TODO: I am pretty sure this only works for a single dimension, right?
         L = SP.exp(logtheta[1:1+self.n_dimensions])
         dd = self._pointwise_distance(x,x,-(L**2))
         return self.K(logtheta,x) * dd.transpose(2,0,1)

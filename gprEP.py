@@ -3,7 +3,7 @@ Class for Gaussian Process Regression with arbitrary likelihoods
 commonly we will use EP to obtain a Gaussian approximation to the likelihood function
 """
 
-from gpr import *
+from pygp.gpr import *
 #TMP
 from numpy import *
 from numpy.linalg.linalg import *

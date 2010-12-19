@@ -9,15 +9,15 @@ Each combinator is a covariance function (CF) itself. It combines one or several
 import sys
 sys.path.append('../')
 
-from covar import CovarianceFunction
-from covar import CF_Kd_dx
+from pygp.covar import CovarianceFunction
+from pygp.covar import CF_Kd_dx
 
 import scipy as SP
 import pdb
 
 
 
-class SumCF(CovarianceFunction):
+class SumCF(CF_Kd_dx):
     """
     Sum Covariance function. This function adds
     up the given CFs and returns the resulting sum.
@@ -108,6 +108,16 @@ class SumCF(CovarianceFunction):
             Iexp = SP.concatenate((Iexp,covar.get_Iexp(_logtheta)))
         return SP.array(Iexp,dtype='bool')
 
+    #derivative with respect to inputs
+    def Kd_dx(self,logtheta,x1,d):
+        assert logtheta.shape[0]==self.n_hyperparameters, 'K: logtheta has wrong shape'
+        RV = SP.zeros([x1.shape[0],x1.shape[0]])
+        for nc in xrange(len(self.covars)):
+            covar = self.covars[nc]
+            _logtheta = logtheta[self.covars_logtheta_I[nc]]
+            RV += covar.Kd_dx(_logtheta,x1,d)
+
+        return RV
 
 class ProductCF(CovarianceFunction):
     """

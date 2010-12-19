@@ -12,7 +12,7 @@ sys.path.append("../")
 # import python / numpy:
 import scipy as SP
 
-from covar import CovarianceFunction
+from pygp.covar import CovarianceFunction,CF_Kd_dx
 
 
 class NoiseReplicateCF(CovarianceFunction):
@@ -62,7 +62,7 @@ class NoiseReplicateCF(CovarianceFunction):
         K[self.replicate_indices!=i] *= 0
         return 2*K  
 
-class NoiseISOCF(CovarianceFunction):
+class NoiseISOCF(CF_Kd_dx):
     """
     Covariance function for Gaussian observation noise for
     all datapoints as a whole.
@@ -108,6 +108,8 @@ class NoiseISOCF(CovarianceFunction):
         assert i==0, 'unknown hyperparameter'
         return 2*K        
 
-        
+    def Kd_dx(self,logtheta,x1,d):
+        RV = SP.zeros([x1.shape[0],x1.shape[0]])
+        return RV
 
     

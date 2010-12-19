@@ -73,7 +73,7 @@ covar_priors.append([lnpriors.lngammapdf,[1,1]])
 priors = {'covar':covar_priors}
 Ifilter = {'covar': SP.array([1,1,1],dtype='int')}
 
-gpr = GPR.GP(covar,x=x,y=y) 
+gpr = GPR.GP(covar,x=x,y=y)
 [opt_model_params,opt_lml]=GPR.optHyper(gpr,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)
 
 #predict

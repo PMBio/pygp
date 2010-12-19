@@ -4,7 +4,7 @@ Class for Gaussian process classification using EP
 
 
 
-from gprEP import *
+from pygp.gprEP import *
 import scipy as S
 import EPLikelihood as EPL
 

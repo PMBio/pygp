@@ -9,8 +9,8 @@ import sys
 sys.path.append("../")
 import scipy as SP
 
-from covar import CovarianceFunction
-from combinators import ProductCF
+from pygp.covar import CovarianceFunction
+from pygp.combinators import ProductCF
 
 import copy
 

@@ -58,7 +58,8 @@ def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args)
         non-default prior, otherwise assume
         first index amplitude, last noise, rest:lengthscales
     """
-  
+
+    _param_struct = gpr._create_param_struct(hyperparams)
     #1. convert the dictionaries to parameter lists
     X0 = gpr._param_dict_to_list(hyperparams)
     if Ifilter is not None:
@@ -69,7 +70,8 @@ def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args)
     def f(x):
         x_ = X0
         x_[Ifilter_x] = x
-        rv =  gpr.lMl(x_,**kw_args)
+        
+        rv =  gpr.lMl(gpr._param_list_to_dict(x_,_param_struct),**kw_args)
         LG.debug("L("+str(x_)+")=="+str(rv))
         if SP.isnan(rv):
             return 1E6
@@ -78,7 +80,7 @@ def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args)
     def df(x):
         x_ = X0
         x_[Ifilter_x] = x
-        rv =  gpr.dlMl(x_,**kw_args)
+        rv =  gpr.dlMl(gpr._param_list_to_dict(x_,_param_struct),**kw_args)
         #convert to list
         rv = gpr._param_dict_to_list(rv)
         LG.debug("dL("+str(x_)+")=="+str(rv))
@@ -91,6 +93,12 @@ def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args)
     x  = X0.copy()[Ifilter_x]
         
     LG.info("startparameters for opt:"+str(x))
+
+    if gradcheck:
+        LG.info("check_grad:" + str(OPT.check_grad(f,df,x)))
+        raw_input()
+
+    
     LG.info("start optimization")
 
     opt_RV=OPT.fmin_bfgs(f, x, fprime=df, args=(), gtol=1.0000000000000001e-04, norm=SP.inf, epsilon=1.4901161193847656e-08, maxiter=maxiter, full_output=1, disp=(0), retall=0)
@@ -102,8 +110,9 @@ def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args)
     #get the log marginal likelihood at the optimum:
     opt_lml = opt_RV[1]
 
+
     if gradcheck:
-        LG.info("check_grad:" + str(OPT.check_grad(f,df,opt_x[Ifilter_x])))
+        LG.info("check_grad:" + str(OPT.check_grad(f,df,opt_RV[0])))
         raw_input()
 
     LG.info("old parameters:")
@@ -167,8 +176,9 @@ class GP(object):
     ================================ ============ ===========================================
     """
     # Smean : boolean
-    # Subtract mean of Data    
-    __slots__ = ["x","y","n","covar", \
+    # Subtract mean of Data
+    # TODO: added d
+    __slots__ = ["x","y","n","d","covar", \
                  "_covar_cache","_param_struct"]
     
     def __init__(self, covar_func=None, x=None,y=None):
@@ -206,10 +216,14 @@ class GP(object):
         self.x = x
         #squeeeze targets; this should only be a vector
         self.y = y.squeeze()
-        #assert shapes 
-        assert len(self.y.shape)==1, 'target shape eror'
+        #assert shapes
+        if len(self.y.shape)==1:
+            self.y = self.y[:,SP.newaxis]
         assert self.x.shape[0]==self.y.shape[0], 'input/target shape missmatch'
         self.n = len(self.x)
+        #for GPLVM models:
+        self.d = self.y.shape[1]
+        
         #invalidate cache
         self._invalidate_cache()
         pass
@@ -246,16 +260,9 @@ class GP(object):
         """
         if not isinstance(hyperparams,dict):
             hyperparams = self._param_list_to_dict(hyperparams)
-                    
-        try:   
-            KV = self.getCovariances(hyperparams)
-        except linalg.LinAlgError,e:
-            LG.error("exception caught (%s)" % (str(hyperparams)))
-            return 1E6
 
-        #calc:
-        lMl = 0.5*SP.dot(KV['alpha'],self.y) + sum(SP.log(KV['L'].diagonal())) + 0.5*self.n*SP.log(2*SP.pi)
-
+        lMl = self._lMl_covar(hyperparams)
+        
         #account for prior
         if priors is not None:
             plml = self._lml_prior(hyperparams,priors=priors,**kw_args)
@@ -282,25 +289,7 @@ class GP(object):
         if not isinstance(hyperparams,dict):
             hyperparams = self._param_list_to_dict(hyperparams)
 
-        RV = {}
-        #currently only support derivatives of covar params
-        logtheta = hyperparams['covar']
-        try:   
-            KV = self.getCovariances(hyperparams)
-        except linalg.LinAlgError,e:
-            LG.error("exception caught (%s)" % (str(hyperparams)))
-            return {'covar':SP.zeros(len(logtheta))}
-        logtheta = hyperparams['covar']
-        n = self.n
-        L = KV['L']
-        alpha = KV['alpha'][:,SP.newaxis]
-        W  = linalg.solve(L.transpose(),linalg.solve(L,SP.eye(n))) - SP.dot(alpha,alpha.transpose())
-
-        dlMl = SP.zeros(len(logtheta))
-        for i in xrange(len(logtheta)):
-            Kd = self.covar.Kd(hyperparams['covar'],self.x,i)
-            dlMl[i] = 0.5*(W*Kd).sum()
-        RV = {'covar': dlMl}
+        RV=self._dlMl_covar(hyperparams)
         
         #prior
         if priors is not None:
@@ -324,12 +313,14 @@ class GP(object):
             #update cache
             K = self.covar.K(hyperparams['covar'],self.x)
             L = linalg.cholesky(K)               
-            alpha = _solve_chol(L.transpose(),self.y)
+            #alpha = _solve_chol(L.transpose(),self.y)[:,SP.newaxis]
+            alpha = _solve_chol(L.T,self.y)
+            #pdb.set_trace()
             self._covar_cache = {'K': K,'L':L,'alpha':alpha,'hyperparams':copy.deepcopy(hyperparams)}
         return self._covar_cache 
        
         
-    def predict(self,hyperparams,xstar,var=True):
+    def predict(self,hyperparams,xstar,output=0,var=True):
         '''
         Predict mean and variance for given **Parameters:**
 
@@ -341,11 +332,12 @@ class GP(object):
 
         var      : boolean
             return predicted variance
+        output   : output dimension for prediction (0)
         '''
         KV = self.getCovariances(hyperparams)
         #cross covariance:
         Kstar       = self.covar.K(hyperparams['covar'],self.x,xstar)
-        mu = SP.dot(Kstar.transpose(),KV['alpha'])
+        mu = SP.dot(Kstar.transpose(),KV['alpha'][:,output])
         if(var):            
             Kss_diag         = self.covar.Kdiag(hyperparams['covar'],xstar)
             v    = linalg.solve(KV['L'],Kstar)
@@ -358,18 +350,67 @@ class GP(object):
 
     ########PRIVATE FUNCTIONS########
 
+    #log marginal likelihood contributions from covaraince hyperparameters:
+
+    def _lMl_covar(self,hyperparams):
+        
+        try:   
+            KV = self.getCovariances(hyperparams)
+        except linalg.LinAlgError,e:
+            LG.error("exception caught (%s)" % (str(hyperparams)))
+            return 1E6
+
+        #Change: no supports multi dimensional stuff for GPLVM
+        lMl = 0.5*(KV['alpha']*self.y).sum() + self.d*(sum(SP.log(KV['L'].diagonal())) + 0.5*self.n*SP.log(2*SP.pi))
+        return lMl
+
+
+    def _dlMl_covar(self,hyperparams):
+        RV = {}
+        #currently only support derivatives of covar params
+        logtheta = hyperparams['covar']
+        try:   
+            KV = self.getCovariances(hyperparams)
+        except linalg.LinAlgError,e:
+            LG.error("exception caught (%s)" % (str(hyperparams)))
+            return {'covar':SP.zeros(len(logtheta))}
+        logtheta = hyperparams['covar']
+        n = self.n
+        L = KV['L']
+
+        alpha = KV['alpha']
+        W  =  self.d*linalg.solve(L.transpose(),linalg.solve(L,SP.eye(n))) - SP.dot(alpha,alpha.transpose())
+        self._covar_cache['W'] = W
+        
+
+        dlMl = SP.zeros(len(logtheta))
+        for i in xrange(len(logtheta)):
+            Kd = self.covar.Kd(hyperparams['covar'],self.x,i)
+            dlMl[i] = 0.5*(W*Kd).sum()
+        RV = {'covar': dlMl}
+        return RV
+                   
+
+    def _create_param_struct(self,dict):
+        RV = {}
+        for key in dict:
+            RV[key] = len(dict[key])
+        return RV
+
     def _param_dict_to_list(self,dict):
         """convert from param dictionary to list"""
         RV = SP.concatenate([val for val in dict.values()])
         return RV
         pass
 
-    def _param_list_to_dict(self,list):
+    def _param_list_to_dict(self,list,param_struct=None):
         """convert from param dictionary to list"""
+        if param_struct is None:
+            param_struct = self._param_struct
         RV = []
         i0= 0
-        for key in self._param_struct.keys():
-            np = self._param_struct[key]
+        for key in param_struct.keys():
+            np = param_struct[key]
             i1 = i0+np
             RV.append((key,list[i0:i1]))
             i0 = i1
