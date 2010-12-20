@@ -30,6 +30,29 @@ import logging as LG
 import copy
 import pdb
 
+
+def param_dict_to_list(dict):
+    """convert from param dictionary to list"""
+    RV = SP.concatenate([val.flatten() for val in dict.values()])
+    return RV
+    pass
+
+def param_list_to_dict(list,param_struct):
+    """convert from param dictionary to list
+    param_struct: structure of parameter array
+    """
+    RV = []
+    i0= 0
+    for key,val in param_struct.iteritems():
+        shape = SP.array(val) 
+        np = shape.prod()
+        i1 = i0+np
+        params = list[i0:i1].reshape(shape)
+        RV.append((key,params))
+        i0 = i1
+    return dict(RV)
+
+
 def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args):
     """
     Optimize hyperparemters of gp gpr starting from gpr
@@ -59,11 +82,13 @@ def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args)
         first index amplitude, last noise, rest:lengthscales
     """
 
-    _param_struct = gpr._create_param_struct(hyperparams)
+    #0. store parameter structure
+    param_struct = dict([(name,hyperparams[name].shape) for name in hyperparams.keys()])
+    
     #1. convert the dictionaries to parameter lists
-    X0 = gpr._param_dict_to_list(hyperparams)
+    X0 = param_dict_to_list(hyperparams)
     if Ifilter is not None:
-        Ifilter_x = SP.array(gpr._param_dict_to_list(Ifilter),dtype='bool')
+        Ifilter_x = SP.array(param_dict_to_list(Ifilter),dtype='bool')
     else:
         Ifilter_x = SP.ones(len(X0),dtype='bool')
 
@@ -71,7 +96,7 @@ def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args)
         x_ = X0
         x_[Ifilter_x] = x
         
-        rv =  gpr.lMl(gpr._param_list_to_dict(x_,_param_struct),**kw_args)
+        rv =  gpr.lMl(param_list_to_dict(x_,param_struct),**kw_args)
         LG.debug("L("+str(x_)+")=="+str(rv))
         if SP.isnan(rv):
             return 1E6
@@ -80,9 +105,9 @@ def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args)
     def df(x):
         x_ = X0
         x_[Ifilter_x] = x
-        rv =  gpr.dlMl(gpr._param_list_to_dict(x_,_param_struct),**kw_args)
+        rv =  gpr.dlMl(param_list_to_dict(x_,param_struct),**kw_args)
         #convert to list
-        rv = gpr._param_dict_to_list(rv)
+        rv = param_dict_to_list(rv)
         LG.debug("dL("+str(x_)+")=="+str(rv))
         if SP.isnan(rv).any():
             In = SP.isnan(rv)
@@ -95,9 +120,8 @@ def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args)
     LG.info("startparameters for opt:"+str(x))
 
     if gradcheck:
-        LG.info("check_grad:" + str(OPT.check_grad(f,df,x)))
+        LG.info("check_grad (pre) (Enter to continue):" + str(OPT.check_grad(f,df,x)))
         raw_input()
-
     
     LG.info("start optimization")
 
@@ -106,13 +130,12 @@ def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args)
     #get optimized parameters out
     opt_x = X0.copy()
     opt_x[Ifilter_x] = opt_RV[0]
-    opt_hyperparams = gpr._param_list_to_dict(opt_x)
+    opt_hyperparams = param_list_to_dict(opt_x,param_struct)
     #get the log marginal likelihood at the optimum:
     opt_lml = opt_RV[1]
 
-
     if gradcheck:
-        LG.info("check_grad:" + str(OPT.check_grad(f,df,opt_RV[0])))
+        LG.info("check_grad (post) (Enter to continue):" + str(OPT.check_grad(f,df,opt_RV[0])))
         raw_input()
 
     LG.info("old parameters:")
@@ -179,7 +202,7 @@ class GP(object):
     # Subtract mean of Data
     # TODO: added d
     __slots__ = ["x","y","n","d","covar", \
-                 "_covar_cache","_param_struct"]
+                 "_covar_cache"]
     
     def __init__(self, covar_func=None, x=None,y=None):
         '''GP(covar_func,Smean=True,x=None,y=None)
@@ -191,9 +214,6 @@ class GP(object):
         # Store the constructor parameters
         self.covar   = covar_func
         self._invalidate_cache()
-        # create a prototype of the parameter dictionary
-        # additional fields will follow
-        self._param_struct = {'covar': self.covar.get_number_of_parameters()}
         pass
 
     
@@ -210,7 +230,8 @@ class GP(object):
 
         x : inputs: [N x D]
 
-        y : targets/outputs [ N x 1]
+        y : targets/outputs [N x d]
+        #note d dimensional data structure only make sense for GPLVM
         """
 
         self.x = x
@@ -258,9 +279,6 @@ class GP(object):
             when necessary.
             
         """
-        if not isinstance(hyperparams,dict):
-            hyperparams = self._param_list_to_dict(hyperparams)
-
         lMl = self._lMl_covar(hyperparams)
         
         #account for prior
@@ -285,9 +303,6 @@ class GP(object):
         """
         # Ideriv : 
         #      indicator which derivativse to calculate (default: all)
-
-        if not isinstance(hyperparams,dict):
-            hyperparams = self._param_list_to_dict(hyperparams)
 
         RV=self._dlMl_covar(hyperparams)
         
@@ -389,38 +404,8 @@ class GP(object):
             dlMl[i] = 0.5*(W*Kd).sum()
         RV = {'covar': dlMl}
         return RV
+
                    
-
-    def _create_param_struct(self,dict):
-        RV = {}
-        for key in dict:
-            RV[key] = len(dict[key])
-        return RV
-
-    def _param_dict_to_list(self,dict):
-        """convert from param dictionary to list"""
-        RV = SP.concatenate([val for val in dict.values()])
-        return RV
-        pass
-
-    def _param_list_to_dict(self,list,param_struct=None):
-        """convert from param dictionary to list"""
-        if param_struct is None:
-            param_struct = self._param_struct
-        RV = []
-        i0= 0
-        for key in param_struct.keys():
-            np = param_struct[key]
-            i1 = i0+np
-            RV.append((key,list[i0:i1]))
-            i0 = i1
-        return dict(RV)
-
-    def _get_number_of_parameters(self):
-        """calculate the number of parameters of the gp object"""
-        #currently: only covariance function has parameters
-        return SP.array([len(val) for val in self._param_dict.values()]).sum()
-
     def _invalidate_cache(self):
         """reset cache structure"""
         self._covar_cache = None
