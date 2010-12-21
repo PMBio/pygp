@@ -5,7 +5,7 @@ This is really not ready for release yet but is used by the gpasso model
 import sys
 sys.path.append('./..')
 
-from pygp.gpr import GP,_solve_chol
+from pygp.gpr import GP,_solve_chol,optHyper
 import scipy as SP
 import numpy.linalg as linalg
 import pdb
@@ -162,7 +162,6 @@ class GPLVM(GP):
 
 if __name__ =='__main__':
     import sys
-    from gplvm_covar import *
     from pygp.covar import linear, noise, combinators
     import pygp.gpr as GPR
     import logging as LG
