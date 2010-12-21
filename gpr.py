@@ -25,7 +25,7 @@ Methods and Classes
 #from pylab import *
 import scipy as SP
 import numpy.linalg as linalg
-import scipy.optimize.optimize as OPT
+import scipy.optimize as OPT
 import logging as LG
 import copy
 import pdb
@@ -53,7 +53,7 @@ def param_list_to_dict(list,param_struct):
     return dict(RV)
 
 
-def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args):
+def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,optimizer=OPT.fmin_l_bfgs_b,**kw_args):
     """
     Optimize hyperparemters of gp gpr starting from gpr
 
@@ -76,6 +76,13 @@ def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args)
         means that only the second entry (which equals 2 in
         this example) of logtheta will be optimized
         and the others remain untouched.
+
+    maxiter: maximum number of function evaluations
+
+    gradcheck: check gradients comparing the analytical gradients to their approximations
+    optimizer: which scipy optimizer to use? (standard lbfgsb)
+
+    ** argument passed onto lMl**
 
     priors : [:py:class:`lnpriors`]
         non-default prior, otherwise assume
@@ -125,7 +132,9 @@ def optHyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,**kw_args)
     
     LG.info("start optimization")
 
-    opt_RV=OPT.fmin_bfgs(f, x, fprime=df, args=(), gtol=1.0000000000000001e-04, norm=SP.inf, epsilon=1.4901161193847656e-08, maxiter=maxiter, full_output=1, disp=(0), retall=0)
+    #general optimizer interface
+    opt_RV=optimizer(f, x, fprime=df, args=(), pgtol=1E-05, epsilon=1E-08, maxfun=maxiter)
+    #opt_RV=OPT.fmin_bfgs(f, x, fprime=df, args=(), gtol=1.0000000000000001e-04, norm=SP.inf, epsilon=1.4901161193847656e-08, maxiter=maxiter, full_output=1, disp=(0), retall=0)
 
     #get optimized parameters out
     opt_x = X0.copy()
@@ -328,9 +337,7 @@ class GP(object):
             #update cache
             K = self.covar.K(hyperparams['covar'],self.x)
             L = linalg.cholesky(K)               
-            #alpha = _solve_chol(L.transpose(),self.y)[:,SP.newaxis]
             alpha = _solve_chol(L.T,self.y)
-            #pdb.set_trace()
             self._covar_cache = {'K': K,'L':L,'alpha':alpha,'hyperparams':copy.deepcopy(hyperparams)}
         return self._covar_cache 
        

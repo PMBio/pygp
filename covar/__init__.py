@@ -224,8 +224,14 @@ class CF_Kd_dx(CovarianceFunction):
     See :py:class:`covar.CovarianceFunction
     """
     
-    def Kd_dx(self,logtheta,x):
+    def Kd_dx(self,logtheta,x,d):
         """
+        Matrix derivatives of the self covariance with respect to dimension d
+        RV = d/dx_n,d K(X,X)_i,j = k(x_i,x_j)
+        i.e. RV[n,:] = d/dx_n,d k(x_n,:)
+        Note: all covariance functions always return an nXn matrix. If d is not in active dimensions the matrix is zeros
+
+        #TODO: update description properly
         Partial derivative of covariance matrix K with respect
         to training input x.
 

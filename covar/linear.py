@@ -40,8 +40,9 @@ class LinearCFISO(CF_Kd_dx):
 
     def Kd_dx(self,logtheta,x1,d):
         RV = SP.zeros([x1.shape[0],x1.shape[0]])
-        #only operate on active dimensions
-        x1 = self._filter_x(x1)
+        if d not in self.dimension_indices:
+            return RV
+        #no filtering here, as we have dimension argument anyway
         #get going:
         RV[:,:] = 2*x1[:,d]
         return RV
