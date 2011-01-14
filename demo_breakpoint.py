@@ -10,9 +10,7 @@ This Example shows the Squared Exponential CF
 
 import os
 import sys
-sys.path.append('./../../')
 sys.path.append('./../')
-sys.path.append('./')
 
 import cPickle
 
@@ -24,12 +22,14 @@ import pylab as PL
 import scipy as SP
 import numpy.random as random
 
-from covar import se, noise, combinators, breakpoint
-import gpr as GPR
+from pygp.covar import se, noise, combinators, breakpoint
+import pygp.gpr as GPR
 
 import sys
 import lnpriors
 import logging as LG
+
+import copy
 
 LG.basicConfig(level=LG.INFO)
 
@@ -83,15 +83,15 @@ for name, probe in data.iteritems():
     C = probe['C']
     T = probe['T']
 
-    x1 = C[0].reshape(-1,1)
+    x1 = C[0][0].reshape(-1,1)
     x1_rep = SP.repeat(0,len(x1)).reshape(-1,1)
     x1 = SP.concatenate((x1,x1_rep),axis=1)
-    x2 = T[0].reshape(-1,1)
+    x2 = T[0][0].reshape(-1,1)
     x2_rep = SP.repeat(1,len(x2)).reshape(-1,1)
     x2 = SP.concatenate((x2,x2_rep),axis=1)
 
     x = SP.concatenate((x1,x2),axis=0)
-    y = SP.concatenate((C[1],T[1]),axis=0).reshape(-1,1)
+    y = SP.concatenate((C[1][0],T[1][0]),axis=0).reshape(-1,1)
     
     #predictions:
     X = SP.linspace(2,x2.max(),100)[:,SP.newaxis]
@@ -143,39 +143,56 @@ for name, probe in data.iteritems():
     #[opt_model_params,opt_lml]=GPR.optHyper(gpr_BP,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)
 
     import gpr_plot
+    first = True
+    norm=PL.Normalize()
 
     break_lml = []
     plots = SP.int_(SP.sqrt(24)+1)
-    for i,BP in enumerate(x[12:13,0]):
-        #PL.subplot(2,1,i+1)
+    for i,BP in enumerate(x[:24,0]):
+        PL.subplot(plots,plots,i+1)
         
         hyperparams['covar'][3] = BP
         [opt_model_params,opt_lml]=GPR.optHyper(gpr_BP,hyperparams,priors=priors,gradcheck=False,Ifilter=Ifilter)
         break_lml.append(opt_lml)
 
-        PL.plot(C[0].transpose(),C[1].transpose(),'+b',markersize=10)
-        PL.plot(T[0].transpose(),T[1].transpose(),'+r',markersize=10)
+        # PL.plot(C[0].transpose(),C[1].transpose(),'+b',markersize=10)
+        # PL.plot(T[0].transpose(),T[1].transpose(),'+r',markersize=10)
 
-        [M,S] = gpr_BP.predict(opt_model_params,X)
-        gpr_plot.plot_sausage(X,M,SP.sqrt(S),format_fill={'alpha':0.1,'facecolor':'k'})
+        # [M,S] = gpr_BP.predict(opt_model_params,X)
 
-        gpr_BP_1 = GPR.GP(CovFun,x=x,y=y)
-        [M_1,S_1] = gpr_BP_1.predict(opt_model_params,SP.concatenate((X,X_g1),axis=1))
-        gpr_plot.plot_sausage(X,M_1,SP.sqrt(S_1),format_fill={'alpha':0.2,'facecolor':'b'})
+        # gpr_plot.plot_sausage(X,M,SP.sqrt(S),format_fill={'alpha':0.1,'facecolor':'k'})
 
-        x_filter = (x2<BP)[:,0]
-        gpr_BP_1_st = GPR.GP(combinators.SumCF((SECF,noiseCF),
-                                               dimension_indices=[0]),
-                             x=SP.concatenate((x1,x2[x_filter]),axis=0),
-                             y=SP.concatenate((C[1].reshape(-1),
-                                               T[1].reshape(-1)[x_filter]),axis=0).reshape(-1,1))
-        priors_st = {'covar' : SP.array(covar_priors)[[0,1,2]]}
-        Ifilter_st = {'covar' : SP.array([1,1,1],dtype='int')}
-        [opt_model_params,opt_lml]=GPR.optHyper(gpr_BP_1_st,hyperparams,priors=priors_st,
-                                                gradcheck=False,Ifilter=Ifilter_st)
-        [M_1,S_1] = gpr_BP_1_st.predict(opt_model_params,X)
-        gpr_plot.plot_sausage(X,M_1,SP.sqrt(S_1),format_fill={'alpha':0.2,'facecolor':'g'})
+        # gpr_BP_1 = GPR.GP(CovFun,x=x,y=y)
+        # [M_1,S_1] = gpr_BP_1.predict(opt_model_params,SP.concatenate((X,X_g1),axis=1))
+        # gpr_plot.plot_sausage(X,M_1,SP.sqrt(S_1),format_fill={'alpha':0.2,'facecolor':'b'})
 
+        # x_filter = (x2<BP)[:,0]
+        # gpr_BP_1_st = GPR.GP(combinators.SumCF((SECF,noiseCF),
+        #                                        dimension_indices=[0]),
+        #                      x=SP.concatenate((x1,x2[x_filter]),axis=0),
+        #                      y=SP.concatenate((C[1].reshape(-1),
+        #                                        T[1].reshape(-1)[x_filter]),axis=0).reshape(-1,1))
+        # priors_st = {'covar' : SP.array(covar_priors)[[0,1,2]]}
+        # Ifilter_st = {'covar' : SP.array([1,1,1],dtype='int')}
+        # hyperparams_st = copy.deepcopy(hyperparams)
+        # hyperparams_st['covar'] = hyperparams['covar'][[0,1,2]]
+        # [opt_model_params_st,opt_lml_st]=GPR.optHyper(gpr_BP_1_st,hyperparams_st,priors=priors_st,
+        #                                         gradcheck=False,Ifilter=Ifilter_st)
+        # [M_1,S_1] = gpr_BP_1_st.predict(opt_model_params_st,X)
+        # gpr_plot.plot_sausage(X,M_1,SP.sqrt(S_1),format_fill={'alpha':0.2,'facecolor':'g'})
+
+        
+        # PL.figure()
+        if(first):
+            first=False
+            K = CovFun.K(opt_model_params['covar'], x)
+            norm.autoscale(2*K)
+            PL.pcolor(K, norm=norm)
+        else:
+            PL.pcolor(CovFun.K(opt_model_params['covar'], x), norm=norm)
+
+        PL.title("BP = %i" % (BP))
+        
         #gpr_BP_2 = GPR.GP(CovFun,x=x,y=y)
         #[M_2,S_2] = gpr_BP_2.predict(opt_model_params,SP.concatenate((X,X_g2),axis=1))
         #gpr_plot.plot_sausage(X,M_2,SP.sqrt(S_2),format_fill={'alpha':0.2,'facecolor':'r'})

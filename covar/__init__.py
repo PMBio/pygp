@@ -153,7 +153,7 @@ class CovarianceFunction(object):
         
         *Default:*: No hyperparameters; Returns an empty array.
         """
-        return array([])
+        return {'covar':array([])}
 
     def get_n_dimensions(self):
         """

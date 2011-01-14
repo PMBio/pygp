@@ -10,7 +10,6 @@ This Example shows the Squared Exponential CF
 
 import sys
 sys.path.append('./../')
-sys.path.append('./')
 
 #import sys
 #sys.path.append('/kyb/agbs/stegle/work/ibg/lib')
@@ -20,11 +19,11 @@ import pylab as PL
 import scipy as SP
 import numpy.random as random
 
-from covar import se, noise, combinators
-import gpr as GPR
+from pygp.covar import se, noise, combinators
+import pygp.gpr as GPR
+import pygp.lnpriors as lnpriors
 
 import sys
-import lnpriors
 import logging as LG
 
 LG.basicConfig(level=LG.INFO)

@@ -6,11 +6,11 @@ Detects breakpoint T where two timeseries diverge.
 """
 
 import sys
-sys.path.append("../")
+sys.path.append("./../../")
 import scipy as SP
 
 from pygp.covar import CovarianceFunction
-from pygp.combinators import ProductCF
+from pygp.covar.combinators import ProductCF
 
 import copy
 

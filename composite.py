@@ -5,10 +5,10 @@ Grouping GP regression classes
 Module for composite Gaussian processes models that combine multiple GPs into one model
 """
 
-from gpr import *
+from gpr import GP
+import scipy as SP
 
-
-class GroupGP(object):
+class GroupGP(GP):
     __slots__ = ["N","GPs"]
 
     """
@@ -21,7 +21,10 @@ class GroupGP(object):
         Array, holding al GP classes to be optimized together
     """
 
-    def __init__(self,GPs=None):
+    def __init__(self,GPs=None,*args,**kw_args):
+        # create a prototype of the parameter dictionary
+        # additional fields will follow
+        self._invalidate_cache()
         if GPs is None:
             print "you need to specify a list of Gaussian Processes to bundle"
             return None
@@ -41,14 +44,34 @@ class GroupGP(object):
     
         """
         #lMl(logtehtas,lml=Ture,dlml=true,clml=True,cdlml=True,priors=None)
-        #just call them all and add up:
-        R = []
         #calculate them for all N
         R = 0
         for n in range(self.N):
             L = self.GPs[n].lMl(hyperparams,**lml_kwargs)
-            R = R+ L
+            R = R+L
         return R
+
+    def dlMl(self,hyperparams,priors=None,**lml_kwargs):
+        """
+        Returns the log Marginal likelihood for the given logtheta.
+
+        **Parameters:**
+
+        hyperparams : {'covar':CF_hyperparameters, ...}
+            The hyperparameters which shall be optimized and derived
+
+        priors : [:py:class:`lnpriors`]
+            The hyperparameters which shall be optimized and derived
+
+        """
+        #just call them all and add up:
+        R = 0
+        #calculate them for all N
+        for n in range(self.N):
+            L = self.GPs[n].dlMl(hyperparams,**lml_kwargs)
+            for key in L.keys():
+                R += (L[key])
+        return {'covar':R}
 
     def setData(self,x,y):
         """
