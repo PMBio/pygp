@@ -78,7 +78,7 @@ class GroupGP(GP):
         set inputs x and outputs y with **Parameters:**
 
         x : [double]
-            trainging input
+            training input
 
         y : [double]
             training targets
@@ -94,5 +94,37 @@ class GroupGP(GP):
             xn = x[n]
             yn = y[n]
             self.GPs[n].setData(xn,yn)
+
+    def getData(self):
+        data = []
+        for n in range(self.N):
+            data.append(self.GPs[n].getData())
+        return data
             
-        
+    def predict(self,*args,**kwargs):
+        '''
+        Predict mean and variance for each GP and given **Parameters:**
+
+        hyperparams : {}
+            hyperparameters in logSpace
+
+        xstar    : [double]
+            prediction inputs
+
+        var      : boolean
+            return predicted variance
+            
+        output   : output dimension for prediction (0)
+
+        **returns:** [[1st_predictions_mean, 2nd, ..., nth_predictions_mean],
+                      [1st_predictions_var, 2nd, ..., nth_predictions_var]]
+            See :py:class:`gpr.GP` for individual prediction outputs.
+
+        '''
+        means = []
+        var = []
+        for n in range(self.N):
+            means.append(self.GPs[n].predict(*args,**kwargs)[0])
+            var.append(self.GPs[n].predict(*args,**kwargs)[1])
+            
+        return SP.array([means,var])

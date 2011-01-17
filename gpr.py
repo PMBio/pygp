@@ -354,6 +354,7 @@ class GP(object):
 
         var      : boolean
             return predicted variance
+            
         output   : output dimension for prediction (0)
         '''
         KV = self.getCovariances(hyperparams)

@@ -8,7 +8,7 @@ or :py:class:`covar.combinators.ProductCF` with the :py:class:`covar.noise.Noise
 """
 
 import sys
-sys.path.append("../")
+sys.path.append("./../../")
 import scipy as SP
 
 # import super class CovarianceFunction

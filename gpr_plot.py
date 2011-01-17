@@ -73,7 +73,7 @@ def plot_training_data(x,y,
                                         frac=.3))
 
 
-    PL.plot(x_shift,y,
+    return PL.plot(x_shift,y,
             **format_data)
 
 def plot_sausage(X,mean,std,format_fill={'alpha':0.2,'facecolor':'k'},format_line={'alpha':1, 'color':'g'}):
@@ -82,7 +82,10 @@ def plot_sausage(X,mean,std,format_fill={'alpha':0.2,'facecolor':'k'},format_lin
 
     .. image:: ../images/sausage.png
       :height: 8cm
-      
+
+    **returns:** : [fill_plot, line_plot]
+        The fill and the line of the sausage plot. (i.e. the green line and gray fill of the example above)
+        
     **Parameters:**
 
     X : [double]
@@ -104,5 +107,5 @@ def plot_sausage(X,mean,std,format_fill={'alpha':0.2,'facecolor':'k'},format_lin
     Yp = S.concatenate(((mean+2*std),(mean-2*std)[::-1]))
     hf=PL.fill(Xp,Yp,**format_fill)
     hp=PL.plot(X,mean,**format_line)
-    return hp
+    return [hf,hp]
     
