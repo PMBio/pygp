@@ -8,6 +8,7 @@ Tools to plot gpr output.
 # import python / numpy:
 import pylab as PL
 import scipy as S
+import matplotlib
 
 def plot_training_data(x,y,
                        shift=None,
@@ -109,3 +110,25 @@ def plot_sausage(X,mean,std,format_fill={'alpha':0.2,'facecolor':'k'},format_lin
     hp=PL.plot(X,mean,**format_line)
     return [hf,hp]
     
+class CrossRect(matplotlib.patches.Rectangle):
+    def __init__(self, *args, **kwargs):
+        matplotlib.patches.Rectangle.__init__(self, *args, **kwargs)
+        
+        #self.ax = ax
+
+    # def get_verts(self):
+    #     rectverts = matplotlib.patches.Rectangle.get_verts(self)
+        
+    #     return verts
+
+    def get_path(self, *args, **kwargs):
+        old_path = matplotlib.patches.Rectangle.get_path(self)
+        verts = []
+        codes = []
+        for vert,code in old_path.iter_segments():
+            verts.append(vert)
+            codes.append(code)
+        verts.append([1,1])
+        codes.append(old_path.LINETO)
+        new_path = matplotlib.artist.Path(verts,codes) 
+        return new_path
