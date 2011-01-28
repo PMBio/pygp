@@ -19,15 +19,18 @@ For example to use the squared exponential CF with noise::
 
 """
 
+try:
+    __import__('pkg_resources').declare_namespace(__name__)
+except ImportError:
+    from pkgutil import extend_path
+    __path__ = extend_path(__path__, __name__)
+
+# import scipy:
+import scipy as SP
+import sq_dist
+import logging as LG
 
 __all__ = ["se","sq_dist","combinators","noise","linear"]
-
-# import python / numpy:
-import scipy as SP
-
-import sq_dist
-
-import logging as LG
 
 class CovarianceFunction(object):
     """

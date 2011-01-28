@@ -10,3 +10,5 @@ gpr_ep.py GP regression with EP likelihood models
 
 covar: covariance functions
 """
+
+__import__('pkg_resources').declare_namespace(__name__)

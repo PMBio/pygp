@@ -7,13 +7,12 @@ These SEs do not model noise, so combine them by a :py:class:`covar.combinators.
 or :py:class:`covar.combinators.ProductCF` with the :py:class:`covar.noise.NoiseISOCF`, if you want noise to be modelled by this GP.
 """
 
-import sys
-sys.path.append("./../../")
 import scipy as SP
 
 # import super class CovarianceFunction
 #from covar import CovarianceFunction
 # import super class CF_Kd_dx
+
 from pygp.covar import CF_Kd_dx
 
 class SEARDCF(CF_Kd_dx):
