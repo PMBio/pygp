@@ -1,15 +1,12 @@
 """
 Class for Gaussian process classification using EP
+==================================================
+
 """
 
-
-
-from pygp.gprEP import *
 import scipy as S
-import EPLikelihood as EPL
-
-
-
+import pygp.likelihood.EPLikelihood as EPL
+import pygp.gp.gpEP.GPEP as GPEP
 
 class GPCEP(GPEP):
     __slots__ = []
@@ -18,7 +15,7 @@ class GPCEP(GPEP):
     def __init__(self,*argin,**kwargin):
         likelihood = EPL.ProbitLikelihood()
         #call constructor, pass on likelihood function and switch off subtraction of mean
-        GPEP.__init__(self,Smean=False,likelihood=likelihood,*argin,**kwargin)
+        super(GPCEP, self).__init__(Smean=False,likelihood=likelihood,*argin,**kwargin)
         self.Nep = 3
         
 

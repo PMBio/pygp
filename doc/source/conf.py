@@ -12,7 +12,7 @@
 # serve to show the default.
 
 import sys, os
-sys.path.insert(0, os.path.abspath('./../../'))
+sys.path.insert(0, os.path.abspath('../../pygp/'))
 #sys.path.insert(0, os.path.abspath('/kyb/agbs/maxz/Documents/MPG/GP/lib/'))
 
 # If extensions (or modules to document with autodoc) are in another directory,

@@ -5,12 +5,10 @@ Grouping GP regression classes
 Module for composite Gaussian processes models that combine multiple GPs into one model
 """
 
-from gpr import GP
+from pygp.gp.basic_gp import GP
 import scipy as SP
 
 class GroupGP(GP):
-    __slots__ = ["N","GPs"]
-
     """
     Class to bundle one or more GPs for joint
     optimization of hyperparameters.
@@ -20,6 +18,8 @@ class GroupGP(GP):
     GPs : [:py:class:`gpr.GP`]
         Array, holding al GP classes to be optimized together
     """
+    __slots__ = ["N","GPs"]
+
 
     def __init__(self,GPs=None,*args,**kw_args):
         # create a prototype of the parameter dictionary
@@ -60,7 +60,7 @@ class GroupGP(GP):
         hyperparams : {'covar':CF_hyperparameters, ...}
             The hyperparameters which shall be optimized and derived
 
-        priors : [:py:class:`lnpriors`]
+        priors : [:py:class:`pygp.priors`]
             The hyperparameters which shall be optimized and derived
 
         """
@@ -103,23 +103,26 @@ class GroupGP(GP):
             
     def predict(self,*args,**kwargs):
         '''
-        Predict mean and variance for each GP and given **Parameters:**
-
+        Predict mean and variance for each GP and given Parameters.
+        
+        **Parameters:**
+        
         hyperparams : {}
-            hyperparameters in logSpace
-
+            hyperparameters in logSpace.
         xstar    : [double]
-            prediction inputs
-
+            prediction inputs.
         var      : boolean
-            return predicted variance
+            return predicted variance.
+        output   : int
+            output dimension for prediction (0)
+
+        **Return:**
+        Array as follows::
+    
+            [[1st_predictions_mean, 2nd, ..., nth_predictions_mean],
+             [1st_predictions_var, 2nd, ..., nth_predictions_var]]
             
-        output   : output dimension for prediction (0)
-
-        **returns:** [[1st_predictions_mean, 2nd, ..., nth_predictions_mean],
-                      [1st_predictions_var, 2nd, ..., nth_predictions_var]]
-            See :py:class:`gpr.GP` for individual prediction outputs.
-
+        See :py:class:`pygp.gp.basic_gp.GP` for individual prediction outputs.
         '''
         means = []
         var = []

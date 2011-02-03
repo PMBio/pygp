@@ -1,15 +1,21 @@
-"""simple class for a linear covariance function
-K = \sum_d alpha_d^2 * x_d *x_d^{\t}
+"""
+Classes for linear covariance function
+======================================
+
+::
+    
+    K = \sum_d alpha_d^2 * x_d *x_d^{\t}
+
 """
 
 import scipy as SP
-import pdb
 
 from pygp.covar import CovarianceFunction,CF_Kd_dx
 
 
 class LinearCFISO(CF_Kd_dx):
-    """isotropic linear covariance function with a single hyperparameter
+    """
+    isotropic linear covariance function with a single hyperparameter
     """
 
     def __init__(self,*args,**kw_args):

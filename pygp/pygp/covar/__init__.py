@@ -6,7 +6,7 @@ We implemented several different covariance functions (CFs) you can work with. T
 
 For example to use the squared exponential CF with noise::
 
-    from covar import se, noise, combinators
+    from pygp.covar import se, noise, combinators
     
     #Feature dimension of the covariance: 
     dimensions = 1
@@ -135,7 +135,7 @@ class CovarianceFunction(object):
         """
         LG.critical("implement Kd")
         print "please implement Kd"
-    	pass
+        pass
 
     def get_hyperparameter_names(self):
         """
@@ -156,7 +156,7 @@ class CovarianceFunction(object):
         
         *Default:*: No hyperparameters; Returns an empty array.
         """
-        return {'covar':array([])}
+        return {'covar':SP.array([])}
 
     def get_n_dimensions(self):
         """

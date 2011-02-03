@@ -18,7 +18,7 @@ class GP(object):
 
     **Parameters:**
 
-    covar_func : :py:class:`covar`
+    covar_func : :py:class:`pygp.covar`
         The covariance function, which calculates the covariance
         of the outputs
 
@@ -118,7 +118,7 @@ class GP(object):
         hyperparams : {'covar':CF_hyperparameters, ... }
             The hyperparameters for the log marginal likelihood.
 
-        priors : [:py:class:`lnpriors`]
+        priors : [:py:class:`pygp.priors`]
             the prior beliefs for the hyperparameter values
 
         Ifilter : [bool]
@@ -153,7 +153,7 @@ class GP(object):
         hyperparams : {'covar':CF_hyperparameters, ...}
             The hyperparameters which shall be optimized and derived
 
-        priors : [:py:pacakge:`pygp.priors`]
+        priors : [:py:class:`pygp.priors`]
             The hyperparameters which shall be optimized and derived
 
         """
@@ -226,7 +226,7 @@ class GP(object):
         
         try:   
             KV = self.getCovariances(hyperparams)
-        except linalg.LinAlgError,e:
+        except linalg.LinAlgError:
             LG.error("exception caught (%s)" % (str(hyperparams)))
             return 1E6
 
@@ -236,12 +236,11 @@ class GP(object):
 
 
     def _dlMl_covar(self,hyperparams):
-        RV = {}
         #currently only support derivatives of covar params
         logtheta = hyperparams['covar']
         try:   
             KV = self.getCovariances(hyperparams)
-        except linalg.LinAlgError,e:
+        except linalg.LinAlgError:
             LG.error("exception caught (%s)" % (str(hyperparams)))
             return {'covar':SP.zeros(len(logtheta))}
         logtheta = hyperparams['covar']

@@ -8,9 +8,8 @@ Detects breakpoint T where two timeseries diverge.
 import scipy as SP
 
 from pygp.covar import CovarianceFunction
-from pygp.covar.combinators import ProductCF
 
-import copy
+import logging as LG
 
 class DivergeCF(CovarianceFunction):
 
@@ -45,13 +44,13 @@ class DivergeCF(CovarianceFunction):
     """
 
     def __init__(self,*args,**kw_args):
-        CovarianceFunction.__init__(self,*args,**kw_args)
+        super(DivergeCF, self).__init__(*args,**kw_args)
         #2. get number of params
         # self.replicate_indices = replicate_indices
         #self.group_indices = group_indices
         #self.n_replicates = len(SP.unique(replicate_indices))
         self.n_hyperparameters = 1
-        assert self.n_hyperparameters == 1, "Not implemented yet for %i groups" % (n_hyperparameters)
+        assert self.n_hyperparameters == 1, "Not implemented yet for %i groups" % (self.n_hyperparameters)
         
     def get_hyperparameter_names(self):
         """
@@ -139,7 +138,7 @@ class DivergeCF(CovarianceFunction):
         dataset (optional).
         """
         #start with data independent default
-        rv = ones(self.n_hyperparameters)
+        rv = SP.ones(self.n_hyperparameters)
         #start with a smallish variance
         rv[-1] = 0.1
         if y is not None:
@@ -147,7 +146,7 @@ class DivergeCF(CovarianceFunction):
             rv[0] = (y.max()-y.min())/2
         if x is not None:
             rv[1:-1] = (x.max(axis=0)-x.min(axis=0))/4
-        return log(rv)
+        return SP.log(rv)
     
     def get_Iexp(self, logtheta):
         """

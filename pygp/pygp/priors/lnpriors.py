@@ -5,7 +5,7 @@ Hyperpriors for log likelihood calculation
 
 import scipy as SP
 import scipy.special as SPs
-
+import pylab as PL
 
 def lngammapdf(x,params):
     """
@@ -59,14 +59,14 @@ def lnzeropdf(x,params):
     return [0,0]
 
 def plotPrior(X,prior):
-    Y = array(prior[0](X,prior[1]))
-    hold(True)
-    plot(X,exp(Y[0,:]))
+    Y = SP.array(prior[0](X,prior[1]))
+    PL.hold(True)
+    PL.plot(X,SP.exp(Y[0,:]))
     #plot(X,(Y[0,:]))
     #plot(X,Y[1,:],'r-')
-    show()
+    PL.show()
     
 if __name__ == "__main__":
     prior = [lngammapdf,[2,0.5]]
-    X = arange(0.01,10,0.1)
+    X = SP.arange(0.01,10,0.1)
     plotPrior(X,prior)

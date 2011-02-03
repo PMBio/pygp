@@ -8,6 +8,7 @@ or :py:class:`covar.combinators.ProductCF` with the :py:class:`covar.noise.Noise
 """
 
 import scipy as SP
+import logging as LG
 
 # import super class CovarianceFunction
 #from covar import CovarianceFunction
@@ -139,7 +140,7 @@ class SEARDCF(CF_Kd_dx):
         dataset (optional).
         """
         #start with data independent default
-        rv = ones(self.n_hyperparameters)
+        rv = SP.ones(self.n_hyperparameters)
         #start with a smallish variance
         rv[-1] = 0.1
         if y is not None:
@@ -147,5 +148,5 @@ class SEARDCF(CF_Kd_dx):
             rv[0] = (y.max()-y.min())/2
         if x is not None:
             rv[1:-1] = (x.max(axis=0)-x.min(axis=0))/4
-        return log(rv)
+        return SP.log(rv)
 

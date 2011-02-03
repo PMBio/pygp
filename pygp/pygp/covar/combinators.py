@@ -6,14 +6,12 @@ Each combinator is a covariance function (CF) itself. It combines one or several
 
 """
 
+from pygp.covar import CF_Kd_dx, CovarianceFunction
+import scipy as SP
 import sys
 sys.path.append('../')
 
-from pygp.covar import CovarianceFunction
-from pygp.covar import CF_Kd_dx
 
-import scipy as SP
-import pdb
 
 
 
@@ -32,7 +30,7 @@ class SumCF(CF_Kd_dx):
     def __init__(self,covars,*args,**kw_args):
         #1. check that all covars are covariance functions
         #2. get number of params
-        CovarianceFunction.__init__(self,*args,**kw_args)
+        super(SumCF, self).__init__()
         self.n_params_list = []
         self.covars = []
         self.covars_logtheta_I = []
@@ -47,8 +45,10 @@ class SumCF(CF_Kd_dx):
             Nparam = covar.get_number_of_parameters()
             self.n_params_list.append(Nparam)
             self.covars_logtheta_I.append(SP.arange(i,i+covar.get_number_of_parameters()))
-            for ip in xrange(Nparam):
-                self.covars_covar_I.append(nc)
+            
+            self.covars_covar_I.extend(SP.repeat(nc, Nparam))
+#            for ip in xrange(Nparam):
+#                self.covars_covar_I.append(nc)
             i+=covar.get_number_of_parameters()
             
         self.n_params_list = SP.array(self.n_params_list)
@@ -134,7 +134,7 @@ class ProductCF(CovarianceFunction):
     #    __slots__=["n_params_list","covars","covars_logtheta_I"]
     
     def __init__(self,covars,*args,**kw_args):
-        CovarianceFunction.__init__(self,*args,**kw_args)
+        super(ProductCF, self).__init__()
         self.n_params_list = []
         self.covars = []
         self.covars_logtheta_I = []
@@ -149,8 +149,10 @@ class ProductCF(CovarianceFunction):
             Nparam = covar.get_number_of_parameters()
             self.n_params_list.append(Nparam)
             self.covars_logtheta_I.append(SP.arange(i,i+covar.get_number_of_parameters()))
-            for ip in xrange(Nparam):
-                self.covars_covar_I.append(nc)
+            self.covars_covar_I.extend(SP.repeat(nc, Nparam))
+#            for ip in xrange(Nparam):
+#                self.covars_covar_I.append(nc)
+            
             i+=covar.get_number_of_parameters()
             
         self.n_params_list = SP.array(self.n_params_list)
@@ -264,7 +266,7 @@ class ShiftCF(CovarianceFunction):
 #    __slots__=["n_params_list","covars","covars_logtheta_I"]
 
     def __init__(self,covar,replicate_indices,*args,**kw_args):
-        CovarianceFunction.__init__(self,*args,**kw_args)
+        super(ShiftCF, self).__init__()
         #1. check that covar is covariance function
         assert isinstance(covar,CF_Kd_dx),'ShiftCF: ShiftCF is constructed from a CF_Kd_dx, which provides the partial derivative for the covariance matrix K with respect to input X'
         #2. get number of params

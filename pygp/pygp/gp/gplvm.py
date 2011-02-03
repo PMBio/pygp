@@ -5,13 +5,11 @@ This is really not ready for release yet but is used by the gpasso model
 import sys
 sys.path.append('./..')
 
-from pygp.gpr import GP,_solve_chol,optHyper
+from pygp.gp.basic_gp import GP
+from pygp.optimize.optimize import opt_hyper
+
 import scipy as SP
 import numpy.linalg as linalg
-import pdb
-import copy
-
-
 
 def PCA(Y,components):
     """run PCA, retrieving the first (components) principle components
@@ -161,9 +159,8 @@ class GPLVM(GP):
         
 
 if __name__ =='__main__':
-    import sys
     from pygp.covar import linear, noise, combinators
-    import pygp.gpr as GPR
+    
     import logging as LG
     LG.basicConfig(level=LG.DEBUG)
     
@@ -195,7 +192,7 @@ if __name__ =='__main__':
     #X = SP.random.randn(N,K)
     gplvm = GPLVM(covar_func=covariance,x=X,y=Y)
 
-    gpr = GPR.GP(covar_func=covariance,x=X,y=Y[:,0])
+    gpr = GP(covar_func=covariance,x=X,y=Y[:,0])
     
     #construct hyperparams
     covar = SP.log([1.0,0.1])
@@ -212,7 +209,7 @@ if __name__ =='__main__':
     
     #evaluate log marginal likelihood
     lml = gplvm.lMl(hyperparams=hyperparams)
-    [opt_model_params,opt_lml]=GPR.optHyper(gplvm,hyperparams,gradcheck=False)
+    [opt_model_params,opt_lml]= opt_hyper(gplvm,hyperparams,gradcheck=False)
     Xo = opt_model_params['x']
     
 

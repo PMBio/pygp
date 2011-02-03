@@ -2,7 +2,7 @@
 Noise covariance function
 -------------------------
 
-adding Gaussian observation noise to an arbitrary CovarianceFunction chosen.
+adding Gaussian observation noise to given CovarianceFunction.
 """
 
 import sys
@@ -16,7 +16,7 @@ from pygp.covar import CovarianceFunction,CF_Kd_dx
 
 
 class NoiseReplicateCF(CovarianceFunction):
-    """Covariance function for INTegrated Gaussian observation noise"""
+    """Covariance function for replicate-wise Gaussian observation noise"""
 
     def __init__(self, replicate_indices,*args,**kw_args):
         CovarianceFunction.__init__(self,*args,**kw_args)

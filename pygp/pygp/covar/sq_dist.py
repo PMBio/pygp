@@ -1,4 +1,4 @@
-import numpy as N
+import numpy as NP
 
 def Bdist(*args):
     '''binary distance matrix:
@@ -10,19 +10,19 @@ def Bdist(*args):
         #return true
         X  = args[0]
         Y  = args[0]
-        #X = N.matrix(args[0])
-        #Y = N.matrix(args[0])
+        #X = NP.matrix(args[0])
+        #Y = NP.matrix(args[0])
     elif(len(args)>=2):
         X  = args[0]
         Y  = args[1]
-        #X = N.matrix(args[0])
-        #Y = N.matrix(args[1])
+        #X = NP.matrix(args[0])
+        #Y = NP.matrix(args[1])
         
         
-    rv = N.zeros((len(X),len(Y)),'double')
+    #rv = NP.zeros((len(X),len(Y)),'double')
     
-    A = N.repmat(X,1,len(Y))
-    B = N.repmat(Y.T,len(X),1)
+    A = NP.repeat(X,1,len(Y))
+    B = NP.repeat(Y.T,len(X),1)
     
     rv = (A&B)
     
@@ -70,6 +70,6 @@ def sq_dist(*args):
         
     
 if __name__ == "__main__":
-    X = N.array([[1,2],[5,6]],dtype='double')
-    Y = N.array([[1,2],[8,7],[0,0]],dtype='double')
+    X = NP.array([[1,2],[5,6]],dtype='double')
+    Y = NP.array([[1,2],[8,7],[0,0]],dtype='double')
     print sq_dist(X,Y)
