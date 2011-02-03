@@ -8,23 +8,28 @@ This Example shows the Squared Exponential CF
 (using :py:class:`covar.combinators.sumCF`).
 """
 
-try:
-    __import__('pkg_resources').declare_namespace(__name__)
-except ImportError:
-    from pkgutil import extend_path
-    __path__ = extend_path(__path__, __name__)
+#try:
+#    __import__('pkg_resources').declare_namespace(__name__)
+#except ImportError:
+#    from pkgutil import extend_path
+#    __path__ = extend_path(__path__, __name__)
 
+import logging as LG
+import numpy.random as random
 import pdb
+
+from pygp.gp.basic_gp import GP
+from pygp.covar import se, noise, combinators
+
+import pygp.optimize.optimize as opt
+import pygp.plot.gpr_plot as gpr_plot
+import pygp.priors.lnpriors as lnpriors
+
 import pylab as PL
 import scipy as SP
 
-import numpy.random as random
 
-from pygp.covar import se, noise, combinators
-import pygp.optimize as opt
-import pygp.priors.lnpriors as lnpriors
 
-import logging as LG
 
 LG.basicConfig(level=LG.INFO)
 
@@ -72,13 +77,12 @@ covar_priors.append([lnpriors.lngammapdf,[1,1]])
 priors = {'covar':covar_priors}
 Ifilter = {'covar': SP.array([1,1,1],dtype='int')}
 
-gpr = GPR.GP(covar,x=x,y=y)
-[opt_model_params,opt_lml]=opt.optHyper(gpr,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)
+gp = GP(covar,x=x,y=y)
+[opt_model_params,opt_lml]=opt.opt_hyper(gp,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)
 
 #predict
-[M,S] = gpr.predict(opt_model_params,X)
+[M,S] = gp.predict(opt_model_params,X)
 
-import pygp.plot.gpr_plot as gpr_plot
 gpr_plot.plot_sausage(X,M,SP.sqrt(S))
 gpr_plot.plot_training_data(x,y)
-#show()
+PL.show()

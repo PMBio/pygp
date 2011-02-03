@@ -8,25 +8,17 @@ This Example shows the Squared Exponential CF
 (using :py:class:`covar.combinators.SumCF`).
 """
 
-import sys
-sys.path.append('./../')
-sys.path.append('./')
+from pygp.covar import se, noise, combinators
+from pygp.gp.basic_gp import GP
+from pygp.priors import lnpriors
+from pygp.optimize.optimize import opt_hyper
+from pygp.plot import gpr_plot
 
-#import sys
-#sys.path.append('/kyb/agbs/stegle/work/ibg/lib')
-
+import logging as LG
+import numpy.random as random
 import pdb
 import pylab as PL
 import scipy as SP
-import numpy.random as random
-
-
-from covar import se, noise, combinators
-import gpr as GPR
-
-import sys
-import lnpriors
-import logging as LG
 
 LG.basicConfig(level=LG.INFO)
 
@@ -95,14 +87,13 @@ for i in range(n_noises):
 priors = {'covar':covar_priors}
 Ifilter = {'covar': SP.array([1,1,1,1,1],dtype='int')}
 
-gpr = GPR.GP(CovFun,x=x,y=y) 
-[opt_model_params,opt_lml]=GPR.optHyper(gpr,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)
+gpr = GP(CovFun,x=x,y=y) 
+[opt_model_params,opt_lml] = opt_hyper(gpr,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)
 
 #predict
 [M,S] = gpr.predict(opt_model_params,X)
 
-import gpr_plot
 T = opt_model_params['covar'][2:4]
 gpr_plot.plot_sausage(X,M,SP.sqrt(S))
 gpr_plot.plot_training_data(x,y,shift=T,replicate_indices=replicate_indices)
-#show()
+PL.show()
