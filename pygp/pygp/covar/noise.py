@@ -33,7 +33,7 @@ class NoiseReplicateCF(CovarianceFunction):
         Get Covariance matrix K with given hyperparameters logtheta and inputs *args* = X[, X']. Note that this covariance function will only get noise as hyperparameters!
 
         **Parameters:**
-        See :py:class:`covar.CovarianceFunction` 
+        See :py:class:`pygp.covar.CovarianceFunction` 
         """
         assert len(logtheta)==self.n_hyperparameters,'Too many hyperparameters'
         #noise is only present if have a single argument
@@ -51,7 +51,7 @@ class NoiseReplicateCF(CovarianceFunction):
         respect to i-th hyperparameter.
 
         **Parameters:**
-        See :py:class:`covar.CovarianceFunction`
+        See :py:class:`pygp.covar.CovarianceFunction`
         '''
         #1. calculate kernel
         #no noise
@@ -83,7 +83,7 @@ class NoiseISOCF(CF_Kd_dx):
         Get Covariance matrix K with given hyperparameters logtheta and inputs *args* = X[, X']. Note that this covariance function will only get noise as hyperparameter!
 
         **Parameters:**
-        See :py:class:`covar.CovarianceFunction` 
+        See :py:class:`pygp.covar.CovarianceFunction` 
         """
         
         #noise is only presenet if have a single argument
@@ -100,7 +100,7 @@ class NoiseISOCF(CF_Kd_dx):
         respect to i-th hyperparameter.
 
         **Parameters:**
-        See :py:class:`covar.CovarianceFunction`
+        See :py:class:`pygp.covar.CovarianceFunction`
         """
         #1. calculate kernel
         #no noise

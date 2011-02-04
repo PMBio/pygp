@@ -5,9 +5,8 @@ Module for Gaussian process Regression
 This module is a lot modelled after Karl Rasmussen Gaussian process
 package for Matlab (http://www.gaussianprocess.org/gpml/).
 
-Methods and Classes
-
-.. func *optHyper*:
+.. Methods and Classes
+   func *optHyper*:
    use a gradient based optimiser to optimise
    GP hyperparameters subject to prior parameters
 
@@ -45,11 +44,11 @@ def param_list_to_dict(list,param_struct):
 
 def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,optimizer=OPT.fmin_l_bfgs_b,**kw_args):
     """
-    Optimize hyperparemters of gp gpr starting from gpr
+    Optimize hyperparemters of :py:class:`pygp.gp.basic_gp.GP` ``gpr`` starting from given hyperparameters ``hyperparams``.
 
-    Parameters
-    ----------
-    gpr : :py:class:`pygp.gp.basic_gp.GP`
+    **Parameters:**
+
+    gpr : :py:class:`pygp.gp.basic_gp`
         GP regression class
     hyperparams : {'covar':logtheta, ...}
         Dictionary filled with starting hyperparameters
@@ -69,12 +68,12 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,optimizer
         maximum number of function evaluations
     gradcheck: boolean 
         check gradients comparing the analytical gradients to their approximations
-    optimizer: :py:module:`scipy.optimize`
+    optimizer: :py:class:`scipy.optimize`
         which scipy optimizer to use? (standard lbfgsb)
 
     ** argument passed onto lMl**
 
-    priors : [:py:class:`lnpriors`]
+    priors : [:py:class:`pygp.priors`]
         non-default prior, otherwise assume
         first index amplitude, last noise, rest:lengthscales
     """

@@ -72,7 +72,7 @@ class DivergeCF(CovarianceFunction):
         and inputs X=x1 and X\`*`=x2.
 
         **Parameters:**
-        See :py:class:`covar.CovarianceFunction`
+        See :py:class:`pygp.covar.CovarianceFunction`
         """
         x1_f,x2_f = self._filter_input_dimensions(x1,x2)
 
@@ -104,7 +104,7 @@ class DivergeCF(CovarianceFunction):
         each hyperparameter, respectively.
 
         **Parameters:**
-        See :py:class:`covar.CovarianceFunction`
+        See :py:class:`pygp.covar.CovarianceFunction`
         """
         return self.K(logtheta, x1)
 
@@ -113,7 +113,7 @@ class DivergeCF(CovarianceFunction):
         Get diagonal of the (squared) covariance matrix.
 
         **Parameters:**
-        See :py:class:`covar.CovarianceFunction`
+        See :py:class:`pygp.covar.CovarianceFunction`
         """
         #default: naive implementation
         LG.debug("SEARDCF: Kdiag: Default unefficient implementation!")
@@ -126,7 +126,7 @@ class DivergeCF(CovarianceFunction):
         respect to x, given hyperparameters `logtheta`.
 
         **Parameters:**
-        See :py:class:`covar.CovarianceFunction`
+        See :py:class:`pygp.covar.CovarianceFunction`
         """
         L = SP.exp(logtheta[1:1+self.n_dimensions])
         dd = self._pointwise_distance(x,x,-(L**2))
@@ -154,6 +154,6 @@ class DivergeCF(CovarianceFunction):
         for optimization. Here we do not want
         
         **Parameters:**
-        See :py:class:`covar.CovarianceFunction`
+        See :py:class:`pygp.covar.CovarianceFunction`
         """
         return [0]

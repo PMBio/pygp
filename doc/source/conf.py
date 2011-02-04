@@ -12,7 +12,9 @@
 # serve to show the default.
 
 import sys, os
-sys.path.insert(0, os.path.abspath('../../pygp/'))
+import pygp
+
+#sys.path.insert(0, os.path.abspath('../../pygp/'))
 #sys.path.insert(0, os.path.abspath('/kyb/agbs/maxz/Documents/MPG/GP/lib/'))
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -89,7 +91,7 @@ pygments_style = 'sphinx'
 #modindex_common_prefix = []
 
 # Options for autodoc
-autodoc_default_flags = ['show-inheritance', 'inherited_members']
+autodoc_default_flags = ['show-inheritance', 'inherited_members', 'bysource']
 
 # -- Options for HTML output ---------------------------------------------------
 

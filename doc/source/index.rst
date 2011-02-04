@@ -17,17 +17,19 @@ The different GP Regression classes provide following computations:
 Contents:
 
 .. toctree:: 
-   :maxdepth: 2
+   :maxdepth: 3
 
    Gaussian Process Regression <gp>
-..   Gaussian Process Hyperparameter optimization <opt_hyper>
-.. Grouping GP regression classes <composite>
-   Example demonstration of gpr <demo_gpr>
-   Example demonstration of gpr with input shift <demo_gpr_shiftx>
+   Gaussian Process Hyperparameter optimization <opt_hyper>
    Covariance Functions <covars>
-   Hyperprior Distributions <priors>
-   Plotting gpr output <plot_gpr>
-   Sampling from a GP <gp_sample>
+
+     Example demonstration of gpr <demo_gpr>
+     Example demonstration of gpr with input shift <demo_gpr_shiftx>   
+
+..   Grouping GP regression classes <composite>
+    Hyperprior Distributions <priors>
+     Plotting gpr output <plot_gpr>
+     Sampling from a GP <gp_sample>
    
 Indices and tables
 ==================

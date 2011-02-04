@@ -2,7 +2,7 @@
 Covariance Function Combinators
 -------------------------------
 
-Each combinator is a covariance function (CF) itself. It combines one or several covariance function(s) into another. For instance, :py:class:`combinators.SumCF` combines all given CFs into one sum; use this class to add noise.
+Each combinator is a covariance function (CF) itself. It combines one or several covariance function(s) into another. For instance, :py:class:`pygp.covar.combinators.SumCF` combines all given CFs into one sum; use this class to add noise.
 
 """
 
@@ -20,7 +20,7 @@ class SumCF(CF_Kd_dx):
     Sum Covariance function. This function adds
     up the given CFs and returns the resulting sum.
 
-    *covars* : [:py:class:`covar.CovarianceFunction`]
+    *covars* : [:py:class:`pygp.covar.CovarianceFunction`]
     
         Covariance functions to sum up.
     """
@@ -69,7 +69,7 @@ class SumCF(CF_Kd_dx):
         functions combined in this sum covariance.
 
         **Parameters:**
-        See :py:class:`covar.CovarianceFunction` 
+        See :py:class:`pygp.covar.CovarianceFunction` 
         """
         #1. check logtheta has correct length
         assert logtheta.shape[0]==self.n_hyperparameters, 'K: logtheta has wrong shape'
@@ -90,7 +90,7 @@ class SumCF(CF_Kd_dx):
         respect to i-th hyperparameter.
 
         **Parameters:**
-        See :py:class:`covar.CovarianceFunction`
+        See :py:class:`pygp.covar.CovarianceFunction`
         '''
         #1. check logtheta has correct length
         assert logtheta.shape[0]==self.n_hyperparameters, 'K: logtheta has wrong shape'
@@ -126,7 +126,7 @@ class ProductCF(CovarianceFunction):
     
     **Parameters:**
     
-    covars : [CFs of type :py:class:`covar.CovarianceFunction`]
+    covars : [CFs of type :py:class:`pygp.covar.CovarianceFunction`]
     
         Covariance functions to be multiplied.
         
@@ -174,7 +174,7 @@ class ProductCF(CovarianceFunction):
         functions combined in this product covariance.
 
         **Parameters:**
-        See :py:class:`covar.CovarianceFunction` 
+        See :py:class:`pygp.covar.CovarianceFunction` 
         """
         #1. check logtheta has correct length
         assert logtheta.shape[0]==self.n_hyperparameters, 'ProductCF: K: logtheta has wrong shape'
@@ -195,7 +195,7 @@ class ProductCF(CovarianceFunction):
         the i-th hyperparameter.
         
         **Parameters:**
-        See :py:class:`covar.CovarianceFunction`
+        See :py:class:`pygp.covar.CovarianceFunction`
         '''
         #1. check logtheta has correct length
         assert logtheta.shape[0]==self.n_hyperparameters,'ProductCF: K: logtheta has wrong shape'
@@ -242,7 +242,7 @@ class ShiftCF(CovarianceFunction):
     function passed implements the derivative after the input
     Kd_dx(logtheta, x).
     
-    covar : CF of type :py:class:`covar.CovarianceFunction`
+    covar : CF of type :py:class:`pygp.covar.CovarianceFunction`
     
         Covariance function to be used to depict the time shifts.
     
@@ -296,7 +296,7 @@ class ShiftCF(CovarianceFunction):
             the hyperparameters of this CF. Its structure is as follows:
             [logtheta of covar, time-shift-parameters]
         
-        Others see :py:class:`covar.CovarianceFunction` 
+        Others see :py:class:`pygp.covar.CovarianceFunction` 
         """
         #1. check logtheta has correct length
         assert logtheta.shape[0]==self.n_hyperparameters, 'ShiftCF: K: logtheta has wrong shape'
@@ -352,7 +352,7 @@ class ShiftCF(CovarianceFunction):
         for optimization. Here we do not want
         
         **Parameters:**
-        See :py:class:`covar.CovarianceFunction`
+        See :py:class:`pygp.covar.CovarianceFunction`
         """
         covar_n_hyper = self.covar.get_number_of_parameters()
         Iexp = SP.concatenate((self.covar.get_Iexp(logtheta[:covar_n_hyper]),

@@ -3,8 +3,8 @@ Squared Exponential Covariance functions
 ========================================
 
 This class provides some ready-to-use implemented squared exponential covariance functions (SEs).
-These SEs do not model noise, so combine them by a :py:class:`covar.combinators.SumCF`
-or :py:class:`covar.combinators.ProductCF` with the :py:class:`covar.noise.NoiseISOCF`, if you want noise to be modelled by this GP.
+These SEs do not model noise, so combine them by a :py:class:`pygp.covar.combinators.SumCF`
+or :py:class:`pygp.covar.combinators.ProductCF` with the :py:class:`pygp.covar.noise.NoiseISOCF`, if you want noise to be modelled by this GP.
 """
 
 import scipy as SP
@@ -67,7 +67,7 @@ class SEARDCF(CF_Kd_dx):
         and inputs X=x1 and X\`*`=x2.
 
         **Parameters:**
-        See :py:class:`covar.CovarianceFunction`
+        See :py:class:`pygp.covar.CovarianceFunction`
         """
         x1, x2 = self._filter_input_dimensions(x1,x2)
         # 2. exponentiate params:
@@ -87,7 +87,7 @@ class SEARDCF(CF_Kd_dx):
         each hyperparameter, respectively.
 
         **Parameters:**
-        See :py:class:`covar.CovarianceFunction`
+        See :py:class:`pygp.covar.CovarianceFunction`
         """
         x1 = self._filter_x(x1)
         # 2. exponentiate params:
@@ -113,7 +113,7 @@ class SEARDCF(CF_Kd_dx):
         Get diagonal of the (squared) covariance matrix.
 
         **Parameters:**
-        See :py:class:`covar.CovarianceFunction`
+        See :py:class:`pygp.covar.CovarianceFunction`
         """
         #default: naive implementation
         LG.debug("SEARDCF: Kdiag: Default unefficient implementation!")
@@ -126,7 +126,7 @@ class SEARDCF(CF_Kd_dx):
         respect to x, given hyperparameters `logtheta`.
 
         **Parameters:**
-        See :py:class:`covar.CovarianceFunction`
+        See :py:class:`pygp.covar.CovarianceFunction`
         """
 
         #TODO: I am pretty sure this only works for a single dimension, right?

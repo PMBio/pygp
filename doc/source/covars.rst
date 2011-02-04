@@ -1,14 +1,12 @@
-.. automodule:: covar
+.. automodule:: pygp.covar
+    :members: CovarianceFunction, CF_Kd_dx	
 
-    .. autoclass:: covar.CovarianceFunction
-        :members:
-
-    .. automodule:: covar.combinators
+    .. automodule:: pygp.covar.combinators
         :members: SumCF, ProductCF, ShiftCF
 
-    .. automodule:: covar.se
+    .. automodule:: pygp.covar.se
         :members: 
 	  SEARDCF
 	  
-    .. automodule:: covar.noise
+    .. automodule:: pygp.covar.noise
         :members: NoiseISOCF

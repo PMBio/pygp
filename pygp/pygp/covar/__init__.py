@@ -2,7 +2,7 @@
 Covariance Functions
 ====================
 
-We implemented several different covariance functions (CFs) you can work with. To use GP-regression with these covariance functions it is highly recommended to model the noise of the data in one extra covariance function (:py:class:`covar.noise.NoiseISOCF`) and add this noise CF to the CF you are calculating by putting them all together in one :py:class:`covar.combinators.SumCF`.
+We implemented several different covariance functions (CFs) you can work with. To use GP-regression with these covariance functions it is highly recommended to model the noise of the data in one extra covariance function (:py:class:`pygp.covar.noise.NoiseISOCF`) and add this noise CF to the CF you are calculating by putting them all together in one :py:class:`pygp.covar.combinators.SumCF`.
 
 For example to use the squared exponential CF with noise::
 
@@ -14,8 +14,6 @@ For example to use the squared exponential CF with noise::
     SECF = se.SEARDCF(dim)
     noise = noise.NoiseISOCF()
     covariance = combinators.SumCF((SECF,noise))
-
-**Abstract super class for all implementations of covariance functions:**
 
 """
 
@@ -30,10 +28,14 @@ import scipy as SP
 import sq_dist
 import logging as LG
 
+import warnings
+
 __all__ = ["se","sq_dist","combinators","noise","linear"]
 
 class CovarianceFunction(object):
     """
+    *Abstract super class for all implementations of covariance functions:*
+    
     **Important:** *All Covariance Functions have
     to inherit from this class in order to work
     properly with this GP framework.*
@@ -79,7 +81,7 @@ class CovarianceFunction(object):
             The hyperparameters for which the covariance
             matrix shall be computed. *logtheta* are the
             hyperparameters for the respective covariance function.
-            For instance :py:class:`covar.se.SEARDCF`
+            For instance :py:class:`pygp.covar.se.SEARDCF`
             holds hyperparameters as follows::
 
                 `[Amplitude, Length-Scale(s)]`.
@@ -224,32 +226,43 @@ class CF_Kd_dx(CovarianceFunction):
     respect to input x.
     
     **Parameters:**
-    See :py:class:`covar.CovarianceFunction
+    See :py:class:`pygp.covar.CovarianceFunction`
+
     """
+    
+    def __init__(self,*args,**kwargs):
+        super(CF_Kd_dx, self).__init__(*args,**kwargs);
+        warnings.warn("'CovarianceFunction' and 'CF_Kd_dx' will be merged in version 1.0.0!")
     
     def Kd_dx(self,logtheta,x,d):
         """
-        Matrix derivatives of the self covariance with respect to dimension d
-        RV = d/dx_n,d K(X,X)_i,j = k(x_i,x_j)
-        i.e. RV[n,:] = d/dx_n,d k(x_n,:)
-        Note: all covariance functions always return an nXn matrix. If d is not in active dimensions the matrix is zeros
+        Matrix derivatives of the self covariance with respect to dimension d::
+        
+            RV = d/dx_n,d K(X,X)_i,j = k(x_i,x_j)
+        
+        i.e:: 
+            
+            RV[n,:] = d/dx_n,d k(x_n,:)
+        
+        Note: all covariance functions always return an `n x n` matrix. If d is not in active dimensions the matrix is zeros
 
         #TODO: update description properly
         Partial derivative of covariance matrix K with respect
         to training input x.
 
-        *Default*: return K(logtheta,x). **!This might be wrong!**
+        *Default*: return K(logtheta,x). **!This might be wrong, be careful!**
 
         **Parameters:**
+        
         logtheta : [double]
-
             Hyperparameters of CF.
 
         x : [double]
-        
             The training input X. The return value is
             the partial derivative of the covariance
             matrix with respect to given training input X.
+        d : int
+            See: :py:class:`pygp.covar.CovarianceFunction` 
 
         """
         LG.critical("implement Kd_dx")
