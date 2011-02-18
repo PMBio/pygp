@@ -2,10 +2,10 @@ Application Example of GP regression
 ====================================
 
 This Example shows the Squared Exponential CF
-(:py:class:`covar.se.SEARDCF`) preprocessed by
+(:py:class:`pygp.covar.se.SEARDCF`) preprocessed by
 shiftCF(:py:class`covar.combinators.ShiftCF) and combined with noise
-:py:class:`covar.noise.NoiseISOCF` by summing them up
-(using :py:class:`covar.combinators.SumCF`).
+:py:class:`pygp.covar.noise.NoiseISOCF` by summing them up
+(using :py:class:`pygp.covar.combinators.SumCF`).
 We will shift two input replicates against each other, to make them fit to each other.
 
 First of all we have to import all important packages::
@@ -16,25 +16,26 @@ First of all we have to import all important packages::
 
 Now import the Covariance Functions and Combinators::
 
-    from covar import se, noise, combinators
+    from pygp.covar import se, noise, combinators
 
-And additionally the GP regression framework (:py:class:`gpr`, :py:class:`lnpriors` for the priors and :py:class:`gpr_plot` for plotting the results)::
+And additionally the GP regression framework (:py:class:`pygp.gp`, :py:class:`pygp.priors` for the priors and :py:class:`pygp.plot.gpr_plot` for plotting the results)::
 
-    import gpr as GPR
-    import gpr_plot
-    import lnpriors
+    from pygp.gp.basic_gp import GP
+    from pygp.optimize.optimize import opt_hyper
+    from pygp.priors import lnpriors
+    import pygp.plot.gpr_plot as gpr_plot
 
 For this particular example we generate some simulated random sinus
 data; just samples from a superposition of a `sin + linear` trend::
 
-   xmin = 1
+    xmin = 1
     xmax = 2.5*SP.pi
     x1 = SP.arange(xmin,xmax,.7)
     x2 = SP.arange(xmin,xmax,.4)
 
     C = 2       #offset
     b = 0.5
-    sigma = 0.01
+    sigma = 0.1
 
     b = 0
 
@@ -56,7 +57,7 @@ data; just samples from a superposition of a `sin + linear` trend::
 
 The predictions we will make on the interpolation interval ::
 
-   X = SP.linspace(0,10,100)[:,SP.newaxis]
+   X = SP.linspace(-2,10,100)[:,SP.newaxis]
 
 For the calculation of the replicates, we need to give the replicate indices per input x::
 
@@ -72,19 +73,22 @@ Thus, our starting hyperparameters are::
 Now the interesting point: creating the sumCF by combining noise and se::
 
     SECF = se.SEARDCF(dim)
-    noise = noise.NoiseISOCF()
+    noiseCF = noise.NoiseISOCF()
     shiftCF = combinators.ShiftCF(SECF,replicate_indices)
-    covar = combinators.SumCF((shiftCF,noise))
+    covar = combinators.SumCF((shiftCF,noiseCF))
 
 And the prior believes, we have about the hyperparameters::
 
+    covar_priors = []
     #Length-Scale
     covar_priors.append([lnpriors.lngammapdf,[1,2]])
     for i in range(dim):
         covar_priors.append([lnpriors.lngammapdf,[1,1]])
+
     #X-Shift
     for i in range(n_replicates):
-        covar_priors.append([lnpriors.lngausspdf,[0,1]])    
+        covar_priors.append([lnpriors.lngausspdf,[0,.5]])    
+
     #Noise
     covar_priors.append([lnpriors.lngammapdf,[1,1]])
     priors = {'covar':covar_priors}
@@ -93,17 +97,18 @@ We want all hyperparameters to be optimized::
 
     Ifilter = {'covar': SP.array([1,1,1,1,1],dtype='int')}
 
-To ensure the gpr optimization of the shifts can be positive and negative, we say the optimizer to only exponentiate Amplitude, Length-Scale and noise::
-
-    Iexp = {'covar': SP.array([1,1,0,0,1],dtype='bool')}
+.. To ensure the gpr optimization of the shifts can be positive and
+   negative, we say the optimizer to only exponentiate Amplitude, 
+   Length-Scale and noise::
+   Iexp = {'covar': SP.array([1,1,0,0,1],dtype='bool')}
 
 Create the GP regression class for further usage::
 
-    gpr = GPR.GP(covar,x=x,y=y)
+    gpr = GP(covar,x=x,y=y)
 
 And optimize the hyperparameters::
 
-   [opt_model_params,opt_lml]=GPR.optHyper(gpr,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)
+   [opt_model_params,opt_lml]=opt_hyper(gpr,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)
 
 With these optimized hyperparameters we can now predict the point-wise mean M and deviance S of the training data::
 
@@ -111,10 +116,9 @@ With these optimized hyperparameters we can now predict the point-wise mean M an
 
 For the sake of beauty plot the mean M and deviance S::
 
-    import gpr_plot
     T = opt_model_params['covar'][2:4]
     gpr_plot.plot_sausage(X,M,SP.sqrt(S))
-    gpr_plot.plot_training_data_with_shiftx(x,y,shift=T,replicate_indices=replicate_indices)
+    gpr_plot.plot_training_data(x,y,shift=T,replicate_indices=replicate_indices)
 
 The resulting plot is:
 

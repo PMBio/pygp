@@ -16,9 +16,11 @@ from pygp.plot import gpr_plot
 
 import logging as LG
 import numpy.random as random
+
 #import pdb
 import pylab as PL
 import scipy as SP
+
 
 def run_demo():
     LG.basicConfig(level=LG.INFO)
@@ -56,7 +58,7 @@ def run_demo():
     y = SP.concatenate((y1,y2),axis=0)
     
     #predictions:
-    X = SP.linspace(0,10,100)[:,SP.newaxis]
+    X = SP.linspace(-2,10,100)[:,SP.newaxis]
     
     #hyperparamters
     dim = 1
@@ -89,7 +91,7 @@ def run_demo():
     Ifilter = {'covar': SP.array([1,1,1,1,1],dtype='int')}
     
     gpr = GP(CovFun,x=x,y=y) 
-    [opt_model_params,opt_lml] = opt_hyper(gpr,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)
+    opt_model_params = opt_hyper(gpr,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)[0]
     
     #predict
     [M,S] = gpr.predict(opt_model_params,X)
@@ -97,4 +99,8 @@ def run_demo():
     T = opt_model_params['covar'][2:4]
     gpr_plot.plot_sausage(X,M,SP.sqrt(S))
     gpr_plot.plot_training_data(x,y,shift=T,replicate_indices=replicate_indices)
+    
     PL.show()
+    
+if __name__ == "__main__":
+    run_demo()

@@ -1,2 +1,2 @@
-.. automodule:: gp_sample
+.. automodule:: pygp.sample.gp_sample
    :members:

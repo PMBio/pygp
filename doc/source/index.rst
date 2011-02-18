@@ -6,30 +6,33 @@
 Welcome to PyGP
 ===============
 
-This package provides Gaussian Process based regression. 
+This package provides Gaussian Process based regression.
+Find provided regression modules in :py:class:`pygp.gp`.
 
-The different GP Regression classes provide following computations:
-
-   - :py:class:`pygp.gpr` Basic gp regression package
-   - :py:class:`pygp.gpr_ep` GP regression with EP likelihood models. (Not yet implemented)
-
-
-Contents:
+Documentation API Contents:
 
 .. toctree:: 
    :maxdepth: 3
 
-   Gaussian Process Regression <gp>
-   Gaussian Process Hyperparameter optimization <opt_hyper>
+   Gaussian Process (GP) Regression <gp>
    Covariance Functions <covars>
+   GP Hyperparameter optimization <opt_hyper>
+   Hyperprior Distributions <priors>
+   Plotting gpr output <plot_gpr>
+   Sample from GPs <gp_sample>
 
-     Example demonstration of gpr <demo_gpr>
-     Example demonstration of gpr with input shift <demo_gpr_shiftx>   
+See following examples for usage details:
+
+.. toctree:: 
+   :maxdepth: 2
+
+   Example for GP regression with hyperparameter optimization <demo_gpr>
+   Example for GP regression with hyperparameter optimization and input shift adjustment <demo_gpr_shiftx>   
 
 ..   Grouping GP regression classes <composite>
-    Hyperprior Distributions <priors>
-     Plotting gpr output <plot_gpr>
-     Sampling from a GP <gp_sample>
+     
+     
+     
    
 Indices and tables
 ==================

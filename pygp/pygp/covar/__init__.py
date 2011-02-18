@@ -232,7 +232,7 @@ class CF_Kd_dx(CovarianceFunction):
     
     def __init__(self,*args,**kwargs):
         super(CF_Kd_dx, self).__init__(*args,**kwargs);
-        warnings.warn("'CovarianceFunction' and 'CF_Kd_dx' will be merged in version 1.0.0!")
+        warnings.warn(("'CovarianceFunction' and 'CF_Kd_dx' will be merged in version 1.0.0!"),DeprecationWarning)
     
     def Kd_dx(self,logtheta,x,d):
         """

@@ -141,4 +141,5 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,optimizer
     LG.info("optimized parameters:")
     LG.info(str(opt_hyperparams))
     LG.info("grad:"+str(df(opt_x)))
-    return [opt_hyperparams,opt_lml]
+    
+    return opt_hyperparams,opt_lml

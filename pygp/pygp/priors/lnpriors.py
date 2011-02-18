@@ -1,6 +1,7 @@
 """
 Hyperpriors for log likelihood calculation
 ------------------------------------------
+
 """
 
 import scipy as SP
@@ -10,17 +11,19 @@ import pylab as PL
 def lngammapdf(x,params):
     """
     Returns the ``log gamma (x,k,t)`` distribution and its derivation with::
-
+    
         lngamma     = (k-1)*log(x) - x/t -gammaln(k) - k*log(t)
         dlngamma    = (k-1)/x - 1/t
-
+    
+    
     **Parameters:**
-
+    
     x : [double]
         the interval in which the distribution shall be computed.
-
+    
     params : [k, t]
         the distribution parameters k and t.
+    
     """
     #explicitly convert to double to avoid int trouble :-)
     k=SP.double(params[0])
@@ -47,6 +50,7 @@ def lngausspdf(x,params):
 
     params : [k, t]
         the distribution parameters k and t.
+        
     """
     mu = SP.double(params[0])
     sigma = SP.double(params[1])
@@ -56,9 +60,13 @@ def lngausspdf(x,params):
     return [N,dN]
 
 def lnzeropdf(x,params):
+    """
+    Implementation of ``lnzeropdf`` for development purpose only. This
+    pdf returns always ``[0,0]``.  
+    """
     return [0,0]
 
-def plotPrior(X,prior):
+def _plotPrior(X,prior):
     Y = SP.array(prior[0](X,prior[1]))
     PL.hold(True)
     PL.plot(X,SP.exp(Y[0,:]))
@@ -69,4 +77,4 @@ def plotPrior(X,prior):
 if __name__ == "__main__":
     prior = [lngammapdf,[2,0.5]]
     X = SP.arange(0.01,10,0.1)
-    plotPrior(X,prior)
+    _plotPrior(X,prior)

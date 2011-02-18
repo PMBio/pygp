@@ -14,12 +14,14 @@ First of all we have to import all important packages::
 
 Now import the Covariance Functions and Combinators::
 
-    from covar import se, noise, combinators
+    from pygp.covar import se, noise, combinators
 
-And additionally the GP regression framework (:py:class:`gpr` and :py:class:`lnpriors` for the priors)::
+And additionally the GP regression framework (:py:class:`pygp.gp` and :py:class:`pygp.priors` for the priors)::
 
-    import gpr as GPR
-    import lnpriors
+    from pygp.gp.basic_gp import GP
+    from pygp.optimize.optimize import opt_hyper
+    from pygp.priors import lnpriors
+    import pygp.plot.gpr_plot as gpr_plot
 
 For this particular example we generate some simulated random sinus data, just samples from a superposition of a sin + linear trend::
 
@@ -55,8 +57,8 @@ Our starting hyperparameters are::
 Now the interesting point: creating the sumCF by combining noise and se::
 
     SECF = se.SEARDCF(dim)
-    noise = noise.NoiseISOCF()
-    covar = combinators.SumCF((SECF,noise))
+    noiseCF = noise.NoiseISOCF()
+    covar = combinators.SumCF((SECF,noiseCF))
 
 And the prior believes, we have about the hyperparameters::
 
@@ -75,11 +77,11 @@ We do want all hyperparameter to be optimized::
 
 Create the GP regression class for further usage::
 
-    gpr = GPR.GP(covar,x=x,y=y)
+    gpr = GP(covar,x=x,y=y)
 
 And optimize the hyperparameters::
 
-   [opt_model_params,opt_lml]=GPR.optHyper(gpr,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)
+    [opt_model_params,opt_lml]= opt_hyper(gpr,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)
 
 With these optimized hyperparameters we can now predict the point-wise mean and deviance of the training data::
 

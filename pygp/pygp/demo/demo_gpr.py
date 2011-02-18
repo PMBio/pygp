@@ -60,15 +60,15 @@ def run_demo():
     covar_priors = []
     #scale
     covar_priors.append([lnpriors.lngammapdf,[1,2]])
-    for i in range(dim):
-        covar_priors.append([lnpriors.lngammapdf,[1,1]])
+
+    covar_priors.extend([[lnpriors.lngammapdf,[1,1]] for i in xrange(dim)])
     #noise
     covar_priors.append([lnpriors.lngammapdf,[1,1]])
     priors = {'covar':covar_priors}
     Ifilter = {'covar': SP.array([1,1,1],dtype='int')}
     
     gp = GP(covar,x=x,y=y)
-    [opt_model_params,opt_lml]=opt.opt_hyper(gp,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)
+    opt_model_params = opt.opt_hyper(gp,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)[0]
     
     #predict
     [M,S] = gp.predict(opt_model_params,X)
@@ -76,3 +76,6 @@ def run_demo():
     gpr_plot.plot_sausage(X,M,SP.sqrt(S))
     gpr_plot.plot_training_data(x,y)
     PL.show()
+    
+if __name__ == '__main__':
+    run_demo()

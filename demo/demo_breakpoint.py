@@ -8,10 +8,6 @@ This Example shows the Squared Exponential CF
 (using :py:class:`covar.combinators.SumCF`).
 """
 
-import os
-import sys
-sys.path.append('./../')
-
 import cPickle
 
 #import sys
@@ -23,15 +19,18 @@ import scipy as SP
 import numpy.random as random
 
 from pygp.covar import se, noise, combinators, breakpoint
-import pygp.gpr as GPR
+import pygp.priors.lnpriors as lnpriors
 
-import sys
-import lnpriors
-import logging as LG
-
+import logging
 import copy
+import os
 
-LG.basicConfig(level=LG.INFO)
+from pygp.gp.basic_gp import GP
+from pygp.gp.composite import GroupGP
+from pygp.optimize.optimize import opt_hyper
+import pygp
+
+logging.basicConfig(level=logging.INFO)
 
 random.seed(1)
 
@@ -70,15 +69,16 @@ random.seed(1)
 """ Get the warwick data """
 # Data of warwick.pickle (depends on which system were running)
 
-data_path = '/kyb/agbs/maxz/Documents/MPG/GP/diff_expression/time_delay/data/'
+data_path = '/kyb/agbs/maxz/Documents/MPG/GP/diff_expression/time_delay/data'
 data_file = os.path.join(data_path,'data_warwick.pickle')
 data_file_f = open(data_file,'rb')
 data = cPickle.load(data_file_f)
 
-for name, probe in data.iteritems():
-
-    if not name == 'CATMA3A22550':
-        continue
+#for name, probe in data.iteritems():
+for name in ['CATMA3A12810', 'CATMA3A22550' , 'CATMA4A36120', 'CATMA3A19900']:    
+#    if not name == 'CATMA3A12810': #CATMA3A22550 , CATMA4A36120, CATMA3A19900
+#        continue
+    probe = data[name]
     
     C = probe['C']
     T = probe['T']
@@ -102,10 +102,6 @@ for name, probe in data.iteritems():
     dim = 1
     group_indices = SP.concatenate([SP.repeat(i,len(xi)) for i,xi in enumerate((C[0].reshape(-1,1),
                                                                                 T[0].reshape(-1,1)))])
-    
-    logthetaCOVAR = SP.log([1,1,0.2,1])#,sigma2])
-    hyperparams = {'covar':logthetaCOVAR}
-
     SECF = se.SEARDCF(dim,dimension_indices=[0])
     breakpointCF = breakpoint.DivergeCF(dimension_indices=[0])
     #noiseCF = noise.NoiseReplicateCF(replicate_indices)
@@ -120,19 +116,30 @@ for name, probe in data.iteritems():
         covar_priors.append([lnpriors.lngammapdf,[30,.1]])
     #noise
     for i in range(1):
-        covar_priors.append([lnpriors.lngammapdf,[1,.5]])
+        covar_priors.append([lnpriors.lngammapdf,[1,.3]])
     #breakpoint, no knowledge
     for i in range(1):
         covar_priors.append([lnpriors.lnzeropdf,[0,0]])    
 
-    priors = {'covar' : covar_priors}
-    Ifilter = {'covar' : SP.array([1,1,1,0],dtype='int')}
+    logthetaCOVAR = SP.log([.4,3.2,0.3])#,sigma2])
+    hyperparams = {'covar':logthetaCOVAR}
+
+    covar_priors = SP.array(covar_priors)
+    priors = {'covar' : covar_priors[[0,1,2]]}
+    priors_BP = {'covar' : covar_priors}
+    Ifilter = {'covar' : SP.array([1,1,1],dtype='int')}
+    Ifilter_BP = {'covar' : SP.array([1,1,1,0],dtype='int')}
 
     #gpr_BP = GPR.GP(CovFun,x=x,y=y)
-    gpr_BP = GPR.GP(CovFun,x=x,y=y)
-    #gpr_opt_hyper = GPR.GP(combinators.SumCF((SECF,noiseCF)),x=x,y=y)
+    gpr_BP = GP(CovFun,x=x,y=y)
+#    gpr_opt_hyper = GP(combinators.SumCF((SECF,noiseCF)),x=x,y=y)
+    gpr_opt_hyper = GroupGP((GP(combinators.SumCF((SECF,noiseCF)), x=x1,y=C[1][0]),
+                             GP(combinators.SumCF((SECF,noiseCF)), x=x2,y=T[1][0])))
 
-    #[opt_model_params,opt_lml]=GPR.optHyper(gpr_opt_hyper,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)
+    [opt_model_params,opt_lml]=opt_hyper(gpr_opt_hyper,hyperparams,priors=priors,gradcheck=False,Ifilter=Ifilter)
+#    opt_model_params = hyperparams
+    print SP.exp(opt_model_params['covar'])
+
 #    import copy
 #    _hyperparams = copy.deepcopy(opt_model_params)
     # _logtheta = SP.array([0,0,0,0],dtype='double')
@@ -142,18 +149,24 @@ for name, probe in data.iteritems():
 
     #[opt_model_params,opt_lml]=GPR.optHyper(gpr_BP,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)
 
-    import gpr_plot
+    import pygp.plot.gpr_plot as gpr_plot
     first = True
     norm=PL.Normalize()
 
     break_lml = []
     plots = SP.int_(SP.sqrt(24)+1)
     for i,BP in enumerate(x[:24,0]):
-        PL.subplot(plots,plots,i+1)
+        #PL.subplot(plots,plots,i+1)
+        _hyper = copy.deepcopy(opt_model_params)
+        _logtheta = _hyper['covar']
+        _logtheta = SP.concatenate((_logtheta,[BP]))
+        _hyper['covar'] = _logtheta
+        #[opt_model_params,opt_lml] = opt_hyper(gpr_BP,_hyper,priors=priors_BP,gradcheck=False,Ifilter=Ifilter_BP)
+        #break_lml.append(opt_lml)
         
-        hyperparams['covar'][3] = BP
-        [opt_model_params,opt_lml]=GPR.optHyper(gpr_BP,hyperparams,priors=priors,gradcheck=False,Ifilter=Ifilter)
-        break_lml.append(opt_lml)
+        priors_BP[3] = [lnpriors.lngausspdf,[BP,1]]
+        
+        break_lml.append(gpr_BP.lMl(_hyper, priors_BP))
 
         # PL.plot(C[0].transpose(),C[1].transpose(),'+b',markersize=10)
         # PL.plot(T[0].transpose(),T[1].transpose(),'+r',markersize=10)
@@ -183,15 +196,15 @@ for name, probe in data.iteritems():
 
         
         # PL.figure()
-        if(first):
-            first=False
-            K = CovFun.K(opt_model_params['covar'], x)
-            norm.autoscale(2*K)
-            PL.pcolor(K, norm=norm)
-        else:
-            PL.pcolor(CovFun.K(opt_model_params['covar'], x), norm=norm)
-
-        PL.title("BP = %i" % (BP))
+#        if(first):
+#            first=False
+#            K = CovFun.K(opt_model_params['covar'], x)
+#            norm.autoscale(2*K)
+#            PL.pcolor(K, norm=norm)
+#        else:
+#            PL.pcolor(CovFun.K(opt_model_params['covar'], x), norm=norm)
+#
+#        PL.title("BP = %i" % (BP))
         
         #gpr_BP_2 = GPR.GP(CovFun,x=x,y=y)
         #[M_2,S_2] = gpr_BP_2.predict(opt_model_params,SP.concatenate((X,X_g2),axis=1))
@@ -199,17 +212,19 @@ for name, probe in data.iteritems():
 
         # predict
         # PL.subplot(plots,plots,i+1)
-        # [M,S] = gpr_BP.predict(_hyperparams,X)
-        # gpr_plot.plot_sausage(X,M,SP.sqrt(S))
-        # PL.plot(C[0].transpose(),C[1].transpose(),'-+b')
-        # PL.plot(T[0].transpose(),T[1].transpose(),'-+r')
         
-#    PL.figure()
-#    PL.plot(x[:24],break_lml)
+        if(BP==20):
+            [M,S] = gpr_BP.predict(_hyper,X)
+            gpr_plot.plot_sausage(X,M,SP.sqrt(S))
+            PL.plot(C[0].transpose(),C[1].transpose(),'-+b')
+            PL.plot(T[0].transpose(),T[1].transpose(),'-+r')
+        
+    PL.figure()
+    PL.plot(x[:24],break_lml)
 
- 
+    PL.show()
 
-    pdb.set_trace() 
+    #pdb.set_trace() 
 
-    PL.close()
-    PL.clf()
+    #PL.close()
+    #PL.clf()

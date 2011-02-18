@@ -66,7 +66,7 @@ class DivergeCF(CovarianceFunction):
         """
         return self.n_hyperparameters;
 
-    def K(self, logtheta, x1, x2=None):
+    def K(self, logtheta, x1, x2=None, k=10):
         """
         Get Covariance matrix K with given hyperparameter BP
         and inputs X=x1 and X\`*`=x2.
@@ -92,11 +92,11 @@ class DivergeCF(CovarianceFunction):
         BPs1 = SP.array((x1_f<BP),dtype="int8")
         BPs2 = SP.array((x2_f<BP),dtype="int8")
         BPs = BPs1 * BPs2.reshape(-1)
-        grouping = grouping_1.reshape(-1,1) == grouping_2.reshape(-1)
+        grouping = grouping_1.reshape(-1) == grouping_2.reshape(1,-1)
         if (False):
             import pdb
             pdb.set_trace()
-        return grouping + BPs
+        return (SP.exp(k*BPs)+SP.exp(k*grouping)) / SP.exp(k)
 
     def Kd(self, logtheta, x1, i):
         """
@@ -106,7 +106,7 @@ class DivergeCF(CovarianceFunction):
         **Parameters:**
         See :py:class:`pygp.covar.CovarianceFunction`
         """
-        return self.K(logtheta, x1)
+        return self.K(logtheta, x1)[i]
 
     def Kdiag(self,logtheta, x1):
         """
@@ -157,3 +157,11 @@ class DivergeCF(CovarianceFunction):
         See :py:class:`pygp.covar.CovarianceFunction`
         """
         return [0]
+
+def softmax(x,y):
+    ma = max(x,y)
+    mi = min(x,y)
+    return ma+SP.log(1+SP.exp(mi-ma))
+
+def pointwise_softmax(x,y):
+    return SP.array([[softmax(xi,yi) for xi in x] for yi in y])

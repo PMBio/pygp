@@ -1,8 +1,9 @@
 """
-Gaussian process plotting tools
+pygp plotting tools
 ===============================
 
-Tools to plot gpr output.
+Tools to plot Gaussian process :py:class:`pygp.gp` regression output.
+
 """
 
 # import python / numpy:
@@ -20,14 +21,14 @@ def plot_training_data(x,y,
                                     'markersize':12}):
     """
     Plot training data input x and output y into the
-    active figure (See Pylab for the details of figure).
+    active figure (See http://matplotlib.sourceforge.net/ for details of figure).
 
     Instance plot without replicate groups:
     
     .. image:: ../images/plotTraining.png
        :height: 8cm
        
-    Instance plot with two replicate groups:
+    Instance plot with two replicate groups and a shift in x-koords:
     
     .. image:: ../images/plotTrainingShiftX.png
        :height: 8cm
@@ -47,7 +48,8 @@ def plot_training_data(x,y,
         Indices of replicates for each x, rexpectively
 
     format_data : {format}
-        Format of the data points. See Matplotlib for details. 
+        Format of the data points. See http://matplotlib.sourceforge.net/ for details. 
+        
     """
     x = S.array(x).reshape(-1)
     y = S.array(y).reshape(-1)
@@ -74,8 +76,7 @@ def plot_training_data(x,y,
                                         frac=.3))
 
 
-    return PL.plot(x_shift,y,
-            **format_data)
+    return PL.plot(x_shift,y,**format_data)
 
 def plot_sausage(X,mean,std,format_fill={'alpha':0.2,'facecolor':'k'},format_line={'alpha':1, 'color':'g'}):
     """
@@ -85,7 +86,7 @@ def plot_sausage(X,mean,std,format_fill={'alpha':0.2,'facecolor':'k'},format_lin
       :height: 8cm
 
     **returns:** : [fill_plot, line_plot]
-        The fill and the line of the sausage plot. (i.e. the green line and gray fill of the example above)
+        The fill and the line of the sausage plot. (i.e. green line and gray fill of the example above)
         
     **Parameters:**
 
@@ -99,10 +100,11 @@ def plot_sausage(X,mean,std,format_fill={'alpha':0.2,'facecolor':'k'},format_lin
         Pointwise standard deviation.
 
     format_fill : {format}
-        The format of the fill. See Matplotlib for details.
+        The format of the fill. See http://matplotlib.sourceforge.net/ for details.
 
     format_line : {format}
-        The format of the mean line. See Matplotlib for details.
+        The format of the mean line. See http://matplotlib.sourceforge.net/ for details.
+        
     """
     Xp = S.concatenate((X,X[::-1]))
     Yp = S.concatenate(((mean+2*std),(mean-2*std)[::-1]))

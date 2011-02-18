@@ -169,7 +169,7 @@ class GP(object):
                 RV[key]-=plml[key][:,1]                       
         return RV
 
-    def getCovariances(self,hyperparams):
+    def getCovariances(self,hyperparams,x=None,y=None):
         """
         Return the Cholesky decompositions L and alpha::
 
@@ -178,18 +178,22 @@ class GP(object):
             alpha = solve(L,t)
             return [covar_struct] = getCovariances(hyperparam)
         """
+        if(x is None or y is None):
+            x=self.x
+            y=self.y
+        
         if self._is_cached(hyperparams):
             pass
         else:
             #update cache
-            K = self.covar.K(hyperparams['covar'],self.x)
+            K = self.covar.K(hyperparams['covar'],x)
             L = linalg.cholesky(K)               
-            alpha = _solve_chol(L.T,self.y)
+            alpha = _solve_chol(L.T,y)
             self._covar_cache = {'K': K,'L':L,'alpha':alpha,'hyperparams':copy.deepcopy(hyperparams)}
         return self._covar_cache 
        
         
-    def predict(self,hyperparams,xstar,output=0,var=True):
+    def predict(self,hyperparams,xstar,output=0,var=True,interval_indices=None):
         '''
         Predict mean and variance for given **Parameters:**
 
@@ -201,12 +205,24 @@ class GP(object):
 
         var      : boolean
             return predicted variance
-            
+        
+        interval_indices : [ int || bool ]
+            Either scipy array-like of boolean indicators, 
+            or scipy array-like of integer indices, denoting 
+            which x indices to predict from data. 
+        
         output   : output dimension for prediction (0)
         '''
-        KV = self.getCovariances(hyperparams)
+        if(interval_indices is None):
+            x=self.x
+            y=self.y
+        else:
+            x=self.x[interval_indices]
+            y=self.y[interval_indices]
+
+        KV = self.getCovariances(hyperparams,x,y)
         #cross covariance:
-        Kstar       = self.covar.K(hyperparams['covar'],self.x,xstar)
+        Kstar       = self.covar.K(hyperparams['covar'],x,xstar)
         mu = SP.dot(Kstar.transpose(),KV['alpha'][:,output])
         if(var):            
             Kss_diag         = self.covar.Kdiag(hyperparams['covar'],xstar)

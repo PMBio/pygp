@@ -1,6 +1,7 @@
 """
 Package for plotting GPRegression results
 =========================================
+
 """
 
 try:
