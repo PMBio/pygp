@@ -139,6 +139,41 @@ class CovarianceFunction(object):
         print "please implement Kd"
         pass
 
+    def Kd_dx(self,logtheta,x,d):
+        """
+        Matrix derivatives of the self covariance with respect to dimension d::
+        
+            RV = d/dx_n,d K(X,X)_i,j = k(x_i,x_j)
+        
+        i.e:: 
+            
+            RV[n,:] = d/dx_n,d k(x_n,:)
+        
+        Note: all covariance functions always return an `n x n` matrix. If d is not in active dimensions the matrix is zeros
+
+        #TODO: update description properly
+        Partial derivative of covariance matrix K with respect
+        to training input x.
+
+        *Default*: return K(logtheta,x). **!This might be wrong, be careful!**
+
+        **Parameters:**
+        
+        logtheta : [double]
+            Hyperparameters of CF.
+
+        x : [double]
+            The training input X. The return value is
+            the partial derivative of the covariance
+            matrix with respect to given training input X.
+        d : int
+            See: :py:class:`pygp.covar.CovarianceFunction` 
+
+        """
+        LG.critical("implement Kd_dx")
+        print "implement Kd_dx"
+        pass
+
     def get_hyperparameter_names(self):
         """
         Return names of hyperparameters to make
@@ -218,53 +253,3 @@ class CovarianceFunction(object):
             x1 = x1.copy()/L
             x2 = x2.copy()/L
         return sq_dist.dist(x1,x2)
-
-
-class CF_Kd_dx(CovarianceFunction):
-    """
-    Covariance function, which provides partial derivative with
-    respect to input x.
-    
-    **Parameters:**
-    See :py:class:`pygp.covar.CovarianceFunction`
-
-    """
-    
-    def __init__(self,*args,**kwargs):
-        super(CF_Kd_dx, self).__init__(*args,**kwargs);
-        warnings.warn(("'CovarianceFunction' and 'CF_Kd_dx' will be merged in version 1.0.0!"),DeprecationWarning)
-    
-    def Kd_dx(self,logtheta,x,d):
-        """
-        Matrix derivatives of the self covariance with respect to dimension d::
-        
-            RV = d/dx_n,d K(X,X)_i,j = k(x_i,x_j)
-        
-        i.e:: 
-            
-            RV[n,:] = d/dx_n,d k(x_n,:)
-        
-        Note: all covariance functions always return an `n x n` matrix. If d is not in active dimensions the matrix is zeros
-
-        #TODO: update description properly
-        Partial derivative of covariance matrix K with respect
-        to training input x.
-
-        *Default*: return K(logtheta,x). **!This might be wrong, be careful!**
-
-        **Parameters:**
-        
-        logtheta : [double]
-            Hyperparameters of CF.
-
-        x : [double]
-            The training input X. The return value is
-            the partial derivative of the covariance
-            matrix with respect to given training input X.
-        d : int
-            See: :py:class:`pygp.covar.CovarianceFunction` 
-
-        """
-        LG.critical("implement Kd_dx")
-        print "implement Kd_dx"
-        pass

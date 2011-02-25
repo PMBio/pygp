@@ -7,9 +7,9 @@ Tools to plot Gaussian process :py:class:`pygp.gp` regression output.
 """
 
 # import python / numpy:
+import matplotlib
 import pylab as PL
 import scipy as S
-import matplotlib
 
 def plot_training_data(x,y,
                        shift=None,
@@ -78,7 +78,10 @@ def plot_training_data(x,y,
 
     return PL.plot(x_shift,y,**format_data)
 
-def plot_sausage(X,mean,std,format_fill={'alpha':0.2,'facecolor':'k'},format_line={'alpha':1, 'color':'g'}):
+def plot_sausage(X,mean,std,
+                 format_fill={'alpha':0.2,'facecolor':'k'},
+                 format_line={'alpha':1, 'color':'g'},
+                 alpha_blend=None):
     """
     plot saussage plot of GP. I.e:
 
@@ -106,11 +109,36 @@ def plot_sausage(X,mean,std,format_fill={'alpha':0.2,'facecolor':'k'},format_lin
         The format of the mean line. See http://matplotlib.sourceforge.net/ for details.
         
     """
+    
     Xp = S.concatenate((X,X[::-1]))
     Yp = S.concatenate(((mean+2*std),(mean-2*std)[::-1]))
-    hf=PL.fill(Xp,Yp,**format_fill)
-    hp=PL.plot(X,mean,**format_line)
+    hf=PL.fill(Xp,Yp,visible=alpha_blend is None,**format_fill)
+    hp=PL.plot(X,mean,visible=alpha_blend is None,**format_line)
+    
+    if alpha_blend is not None:
+        plot_gradient_blend(X, mean, alpha_blend)
+        fill_gradient_blend(X, mean, std, alpha_blend)
+    
     return [hf,hp]
+
+def plot_gradient_blend(X,Y,alpha_blend,*args,**kwargs):
+    for i in range(X.shape[0]-3):
+        PL.plot(X[i:i+3],
+                Y[i:i+3],
+                color=[.1,.1,1,alpha_blend[i]/2],
+                alpha=alpha_blend[i]/2,
+                antialiased=True,
+                *args,**kwargs)
+
+def fill_gradient_blend(X,mean,std,alpha_blend,*args,**kwargs):
+    for i in range(X.shape[0]-3):
+        PL.fill_between(X[i:i+3],
+                        mean[i:i+3]+std[i:i+3],
+                        mean[i:i+3]-std[i:i+3],
+                        facecolor=[.1,.1,1,alpha_blend[i]/2],
+                        antialiased=True,
+                        edgecolor=[.1,.1,1,0],
+                        *args,**kwargs)
     
 class CrossRect(matplotlib.patches.Rectangle):
     def __init__(self, *args, **kwargs):

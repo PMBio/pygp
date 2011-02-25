@@ -4,7 +4,6 @@ Basic Gaussian Process class
 
 
 """
-
 import copy
 import numpy.linalg as linalg
 import scipy as SP
@@ -89,7 +88,8 @@ class GP(object):
         y : targets/outputs [N x d]
         #note d dimensional data structure only make sense for GPLVM
         """
-
+        if(len(x.shape) <= 1):
+            x=x.reshape(-1,1)
         self.x = x
         #squeeeze targets; this should only be a vector
         self.y = y.squeeze()

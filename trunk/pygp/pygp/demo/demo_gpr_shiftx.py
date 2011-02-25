@@ -7,9 +7,8 @@ This Example shows the Squared Exponential CF
 :py:class:`covar.noise.NoiseISOCF` by summing them up
 (using :py:class:`covar.combinators.SumCF`).
 """
-
 from pygp.covar import se, noise, combinators
-from pygp.gp.basic_gp import GP
+from pygp.gp import GP
 from pygp.priors import lnpriors
 from pygp.optimize.optimize import opt_hyper
 from pygp.plot import gpr_plot
