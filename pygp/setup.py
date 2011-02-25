@@ -24,5 +24,5 @@ setup(name='pygp',
       #author = 'Oliver Stegle, Max Zwießele',
       #author_email = 'email_not_yet@support.ed',
       #url = 'no.url.given'
-      #install_requires = ['numpy','scipy']
+      install_requires = ['numpy','scipy']
       )
