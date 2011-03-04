@@ -37,7 +37,7 @@ class GPCEP(GPEP):
     
 
 
-    def setData(self,x,t,**kwargin):
+    def setData(self,x,t,*args,**kwargin):
         """set Data
         x: inputs [N,D]
         t: targets [N]
@@ -50,4 +50,4 @@ class GPCEP(GPEP):
             t_[t] = +1
             t_[~t] = -1
             t = t_
-        GPEP.setData(self,x,t,**kwargin)
+        GPEP.setData(self,x,t,*args,**kwargin)
