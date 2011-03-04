@@ -9,7 +9,7 @@ import logging
 from pygp.gp import GP, _solve_chol
 
 class GPEP(GP):
-    __slots__ = ["likelihood","muEP","zEP","vEP","Nep","IlogthetaL"]
+    #__slots__ = ["likelihood","muEP","zEP","vEP","Nep","IlogthetaL"]
     #zEP are stored 0th moments as an additional outcome of the EP calculations
     #muEP: Ep site parameter mean
     #vEP:  EP site parameter variance
@@ -28,7 +28,7 @@ class GPEP(GP):
         #number of EP sweeps
         self.Nep = Nep
         #split logtheta in likelihood and kernel logtheta
-        Nk = self.covar.getNparams()
+        Nk = self.covar.get_number_of_parameters()
         Nl = self.likelihood.getNparams()
         Nt = Nk+Nl
         self.Nlogtheta = Nt
