@@ -17,7 +17,7 @@ class GPCEP(GPEP):
     def __init__(self,*argin,**kwargin):
         likelihood = ProbitLikelihood()
         #call constructor, pass on likelihood function and switch off subtraction of mean
-        super(GPCEP, self).__init__(Smean=False,likelihood=likelihood,*argin,**kwargin)
+        super(GPCEP, self).__init__(likelihood=likelihood,*argin,**kwargin)#Smean=False,likelihood=likelihood,*argin,**kwargin)
         self.Nep = 3
         
 

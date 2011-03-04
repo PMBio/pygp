@@ -123,7 +123,7 @@ class GP(object):
 
     
 
-    def lMl(self,hyperparams,priors=None,**kw_args):
+    def lMl(self,hyperparams,priors=None,*args,**kw_args):
         """
         Calculate the log Marginal likelihood
         for the given logtheta.
@@ -154,7 +154,7 @@ class GP(object):
         
         #account for prior
         if priors is not None:
-            plml = self._lml_prior(hyperparams,priors=priors,**kw_args)
+            plml = self._lml_prior(hyperparams,priors=priors,*args,**kw_args)
             lMl -= SP.array([p[:,0].sum() for p in plml.values()]).sum()
         return lMl
         
@@ -184,14 +184,14 @@ class GP(object):
                 RV[key]-=plml[key][:,1]                       
         return RV
 
-    def getCovariances(self,hyperparams,x=None,y=None):
+    def get_covariances(self,hyperparams,x=None,y=None):
         """
         Return the Cholesky decompositions L and alpha::
 
             K 
             L     = chol(K)
             alpha = solve(L,t)
-            return [covar_struct] = getCovariances(hyperparam)
+            return [covar_struct] = get_covariances(hyperparam)
         """
         if(x is None or y is None):
             x=self.x
@@ -231,11 +231,17 @@ class GP(object):
         if(interval_indices is None):
             x=self.x
             y=self.y
+        elif(self.x.shape[1]>1):
+            x=self.x[:,interval_indices]
+            y=self.y[:,interval_indices]
+        elif(self.x.shape[0]>1):
+            x=self.x[interval_indices,:]
+            y=self.y[interval_indices,:]
         else:
             x=self.x[interval_indices]
             y=self.y[interval_indices]
 
-        KV = self.getCovariances(hyperparams,x,y)
+        KV = self.get_covariances(hyperparams,x,y)
         #cross covariance:
         Kstar       = self.covar.K(hyperparams['covar'],x,xstar)
         mu = SP.dot(Kstar.transpose(),KV['alpha'][:,output])
@@ -256,7 +262,7 @@ class GP(object):
     def _lMl_covar(self,hyperparams):
         
         try:   
-            KV = self.getCovariances(hyperparams)
+            KV = self.get_covariances(hyperparams)
         except linalg.LinAlgError:
             LG.error("exception caught (%s)" % (str(hyperparams)))
             return 1E6
@@ -270,7 +276,7 @@ class GP(object):
         #currently only support derivatives of covar params
         logtheta = hyperparams['covar']
         try:   
-            KV = self.getCovariances(hyperparams)
+            KV = self.get_covariances(hyperparams)
         except linalg.LinAlgError:
             LG.error("exception caught (%s)" % (str(hyperparams)))
             return {'covar':SP.zeros(len(logtheta))}

@@ -10,7 +10,6 @@ import scipy as SP
 from pygp.covar import CovarianceFunction
 
 import logging as LG
-import covar
 
 class DivergeCF(CovarianceFunction):
 
@@ -50,7 +49,6 @@ class DivergeCF(CovarianceFunction):
         # self.replicate_indices = replicate_indices
         #self.group_indices = group_indices
         #self.n_replicates = len(SP.unique(replicate_indices))
-        covar
         self.n_hyperparameters = 1
         assert self.n_hyperparameters == 1, "Not implemented yet for %i groups" % (self.n_hyperparameters)
         
