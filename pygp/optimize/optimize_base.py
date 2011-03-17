@@ -81,7 +81,7 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = 
         x_ = X0
         x_[Ifilter_x] = x
         
-        rv =  gpr.lMl(param_list_to_dict(x_,param_struct),**kw_args)
+        rv =  gpr.LML(param_list_to_dict(x_,param_struct),**kw_args)
         LG.debug("L("+str(x_)+")=="+str(rv))
         if SP.isnan(rv):
             return 1E6
@@ -90,7 +90,7 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = 
     def df(x):
         x_ = X0
         x_[Ifilter_x] = x
-        rv =  gpr.dlMl(param_list_to_dict(x_,param_struct),**kw_args)
+        rv =  gpr.LMLgrad(param_list_to_dict(x_,param_struct),**kw_args)
         #convert to list
         rv = param_dict_to_list(rv)
         LG.debug("dL("+str(x_)+")=="+str(rv))
@@ -144,7 +144,7 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = 
     opt_x[Ifilter_x] = opt_RV[0]
     opt_hyperparams = param_list_to_dict(opt_x,param_struct)
     #get the log marginal likelihood at the optimum:
-    opt_lml = gpr.lMl(opt_hyperparams,**kw_args)
+    opt_lml = gpr.LML(opt_hyperparams,**kw_args)
 
     if gradcheck:
         LG.info("check_grad (post) (Enter to continue):" + str(OPT.check_grad(f,df,opt_RV[0])))

@@ -11,6 +11,8 @@
 * Speedup for cholesky
 * Added Neils code for cholesky with Jitter
 * Changes to the covaraince interface
+* Renamed lml -> LML
+* Renamed dlml -> LMLgrad
 ** logtheta -> theta
 Parmaeters are now jus parameters of the covariance that decides internally how to handle them.
 ** renamed functions

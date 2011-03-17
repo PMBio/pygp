@@ -53,7 +53,7 @@ class GPLVM(GP):
         pass
 
   
-    def lMl(self,hyperparams,priors=None,**kw_args):
+    def LML(self,hyperparams,priors=None,**kw_args):
         """
         Calculate the log Marginal likelihood
         for the given logtheta.
@@ -84,17 +84,17 @@ class GPLVM(GP):
             self._update_inputs(hyperparams)
 
         #covariance hyper
-        lMl = self._lMl_covar(hyperparams)
+        LML = self._LML_covar(hyperparams)
 
         
         #account for prior
         if priors is not None:
             plml = self._lml_prior(hyperparams,priors=priors,**kw_args)
-            lMl -= SP.array([p[:,0].sum() for p in plml.values()]).sum()
-        return lMl
+            LML -= SP.array([p[:,0].sum() for p in plml.values()]).sum()
+        return LML
         
 
-    def dlMl(self,hyperparams,priors=None,**kw_args):
+    def LMLgrad(self,hyperparams,priors=None,**kw_args):
         """
         Returns the log Marginal likelihood for the given logtheta.
 
@@ -113,10 +113,10 @@ class GPLVM(GP):
         if 'x' in hyperparams:
             self._update_inputs(hyperparams)
             
-        RV = self._dlMl_covar(hyperparams)
+        RV = self._LMLgrad_covar(hyperparams)
         #
         if 'x' in hyperparams:
-            RV_ = self.dlMl_x(hyperparams)
+            RV_ = self._LMLgrad_x(hyperparams)
             #update RV
             RV.update(RV_)
 
@@ -130,7 +130,7 @@ class GPLVM(GP):
 
     ####PRIVATE####
 
-    def dlMl_x(self,hyperparams):
+    def _LMLgrad_x(self,hyperparams):
         """GPLVM derivative w.r.t. to latent variables
         """
         dlMl = SP.zeros_like(self.x)
