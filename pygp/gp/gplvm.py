@@ -6,10 +6,9 @@ import sys
 sys.path.append('./..')
 
 from pygp.gp import GP
-from pygp.opt import opt_hyper
-
 import scipy as SP
-import numpy.linalg as linalg
+import scipy.linalg as linalg
+
 
 def PCA(Y,components):
     """run PCA, retrieving the first (components) principle components
@@ -40,29 +39,20 @@ class GPLVM(GP):
 
 
 
-    def setData(self,*args,**kw_args):
-        GP.setData(self,*args,**kw_args)
+    def setData(self,gplvm_dimensions=None,**kw_args):
+        GP.setData(self,**kw_args)
         #handle non-informative gplvm_dimensions vector
-        if self.gplvm_dimensions is None:
+        if gplvm_dimensions is None:
             self.gplvm_dimensions = SP.arange(self.x.shape[1])
+        else:
+            self.gplvm_dimensions = gplvm_dimensions
         
     def _update_inputs(self,hyperparams):
         """update the inputs from gplvm models if supplied as hyperparms"""
-
-        #TODO: x_gplvm does not update the right thing
-        #self.x = hyperparams['x']
-        #get gplvm index view
-        x_gplvm = self._getXGPLVM()
-        #check everything is consistent
-        assert self.x[:,self.gplvm_dimensions].shape==x_gplvm.shape, 'shape error for latent x'
-        #update
         self.x[:,self.gplvm_dimensions] = hyperparams['x']
         pass
 
-    def _getXGPLVM(self):
-        """get the GPLVM part of the inputs"""
-        return self.x[:,self.gplvm_dimensions]        
-   
+  
     def lMl(self,hyperparams,priors=None,**kw_args):
         """
         Calculate the log Marginal likelihood
@@ -151,8 +141,26 @@ class GPLVM(GP):
         #we can calcualte all the derivatives efficiently; see also interface of Kd_dx of covar
         for i in xrange(len(self.gplvm_dimensions)):
             d = self.gplvm_dimensions[i]
-            dKx = self.covar.Kd_dx(hyperparams['covar'],self.x,d)
-            dlMl[:,i] = 0.5*(W*dKx).sum(axis=1)
+            #dKx is general, not knowing that we are computing the diagonal:
+            dKx = self.covar.Kgrad_x(hyperparams['covar'],self.x,self.x,d)
+            dKx_diag = self.covar.Kgrad_xdiag(hyperparams['covar'],self.x,d)
+            #set diagonal
+            dKx.flat[::(dKx.shape[1]+1)]=dKx_diag
+            #precalc elementwise product of W and K
+            WK = W*dKx
+            if 0:
+                #explicit calculation, slow!
+                #this is only in here to see what is done
+                for n in xrange(self.n):
+                    dKxn = SP.zeros([self.n,self.n])
+                    dKxn[n,:] = dKx[n,:]
+                    dKxn[:,n] = dKx[n,:]
+                    dlMl[n,i] = 0.5*SP.dot(W,dKxn).trace()
+                    pass
+            if 1:
+                #fast calculation
+                #we need twice the sum WK because of the matrix structure above, WK.diagonal() accounts for the double counting
+                dlMl[:,i] = 0.5*( 2*WK.sum(axis=1) - WK.diagonal() )
             pass
         RV = {'x':dlMl}
         return RV

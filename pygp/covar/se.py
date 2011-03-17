@@ -9,14 +9,10 @@ or :py:class:`pygp.covar.combinators.ProductCF` with the :py:class:`pygp.covar.n
 
 import scipy as SP
 import logging as LG
-
-# import super class CovarianceFunction
-#from covar import CovarianceFunction
-# import super class CF_Kd_dx
-
 from pygp.covar import CovarianceFunction
+import dist
 
-class SEARDCF(CovarianceFunction):
+class SqexpCFARD(CovarianceFunction):
     """
     Standart Squared Exponential Covariance function.
 
@@ -33,14 +29,9 @@ class SEARDCF(CovarianceFunction):
         For instance the n_dimensions of inputs are in 2nd and
         4th dimension dimension_indices would have to be [1,3].
 
-    """
-    #__slots__= ["n_hyperparameters",
-    #            "n_dimensions",
-    #            "dimension_indices",
-    #            "active_dimension_indices"]
-    
+    """   
     def __init__(self,*args,**kwargs):
-        super(SEARDCF, self).__init__(*args,**kwargs)
+        super(SqexpCFARD, self).__init__(*args,**kwargs)
         self.n_hyperparameters = self.n_dimensions+1
         pass
 
@@ -61,7 +52,7 @@ class SEARDCF(CovarianceFunction):
         """
         return self.n_dimensions+1;
 
-    def K(self, logtheta, x1, x2=None):
+    def K(self, theta, x1, x2=None):
         """
         Get Covariance matrix K with given hyperparameters
         and inputs X=x1 and X\`*`=x2.
@@ -69,19 +60,27 @@ class SEARDCF(CovarianceFunction):
         **Parameters:**
         See :py:class:`pygp.covar.CovarianceFunction`
         """
+        #1. get inputs
         x1, x2 = self._filter_input_dimensions(x1,x2)
-        # 2. exponentiate params:
-        V0 = SP.exp(2*logtheta[0])
-        L  = SP.exp(logtheta[1:1+self.n_dimensions])#[self.Iactive])
-        # calculate the distance betwen x1,x2 for each dimension separately, reweighted by L. 
-        dd = self._pointwise_distance(x1,x2,L)
-        sqd = dd*dd
-        sqd = sqd.sum(axis=2)
+        #2. exponentialte parameters
+        V0 = SP.exp(2*theta[0])
+        L  = SP.exp(theta[1:1+self.n_dimensions])
+        sqd = dist.sq_dist(x1/L,x2/L)
         #3. calculate the whole covariance matrix:
         rv = V0*SP.exp(-0.5*sqd)
         return rv
 
-    def Kd(self, logtheta, x1, i):
+    def Kdiag(self,theta, x1):
+        """
+        Get diagonal of the (squared) covariance matrix.
+
+        **Parameters:**
+        See :py:class:`pygp.covar.CovarianceFunction`
+        """
+        #diagonal is zero
+        return SP.zeros([x1.shape[0]])
+    
+    def Kgrad_theta(self, theta, x1, i):
         """
         The derivatives of the covariance matrix for
         each hyperparameter, respectively.
@@ -91,62 +90,33 @@ class SEARDCF(CovarianceFunction):
         """
         x1 = self._filter_x(x1)
         # 2. exponentiate params:
-        V0 = SP.exp(2*logtheta[0])
-        L  = SP.exp(logtheta[1:1+self.n_dimensions])
-        # calculate the distance between
-        # x1,x2 for each dimension separately.
-        dd = self._pointwise_distance(x1,x1,L)
-        # sq. distance is neede anyway:
-        sqd = dd*dd
-        sqdd = sqd
-        sqd = sqd.sum(axis=2)
+        V0 = SP.exp(2*theta[0])
+        L  = SP.exp(theta[1:1+self.n_dimensions])
+        # calculate squared distance manually as we need to dissect this below
+        x1_ = x1/L
+        d  = dist.dist(x1_,x1_)
+        sqd = (d*d)
+        sqdd = sqd.sum(axis=2)
         #3. calcualte withotu derivatives, need this anyway:
-        rv0 = V0*SP.exp(-0.5*sqd)
-
+        rv0 = V0*SP.exp(-0.5*sqdd)
         if i==0:
             return 2*rv0
         else:
-            return rv0*sqdd[:,:,i-1]
+            return rv0*sqd[:,:,i-1]
 
-    def Kdiag(self,logtheta, x1):
-        """
-        Get diagonal of the (squared) covariance matrix.
-
-        **Parameters:**
-        See :py:class:`pygp.covar.CovarianceFunction`
-        """
-        #default: naive implementation
-        LG.debug("SEARDCF: Kdiag: Default unefficient implementation!")
-        return self.K(logtheta,x1).diagonal()
     
-
-    def Kdx(self,logtheta,x):
+    def Kgrad_x(self,theta,x1,x2,d):
         """
         The partial derivative of the covariance matrix with
-        respect to x, given hyperparameters `logtheta`.
+        respect to x, given hyperparameters `theta`.
 
         **Parameters:**
         See :py:class:`pygp.covar.CovarianceFunction`
         """
-
-        #TODO: I am pretty sure this only works for a single dimension, right?
-        L = SP.exp(logtheta[1:1+self.n_dimensions])
-        dd = self._pointwise_distance(x,x,-(L**2))
-        return self.K(logtheta,x) * dd.transpose(2,0,1)
-
-    def get_default_hyperparameters(self,x=None,y=None):
-        """
-        Return default parameters for a particular
-        dataset (optional).
-        """
-        #start with data independent default
-        rv = SP.ones(self.n_hyperparameters)
-        #start with a smallish variance
-        rv[-1] = 0.1
-        if y is not None:
-            #adjust amplitude
-            rv[0] = (y.max()-y.min())/2
-        if x is not None:
-            rv[1:-1] = (x.max(axis=0)-x.min(axis=0))/4
-        return SP.log(rv)
+        raise Exception('update this implementation')
+        return None
+    
+    def Kgrad_xdiag(self,theta,x1,d):
+        RV = SP.zeros([x1.shape[0]])
+        return RV
 

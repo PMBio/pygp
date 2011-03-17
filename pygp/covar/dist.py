@@ -1,32 +1,6 @@
-import numpy as NP
+"""helper module for distances"""
 
-def Bdist(*args):
-    '''binary distance matrix:
-    dist(X)    -  return matrix of size (len(X),len(X)) all True!
-    dist(X1,X2)-  return matrix of size (len(X1),len(X2)) with (xi==xj)'''
-    
-    
-    if(len(args)==1):
-        #return true
-        X  = args[0]
-        Y  = args[0]
-        #X = NP.matrix(args[0])
-        #Y = NP.matrix(args[0])
-    elif(len(args)>=2):
-        X  = args[0]
-        Y  = args[1]
-        #X = NP.matrix(args[0])
-        #Y = NP.matrix(args[1])
-        
-        
-    #rv = NP.zeros((len(X),len(Y)),'double')
-    
-    A = NP.repeat(X,1,len(Y))
-    B = NP.repeat(Y.T,len(X),1)
-    
-    rv = (A&B)
-    
-    return rv
+import scipy as SP
 
 def dist(X,Y=None):
     '''calcualte disntance of all inputs:
@@ -40,7 +14,6 @@ def dist(X,Y=None):
         lx = X.shape[0]
         ly = Y.shape[0]
         dim = X.shape[1]
-        
         #reshape stuff and copy it.
         Xr = X.reshape((1,lx,dim))
         Yr = Y.reshape((ly,1,dim))
@@ -63,16 +36,37 @@ def sq_dist(*args):
     rv = rv.sum(axis=2)
     return rv
 
+
+def Bdist(*args):
+    '''binary distance matrix:
+    dist(X)    -  return matrix of size (len(X),len(X)) all True!
+    dist(X1,X2)-  return matrix of size (len(X1),len(X2)) with (xi==xj)'''
+    
+    
+    if(len(args)==1):
+        #return true
+        X  = args[0]
+        Y  = args[0]
+    elif(len(args)>=2):
+        X  = args[0]
+        Y  = args[1]
+    A = SP.repeat(X,1,len(Y))
+    B = SP.repeat(Y.T,len(X),1)    
+    rv = (A&B)
+   
+    return rv
+
+
+
 def _dist_1_dimension(X,Y=None):
     if(Y is None):
         Y=X
     #reshape stuff and copy it.
-    rv = Y.reshape(-1,1) - X.reshape(-1,1,1)
-   
+    rv = Y.reshape(-1,1) - X.reshape(-1,1,1)   
     return rv
    
     
 if __name__ == "__main__":
-    X = NP.array([[1,2],[5,6]],dtype='double')
-    Y = NP.array([[1,2],[8,7],[0,0]],dtype='double')
+    X = SP.array([[1,2],[5,6]],dtype='double')
+    Y = SP.array([[1,2],[8,7],[0,0]],dtype='double')
     print sq_dist(X,Y)

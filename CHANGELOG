@@ -1,0 +1,23 @@
+17.3.2011 (OS)
+* Removed all code from __init__.py and instead used gp_base ,covar_base etc. as module
+* Moved linear algebra into seprate module
+* Added working gplvm demo
+* Moved the demo code in gpr to main, outside the extra function
+  - gradX has changed (TODO: Max. Change the time shift code to reflect this).
+* Added bounds to optimization
+* Exponetiation of hyperparameters is now out of the code.
+  The only placed that deside upon exp. are the covariance and the priors.
+* Changed lnpriors adding Exp prefix that indicates that parameters are in log space
+* Speedup for cholesky
+* Added Neils code for cholesky with Jitter
+* Changes to the covaraince interface
+** logtheta -> theta
+Parmaeters are now jus parameters of the covariance that decides internally how to handle them.
+** renamed functions
+  K(theta,x,[x2])
+  Kdiag (x)
+  Kgrad_theta(x,i)
+  Kgrad_x(x,[x2],d)
+  Kgrad_xdiag(x,d)
+** Removed _pointwise_ditance from Covariance 
+Max: why do you need pointwise_distance? 

@@ -8,12 +8,6 @@ for hyperparameters of covariance functions
 
 """
 
-try:
-    __import__('pkg_resources').declare_namespace(__name__)
-except ImportError:
-    from pkgutil import extend_path
-    __path__ = extend_path(__path__, __name__)
-
 
 # import scipy:
 import scipy as SP
@@ -44,7 +38,7 @@ def param_list_to_dict(list,param_struct):
     return dict(RV)
 
 
-def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,optimizer=OPT.fmin_l_bfgs_b,**kw_args):
+def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = None,optimizer=OPT.fmin_tnc,**kw_args):
     """
     Optimize hyperparemters of :py:class:`pygp.gp.basic_gp.GP` ``gpr`` starting from given hyperparameters ``hyperparams``.
 
@@ -66,6 +60,9 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,optimizer
         this example) of logtheta will be optimized
         and the others remain untouched.
 
+    bounds : [[min,max]]
+        Array with min and max value that can be attained for any hyperparameter
+
     maxiter: int
         maximum number of function evaluations
     gradcheck: boolean 
@@ -79,16 +76,6 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,optimizer
         non-default prior, otherwise assume
         first index amplitude, last noise, rest:lengthscales
     """
-
-    #0. store parameter structure
-    param_struct = dict([(name,hyperparams[name].shape) for name in hyperparams.keys()])
-    
-    #1. convert the dictionaries to parameter lists
-    X0 = param_dict_to_list(hyperparams)
-    if Ifilter is not None:
-        Ifilter_x = SP.array(param_dict_to_list(Ifilter),dtype='bool')
-    else:
-        Ifilter_x = SP.ones(len(X0),dtype='bool')
 
     def f(x):
         x_ = X0
@@ -111,6 +98,32 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,optimizer
             In = SP.isnan(rv)
             rv[In] = 1E6
         return rv[Ifilter_x]
+
+    
+
+    #0. store parameter structure
+    param_struct = dict([(name,hyperparams[name].shape) for name in hyperparams.keys()])
+    
+    #1. convert the dictionaries to parameter lists
+    X0 = param_dict_to_list(hyperparams)
+    if Ifilter is not None:
+        Ifilter_x = SP.array(param_dict_to_list(Ifilter),dtype='bool')
+    else:
+        Ifilter_x = SP.ones(len(X0),dtype='bool')
+
+    #2. bounds
+    if bounds is not None:
+        #go through all hyperparams and build bound array (flattened)
+        _b = []
+        for key in hyperparams.keys():
+            if key in bounds.keys():
+               _b.extend(bounds[key])
+            else:
+                _b.extend([(-SP.inf,+SP.inf)]*hyperparams[key].size)
+        bounds = SP.array(_b)
+        bounds = bounds[Ifilter_x]
+        pass
+       
         
     #2. set stating point of optimization, truncate the non-used dimensions
     x  = X0.copy()[Ifilter_x]
@@ -124,15 +137,14 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,optimizer
     LG.info("start optimization")
 
     #general optimizer interface
-    opt_RV=optimizer(f, x, fprime=df, args=(), pgtol=1E-05, epsilon=1E-08, maxfun=maxiter)
-    #opt_RV=OPT.fmin_bfgs(f, x, fprime=df, args=(), gtol=1.0000000000000001e-04, norm=SP.inf, epsilon=1.4901161193847656e-08, maxiter=maxiter, full_output=1, disp=(0), retall=0)
+    opt_RV=optimizer(f, x, fprime=df, maxfun=maxiter,messages=False,bounds=bounds)
 
     #get optimized parameters out
     opt_x = X0.copy()
     opt_x[Ifilter_x] = opt_RV[0]
     opt_hyperparams = param_list_to_dict(opt_x,param_struct)
     #get the log marginal likelihood at the optimum:
-    opt_lml = opt_RV[1]
+    opt_lml = gpr.lMl(opt_hyperparams,**kw_args)
 
     if gradcheck:
         LG.info("check_grad (post) (Enter to continue):" + str(OPT.check_grad(f,df,opt_RV[0])))
@@ -144,4 +156,4 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,optimizer
     LG.info(str(opt_hyperparams))
     LG.info("grad:"+str(df(opt_x)))
     
-    return opt_hyperparams,opt_lml
+    return [opt_hyperparams,opt_lml]

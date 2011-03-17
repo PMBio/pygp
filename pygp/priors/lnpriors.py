@@ -1,14 +1,30 @@
 """
 Hyperpriors for log likelihood calculation
 ------------------------------------------
-
+This module contains a set of commonly used priors for GP models.
+Note some priors are available in a log transformed space and non-transformed space
 """
 
 import scipy as SP
 import scipy.special as SPs
 import pylab as PL
 
-def lngammapdf(x,params):
+
+def lnL1(x,params):
+    """L1 type prior defined on the non-log weights
+    params[0]: prior cost
+    Note: this prior only works if the paramter is constraint to be strictly positive
+    """
+    l = SP.double(params[0])
+    x_ = 1./x
+
+    lng = -l * x_
+    dlng = + l*x_**2
+    return [lng,dlng]
+
+
+
+def lnGamma(x,params):
     """
     Returns the ``log gamma (x,k,t)`` distribution and its derivation with::
     
@@ -31,8 +47,33 @@ def lngammapdf(x,params):
 
     lng     = (k-1)*SP.log(x) - x/t -SPs.gammaln(k) - k*SP.log(t)
     dlng    = (k-1)/x - 1/t
-
     return [lng,dlng]
+
+
+def lnGammaExp(x,params):
+    """
+    
+    Returns the ``log gamma (exp(x),k,t)`` distribution and its derivation with::
+    
+        lngamma     = (k-1)*log(x) - x/t -gammaln(k) - k*log(t)
+        dlngamma    = (k-1)/x - 1/t
+   
+    
+    **Parameters:**
+    
+    x : [double]
+        the interval in which the distribution shall be computed.
+    
+    params : [k, t]
+        the distribution parameters k and t.
+    
+    """
+    #explicitly convert to double to avoid int trouble :-)
+    ex = SP.exp(x)
+    rv = lnGamma(ex,params)
+    rv[1]*= ex
+    return rv
+
 
 def lngausspdf(x,params):
     """
