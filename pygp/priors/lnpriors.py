@@ -100,7 +100,7 @@ def lngausspdf(x,params):
     dN = -(x-mu)/(sigma**2)
     return [N,dN]
 
-def lnzeropdf(x,params):
+def lnuniformpdf(x,params):
     """
     Implementation of ``lnzeropdf`` for development purpose only. This
     pdf returns always ``[0,0]``.  
