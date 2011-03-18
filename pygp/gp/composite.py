@@ -31,27 +31,25 @@ class GroupGP(GP):
         self.N = len(GPs)
         self.GPs = GPs
 
-    def lMl(self,hyperparams,**lml_kwargs):
+    def LML(self,hyperparams,**LML_kwargs):
         """
         Returns the log Marginal likelyhood for the given logtheta
-        and the lMl_kwargs:
+        and the LML_kwargs:
 
         logtheta : [double]
             Array of hyperparameters, which define the covariance function
 
-        lMl_kwargs : lml, dlml, clml, sdlml, priors, Ifilter
-            See :py:class:`gpr.GP.lMl`
+        LML_kwargs : lml, dlml, clml, sdlml, priors, Ifilter
+            See :py:class:`gpr.GP.LML`
     
         """
-        #lMl(logtehtas,lml=Ture,dlml=true,clml=True,cdlml=True,priors=None)
-        #calculate them for all N
         R = 0
         for n in range(self.N):
-            L = self.GPs[n].lMl(hyperparams,**lml_kwargs)
+            L = self.GPs[n].LML(hyperparams,**LML_kwargs)
             R = R+L
         return R
 
-    def dlMl(self,hyperparams,priors=None,**lml_kwargs):
+    def LMLgrad(self,hyperparams,priors=None,**lml_kwargs):
         """
         Returns the log Marginal likelihood for the given logtheta.
 
@@ -68,7 +66,7 @@ class GroupGP(GP):
         R = 0
         #calculate them for all N
         for n in range(self.N):
-            L = self.GPs[n].dlMl(hyperparams,**lml_kwargs)
+            L = self.GPs[n].LMLgrad(hyperparams,**lml_kwargs)
             for key in L.keys():
                 R += (L[key])
         return {'covar':R}

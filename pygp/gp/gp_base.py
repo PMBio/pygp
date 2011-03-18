@@ -65,18 +65,18 @@ class GP(object):
     # Smean : boolean
     # Subtract mean of Data
     # TODO: added d
-    __slots__ = ["x","y","n","d","covar", \
+    __slots__ = ["x", "y", "n", "d", "covar", \
                  "_covar_cache"]
     
-    def __init__(self, covar_func=None, x=None,y=None):
+    def __init__(self, covar_func=None, x=None, y=None):
         '''GP(covar_func,Smean=True,x=None,y=None)
         covar_func: Covariance
         x/y:        training input/targets
         '''       
         if not (x is None):
-            self.setData(x=x,y=y)
+            self.setData(x=x, y=y)
         # Store the constructor parameters
-        self.covar   = covar_func
+        self.covar = covar_func
         self._invalidate_cache()
         pass
 
@@ -85,10 +85,10 @@ class GP(object):
        
     def getData(self):
         """ Returns the data, currently set for this GP"""
-        return [self.x,self.y]
+        return [self.x, self.y]
 
     
-    def setData(self,x,y):
+    def setData(self, x, y):
         """
         setData(x,t) with **Parameters:**
 
@@ -101,9 +101,9 @@ class GP(object):
         #squeeeze targets; this should only be a vector
         self.y = y.squeeze()
         #assert shapes
-        if len(self.y.shape)==1:
-            self.y = self.y[:,SP.newaxis]
-        assert self.x.shape[0]==self.y.shape[0], 'input/target shape missmatch'
+        if len(self.y.shape) == 1:
+            self.y = self.y[:, SP.newaxis]
+        assert self.x.shape[0] == self.y.shape[0], 'input/target shape missmatch'
         self.n = len(self.x)
         #for GPLVM models:
         self.d = self.y.shape[1]
@@ -115,7 +115,7 @@ class GP(object):
 
     
 
-    def LML(self,hyperparams,priors=None,*args,**kw_args):
+    def LML(self, hyperparams, priors=None, *args, **kw_args):
         """
         Calculate the log Marginal likelihood
         for the given logtheta.
@@ -146,12 +146,12 @@ class GP(object):
         
         #account for prior
         if priors is not None:
-            plml = self._LML_prior(hyperparams,priors=priors,*args,**kw_args)
-            LML -= SP.array([p[:,0].sum() for p in plml.values()]).sum()
+            plml = self._LML_prior(hyperparams, priors=priors, *args, **kw_args)
+            LML -= SP.array([p[:, 0].sum() for p in plml.values()]).sum()
         return LML
         
 
-    def LMLgrad(self,hyperparams,priors=None,**kw_args):
+    def LMLgrad(self, hyperparams, priors=None, **kw_args):
         """
         Returns the log Marginal likelihood for the given logtheta.
 
@@ -167,16 +167,16 @@ class GP(object):
         # Ideriv : 
         #      indicator which derivativse to calculate (default: all)
 
-        RV=self._LMLgrad_covar(hyperparams)
+        RV = self._LMLgrad_covar(hyperparams)
         
         #prior
         if priors is not None:
-            plml = self._LML_prior(hyperparams,priors=priors,**kw_args)
+            plml = self._LML_prior(hyperparams, priors=priors, **kw_args)
             for key in RV.keys():
-                RV[key]-=plml[key][:,1]                       
+                RV[key] -= plml[key][:, 1]                       
         return RV
 
-    def get_covariances(self,hyperparams,x=None,y=None):
+    def get_covariances(self, hyperparams, x=None, y=None):
         """
         Return the Cholesky decompositions L and alpha::
 
@@ -186,21 +186,21 @@ class GP(object):
             return [covar_struct] = get_covariances(hyperparam)
         """
         if(x is None or y is None):
-            x=self.x
-            y=self.y
+            x = self.x
+            y = self.y
         
         if self._is_cached(hyperparams):
             pass
         else:
             #update cache
-            K = self.covar.K(hyperparams['covar'],x)
+            K = self.covar.K(hyperparams['covar'], x)
             L = jitChol(K)[0].T # lower triangular
-            alpha = solve_chol(L,y)
-            self._covar_cache = {'K': K,'L':L,'alpha':alpha,'hyperparams':copy.deepcopy(hyperparams)}
+            alpha = solve_chol(L, y)
+            self._covar_cache = {'K': K, 'L':L, 'alpha':alpha, 'hyperparams':copy.deepcopy(hyperparams)}
         return self._covar_cache 
        
         
-    def predict(self,hyperparams,xstar,output=0,var=True,interval_indices=None):
+    def predict(self, hyperparams, xstar, output=0, var=True, interval_indices=None):
         '''
         Predict mean and variance for given **Parameters:**
 
@@ -221,30 +221,32 @@ class GP(object):
         output   : output dimension for prediction (0)
         '''
 
-        #TODO: Max, what are these about, where do you use them?
+        # Get interval_indices right
+        # interval_indices are meant to not must set data new, 
+        # if predicting on an subset of data only.
         if(interval_indices is None):
-            x=self.x
-            y=self.y
-        elif(self.x.shape[1]>1):
-            x=self.x[:,interval_indices]
-            y=self.y[:,interval_indices]
-        elif(self.x.shape[0]>1):
-            x=self.x[interval_indices,:]
-            y=self.y[interval_indices,:]
+            x = self.x
+            y = self.y
+        elif(self.x.shape[1] > 1):
+            x = self.x[:, interval_indices]
+            y = self.y[:, interval_indices]
+        elif(self.x.shape[0] > 1):
+            x = self.x[interval_indices, :]
+            y = self.y[interval_indices, :]
         else:
-            x=self.x[interval_indices]
-            y=self.y[interval_indices]
+            x = self.x[interval_indices]
+            y = self.y[interval_indices]
 
-        KV = self.get_covariances(hyperparams,x,y)
+        KV = self.get_covariances(hyperparams, x, y)
         #cross covariance:
-        Kstar       = self.covar.K(hyperparams['covar'],x,xstar)
-        mu = SP.dot(Kstar.transpose(),KV['alpha'][:,output])
+        Kstar = self.covar.K(hyperparams['covar'], x, xstar)
+        mu = SP.dot(Kstar.transpose(), KV['alpha'][:, output])
         if(var):            
-            Kss_diag         = self.covar.Kdiag(hyperparams['covar'],xstar)
-            v    = linalg.solve(KV['L'],Kstar)
-            S2   = Kss_diag - sum(v*v,0).transpose()
-            S2   = abs(S2)
-            return [mu,S2]
+            Kss_diag = self.covar.Kdiag(hyperparams['covar'], xstar)
+            v = linalg.solve(KV['L'], Kstar)
+            S2 = Kss_diag - sum(v * v, 0).transpose()
+            S2 = abs(S2)
+            return [mu, S2]
         else:
             return mu
 
@@ -253,7 +255,7 @@ class GP(object):
 
     #log marginal likelihood contributions from covaraince hyperparameters:
 
-    def _LML_covar(self,hyperparams):
+    def _LML_covar(self, hyperparams):
         
         try:   
             KV = self.get_covariances(hyperparams)
@@ -262,11 +264,11 @@ class GP(object):
             return 1E6
 
         #Change: no supports multi dimensional stuff for GPLVM
-        lMl = 0.5*(KV['alpha']*self.y).sum() + self.d*(sum(SP.log(KV['L'].diagonal())) + 0.5*self.n*SP.log(2*SP.pi))
-        return lMl
+        LML = 0.5 * (KV['alpha'] * self.y).sum() + self.d * (sum(SP.log(KV['L'].diagonal())) + 0.5 * self.n * SP.log(2 * SP.pi))
+        return LML
 
 
-    def _LMLgrad_covar(self,hyperparams):
+    def _LMLgrad_covar(self, hyperparams):
         #currently only support derivatives of covar params
         logtheta = hyperparams['covar']
         try:   
@@ -279,15 +281,15 @@ class GP(object):
         L = KV['L']
 
         alpha = KV['alpha']
-        W  =  self.d*linalg.solve(L.transpose(),linalg.solve(L,SP.eye(n))) - SP.dot(alpha,alpha.transpose())
+        W = self.d * linalg.solve(L.transpose(), linalg.solve(L, SP.eye(n))) - SP.dot(alpha, alpha.transpose())
         self._covar_cache['W'] = W
         
 
-        dlMl = SP.zeros(len(logtheta))
+        LMLgrad = SP.zeros(len(logtheta))
         for i in xrange(len(logtheta)):
-            Kd = self.covar.Kgrad_theta(hyperparams['covar'],self.x,i)
-            dlMl[i] = 0.5*(W*Kd).sum()
-        RV = {'covar': dlMl}
+            Kd = self.covar.Kgrad_theta(hyperparams['covar'], self.x, i)
+            LMLgrad[i] = 0.5 * (W * Kd).sum()
+        RV = {'covar': LMLgrad}
         return RV
 
                    
@@ -296,30 +298,30 @@ class GP(object):
         self._covar_cache = None
         pass
 
-    def _LML_prior(self,hyperparams,priors={}):
+    def _LML_prior(self, hyperparams, priors={}):
         """calculate the prior contribution to the log marginal likelihood"""
         if priors is None:
             priors = {}
         RV = {}
-        for key,value in hyperparams.iteritems():
-            pvalues = SP.zeros([len(value),2])
+        for key, value in hyperparams.iteritems():
+            pvalues = SP.zeros([len(value), 2])
             #NOTE: removed the chain rule for exponentiated hyperparams
             if key in priors:
                 plist = priors[key]
                 theta = copy.deepcopy(hyperparams[key])
                 for i in xrange(len(theta)):
-                    pvalues[i,:] = plist[i][0](theta[i],plist[i][1])
+                    pvalues[i, :] = plist[i][0](theta[i], plist[i][1])
             RV[key] = pvalues
         return RV
 
-    def _is_cached(self,hyperparams):
+    def _is_cached(self, hyperparams):
         """check whether model parameters are cached"""
         if self._covar_cache is None:
             return False
         else:
             #compare
             for key in hyperparams.keys():
-                if not (self._covar_cache['hyperparams'][key]==hyperparams[key]).all():
+                if not (self._covar_cache['hyperparams'][key] == hyperparams[key]).all():
                     return False
             #otherwise they are cached:
             return True

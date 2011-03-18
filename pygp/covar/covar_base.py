@@ -19,9 +19,7 @@ For example to use the squared exponential CF with noise::
 
 # import scipy:
 import scipy as SP
-import sq_dist
 import logging as LG
-import warnings
 
 
 class CovarianceFunction(object):
@@ -139,7 +137,7 @@ class CovarianceFunction(object):
         RV: matrix of size [x1,x2] containin all values of
         d/dx1^{i,d} K(X1,X2)
         """
-        LG.critical("implement Kd_dx")
+        LG.critical("implement Kgrad_x")
         return None
 
     def Kgrad_xdiag(self,theta,x1,d):

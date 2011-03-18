@@ -61,7 +61,7 @@ class TestProductCF(unittest.TestCase):
         def f(x):
             x_ = hyperparams
 #            x_[Ifilter_x] = x
-            rv =  self.gpr.lMl(x_)
+            rv =  self.gpr.LML(x_)
             #LG.debug("L("+str(x_)+")=="+str(rv))
             if SP.isnan(rv):
                 return 1E6
@@ -70,7 +70,7 @@ class TestProductCF(unittest.TestCase):
         def df(x):
             x_ = hyperparams
 #            x_[Ifilter_x] = x
-            rv =  self.gpr.dlMl(x_)
+            rv =  self.gpr.LMLgrad(x_)
             #convert to list
             rv = param_dict_to_list(rv)
             #LG.debug("dL("+str(x_)+")=="+str(rv))

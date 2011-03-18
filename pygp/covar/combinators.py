@@ -307,7 +307,7 @@ class ShiftCF(CovarianceFunction):
         return K
 
 
-    def Kd(self,theta, x, i):
+    def Kgrad_theta(self,theta, x, i):
         """
         Get Covariance matrix K with given hyperparameters
         theta and inputs x1 and x2. The result

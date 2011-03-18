@@ -11,7 +11,7 @@ This Example shows the Squared Exponential CF
 from pygp.covar import se, noise, combinators
 from pygp.gp import GP
 from pygp.priors import lnpriors
-from pygp.opt import opt_hyper
+from pygp.optimize import opt_hyper
 from pygp.plot import gpr_plot
 
 import logging as LG
@@ -69,23 +69,23 @@ def run_demo():
     logthetaCOVAR = SP.log([1,1,SP.exp(0),SP.exp(0),sigma1])#,sigma2])
     hyperparams = {'covar':logthetaCOVAR}
     
-    SECF = se.SEARDCF(dim)
+    SECF = se.SqexpCFARD(dim)
     #noiseCF = noise.NoiseReplicateCF(replicate_indices)
-    noiseCF = noise.NoiseISOCF()
+    noiseCF = noise.NoiseCFISO()
     shiftCF = combinators.ShiftCF(SECF,replicate_indices)
     CovFun = combinators.SumCF((shiftCF,noiseCF))
     
     covar_priors = []
     #scale
-    covar_priors.append([lnpriors.lngammapdf,[1,2]])
+    covar_priors.append([lnpriors.lnGammaExp,[1,2]])
     for i in range(dim):
-        covar_priors.append([lnpriors.lngammapdf,[1,1]])
+        covar_priors.append([lnpriors.lnGammaExp,[1,1]])
     #shift
     for i in range(n_replicates):
         covar_priors.append([lnpriors.lngausspdf,[0,.5]])    
     #noise
     for i in range(n_noises):
-        covar_priors.append([lnpriors.lngammapdf,[1,1]])
+        covar_priors.append([lnpriors.lnGammaExp,[1,1]])
     
     priors = {'covar':covar_priors}
     Ifilter = {'covar': SP.array([1,1,1,1,1],dtype='int')}

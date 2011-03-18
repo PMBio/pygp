@@ -70,7 +70,7 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = 
     optimizer: :py:class:`scipy.optimize`
         which scipy optimizer to use? (standard lbfgsb)
 
-    ** argument passed onto lMl**
+    ** argument passed onto LML**
 
     priors : [:py:class:`pygp.priors`]
         non-default prior, otherwise assume
@@ -117,7 +117,7 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = 
         _b = []
         for key in hyperparams.keys():
             if key in bounds.keys():
-               _b.extend(bounds[key])
+                _b.extend(bounds[key])
             else:
                 _b.extend([(-SP.inf,+SP.inf)]*hyperparams[key].size)
         bounds = SP.array(_b)
