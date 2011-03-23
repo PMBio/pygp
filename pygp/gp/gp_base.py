@@ -14,6 +14,7 @@ Holds all Gaussian Process classes, which hold all informations for a Gaussian P
 """
 
 import copy
+import pdb
 import scipy.linalg as linalg
 import scipy as SP
 import logging as LG
@@ -65,18 +66,20 @@ class GP(object):
     # Smean : boolean
     # Subtract mean of Data
     # TODO: added d
-    __slots__ = ["x", "y", "n", "d", "covar", \
+    __slots__ = ["x", "y", "n", "d", "covar", "likelihood", \
                  "_covar_cache"]
     
-    def __init__(self, covar_func=None, x=None, y=None):
-        '''GP(covar_func,Smean=True,x=None,y=None)
+    def __init__(self, covar_func=None, likelihood=None, x=None, y=None):
+        '''GP(covar_func,likleihood,Smean=True,x=None,y=None)
         covar_func: Covariance
+        likelihood: likelihood model
         x/y:        training input/targets
         '''       
         if not (x is None):
             self.setData(x=x, y=y)
         # Store the constructor parameters
         self.covar = covar_func
+        self.likelihood = likelihood
         self._invalidate_cache()
         pass
 
@@ -168,7 +171,8 @@ class GP(object):
         #      indicator which derivativse to calculate (default: all)
 
         RV = self._LMLgrad_covar(hyperparams)
-        
+        if self.likelihood is not None:
+            RV.update(self._LMLgrad_lik(hyperparams))
         #prior
         if priors is not None:
             plml = self._LML_prior(hyperparams, priors=priors, **kw_args)
@@ -176,7 +180,7 @@ class GP(object):
                 RV[key] -= plml[key][:, 1]                       
         return RV
 
-    def get_covariances(self, hyperparams, x=None, y=None):
+    def get_covariances(self, hyperparams):
         """
         Return the Cholesky decompositions L and alpha::
 
@@ -184,19 +188,21 @@ class GP(object):
             L     = chol(K)
             alpha = solve(L,t)
             return [covar_struct] = get_covariances(hyperparam)
-        """
-        if(x is None or y is None):
-            x = self.x
-            y = self.y
-        
+        """       
         if self._is_cached(hyperparams):
             pass
         else:
-            #update cache
-            K = self.covar.K(hyperparams['covar'], x)
+            Knoise = 0
+            #1. use likelihood object to perform the inference
+            if self.likelihood is not None:
+                Knoise = self.likelihood.K(hyperparams['lik'],self.x)
+            K = self.covar.K(hyperparams['covar'], self.x)
+            K+= Knoise
             L = jitChol(K)[0].T # lower triangular
-            alpha = solve_chol(L, y)
-            self._covar_cache = {'K': K, 'L':L, 'alpha':alpha, 'hyperparams':copy.deepcopy(hyperparams)}
+            alpha = solve_chol(L, self.y)
+            self._covar_cache = {'K': K, 'L':L, 'alpha':alpha}
+            #store hyperparameters for cachine
+            self._covar_cache['hyperparams'] = copy.deepcopy(hyperparams)
         return self._covar_cache 
        
         
@@ -220,7 +226,8 @@ class GP(object):
         
         output   : output dimension for prediction (0)
         '''
-
+        # TODO: removes this or figure out how to do it right.
+        # This is currenlty not compatible with the structure:
         # Get interval_indices right
         # interval_indices are meant to not must set data new, 
         # if predicting on an subset of data only.
@@ -236,13 +243,15 @@ class GP(object):
         else:
             x = self.x[interval_indices]
             y = self.y[interval_indices]
-
-        KV = self.get_covariances(hyperparams, x, y)
+            
+        KV = self.get_covariances(hyperparams)
         #cross covariance:
         Kstar = self.covar.K(hyperparams['covar'], x, xstar)
         mu = SP.dot(Kstar.transpose(), KV['alpha'][:, output])
-        if(var):            
+        if(var):
             Kss_diag = self.covar.Kdiag(hyperparams['covar'], xstar)
+            if self.likelihood is not None:
+                Kss_diag += self.likelihood.Kdiag(hyperparams['lik'],xstar)
             v = linalg.solve(KV['L'], Kstar)
             S2 = Kss_diag - sum(v * v, 0).transpose()
             S2 = abs(S2)
@@ -276,7 +285,6 @@ class GP(object):
         except linalg.LinAlgError:
             LG.error("exception caught (%s)" % (str(hyperparams)))
             return {'covar':SP.zeros(len(logtheta))}
-        logtheta = hyperparams['covar']
         n = self.n
         L = KV['L']
 
@@ -290,6 +298,22 @@ class GP(object):
             Kd = self.covar.Kgrad_theta(hyperparams['covar'], self.x, i)
             LMLgrad[i] = 0.5 * (W * Kd).sum()
         RV = {'covar': LMLgrad}
+        return RV
+
+
+    def _LMLgrad_lik(self,hyperparams):
+        """derivative of the likelihood parameters"""
+        logtheta = hyperparams['lik']
+
+        #note: we assume hard codede that this is called AFTER LMLgrad_covar has been called
+        KV = self._covar_cache
+        W = KV['W']
+
+        LMLgrad = SP.zeros(len(logtheta))
+        for i in xrange(len(logtheta)):
+            Kd = self.likelihood.Kgrad_theta(logtheta, self.x, i)
+            LMLgrad[i] = 0.5 * (W * Kd).sum()
+        RV = {'lik': LMLgrad}
         return RV
 
                    

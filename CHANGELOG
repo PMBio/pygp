@@ -23,3 +23,7 @@ Parmaeters are now jus parameters of the covariance that decides internally how 
   Kgrad_xdiag(x,d)
 ** Removed _pointwise_ditance from Covariance 
 Max: why do you need pointwise_distance? 
+
+* 23.23.2011 (OS)
+Added an interace for likelihood models to get the noise out of the covariance
+For now both interfaces are supported. demo_gpr shows how to use the new interface.

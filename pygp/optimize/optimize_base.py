@@ -12,6 +12,7 @@ for hyperparameters of covariance functions
 # import scipy:
 import scipy as SP
 import scipy.optimize as OPT
+import pdb
 
 import logging as LG
 
@@ -100,7 +101,6 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = 
         return rv[Ifilter_x]
 
     
-
     #0. store parameter structure
     param_struct = dict([(name,hyperparams[name].shape) for name in hyperparams.keys()])
     
