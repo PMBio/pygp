@@ -119,7 +119,8 @@ class SqexpCFARD(CovarianceFunction):
         L2  = SP.exp(2*theta[1:1+self.n_dimensions])
         #due to the eexp we always get he covariance as prefactors
         RV = self.K(theta,x1)
-        RV*= (-1)* (x1[:,d]-x2[:,d])/L2[d]
+        #RV*= (-1)* (x1[:,d]-x2[:,d])/L2[d]# old one
+        RV*= (-1)* (x1[:,d].reshape(1,-1)-x2[:,d].reshape(-1,1))/L2[d]# new one
         return RV
     
     def Kgrad_xdiag(self,theta,x1,d):
