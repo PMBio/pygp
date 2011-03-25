@@ -56,7 +56,7 @@ if __name__ == '__main__':
     X = SP.linspace(0,10,100)[:,SP.newaxis]
         
 
-    if 1:
+    if 0:
         #old interface where the covaraince funciton and likelihood are one thing:
         #hyperparamters
         covar_parms = SP.log([1,1,1])
@@ -74,7 +74,7 @@ if __name__ == '__main__':
         priors = {'covar':covar_priors}
         likelihood = None
 
-    if 0:
+    if 1:
         #new interface with likelihood parametres being decoupled from the covaraince function
         likelihood = lik.GaussLikISO()
         covar_parms = SP.log([1,1])

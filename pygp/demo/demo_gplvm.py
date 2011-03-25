@@ -8,11 +8,12 @@ import logging as LG
 import numpy.random as random
 
 from pygp.gp import gplvm
-from pygp.covar import linear, noise, combinators
+from pygp.covar import linear,se, noise, combinators
 
 import pygp.optimize as opt
 import pygp.plot.gpr_plot as gpr_plot
 import pygp.priors.lnpriors as lnpriors
+import pygp.likelihood as lik
 
 import pylab as PL
 import scipy as SP
@@ -26,6 +27,7 @@ if __name__ == '__main__':
     K = 3
     D = 10
 
+    SP.random.seed(1)
     S = SP.random.randn(N,K)
     W = SP.random.randn(D,K)
 
@@ -38,17 +40,25 @@ if __name__ == '__main__':
     #reconstruction
     Y_ = SP.dot(Spca,Wpca.T)
 
-    #use GPLVM
-    linear_cf = linear.LinearCFISO(n_dimensions=K)
-    noise_cf = noise.NoiseCFISO()
-    covariance = combinators.SumCF((linear_cf,noise_cf))
-
-    #hyperparameters
-    hyperparams = {'covar': SP.log([1,0.1])}
+    if 1:
+        linear_cf = linear.LinearCFISO(n_dimensions=K)
+        noise_cf = noise.NoiseCFISO()
+        covariance = combinators.SumCF((linear_cf,noise_cf))
+        hyperparams = {'covar': SP.log([1,0.1])}
+        likelihood = None
+    if 1:
+        if 1:
+            covariance = linear.LinearCFISO(n_dimensions=K)
+            hyperparams = {'covar': SP.log([1])}
+        if 0:
+            covariance = se.SqexpCFARD(n_dimensions=K)
+            hyperparams = {'covar': SP.log([1]*(K+1)),'lik': SP.log([0.1])}
+        likelihood = lik.GaussLikISO()
+        hyperparams['lik'] = SP.log([0.1])
+        
     #initialization of X at arandom
     X0 = SP.random.randn(N,K)
     X0 = Spca
     hyperparams['x'] = X0
-
-    gplvm = gplvm.GPLVM(covar_func=covariance,x=X0,y=Y)
+    gplvm = gplvm.GPLVM(covar_func=covariance,likelihood=likelihood,x=X0,y=Y)
     [opt_hyperparams,opt_lml] = opt.opt_hyper(gplvm,hyperparams,gradcheck=True)

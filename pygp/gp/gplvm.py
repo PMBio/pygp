@@ -115,6 +115,8 @@ class GPLVM(GP):
             self._update_inputs(hyperparams)
             
         RV = self._LMLgrad_covar(hyperparams)
+        if self.likelihood is not None:
+            RV.update(self._LMLgrad_lik(hyperparams))
         #
         if 'x' in hyperparams:
             RV_ = self._LMLgrad_x(hyperparams)

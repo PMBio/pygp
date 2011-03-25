@@ -11,6 +11,7 @@ import scipy as SP
 import logging as LG
 from pygp.covar import CovarianceFunction
 import dist
+import pdb
 
 class SqexpCFARD(CovarianceFunction):
     """
@@ -77,8 +78,9 @@ class SqexpCFARD(CovarianceFunction):
         **Parameters:**
         See :py:class:`pygp.covar.CovarianceFunction`
         """
-        #diagonal is zero
-        return SP.zeros([x1.shape[0]])
+        #diagonal is independent of data
+        V0 = SP.exp(2*theta[0])
+        return V0*SP.exp(0)*SP.ones([x1.shape[0]])
     
     def Kgrad_theta(self, theta, x1, i):
         """
@@ -113,10 +115,16 @@ class SqexpCFARD(CovarianceFunction):
         **Parameters:**
         See :py:class:`pygp.covar.CovarianceFunction`
         """
-        raise Exception('update this implementation')
-        return None
+        x1, x2 = self._filter_input_dimensions(x1,x2)
+        L2  = SP.exp(2*theta[1:1+self.n_dimensions])
+        #due to the eexp we always get he covariance as prefactors
+        RV = self.K(theta,x1)
+        RV*= (-1)* (x1[:,d]-x2[:,d])/L2[d]
+        return RV
     
     def Kgrad_xdiag(self,theta,x1,d):
+        """"""
+        #digaonal derivative is zero because d/dx1 (x1-x2)^2 = 0
+        #because (x1^d-x1^d) = 0
         RV = SP.zeros([x1.shape[0]])
         return RV
-
