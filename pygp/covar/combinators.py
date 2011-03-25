@@ -7,6 +7,7 @@ Each combinator is a covariance function (CF) itself. It combines one or several
 """
 
 from pygp.covar import CovarianceFunction
+from pygp.covar.dist import sq_dist, dist
 import scipy as SP
 import sys
 sys.path.append('../')
@@ -25,7 +26,7 @@ class SumCF(CovarianceFunction):
 
 #    __slots__ = ["n_params_list","covars","covars_theta_I"]
 
-    def __init__(self,covars,*args,**kw_args):
+    def __init__(self, covars, *args, **kw_args):
         #1. check that all covars are covariance functions
         #2. get number of params
         super(SumCF, self).__init__()
@@ -39,12 +40,12 @@ class SumCF(CovarianceFunction):
         
         for nc in xrange(len(covars)):
             covar = covars[nc]
-            assert isinstance(covar,CovarianceFunction), 'SumCF: SumCF is constructed from a list of covaraince functions'
+            assert isinstance(covar, CovarianceFunction), 'SumCF: SumCF is constructed from a list of covaraince functions'
             Nparam = covar.get_number_of_parameters()
             self.n_params_list.append(Nparam)
-            self.covars_theta_I.append(SP.arange(i,i+covar.get_number_of_parameters()))
+            self.covars_theta_I.append(SP.arange(i, i + covar.get_number_of_parameters()))
             self.covars_covar_I.extend(SP.repeat(nc, Nparam))
-            i+=covar.get_number_of_parameters()            
+            i += covar.get_number_of_parameters()            
         self.n_params_list = SP.array(self.n_params_list)
         self.n_hyperparameters = self.n_params_list.sum()
 
@@ -52,10 +53,10 @@ class SumCF(CovarianceFunction):
         """return the names of hyperparameters to make identification easier"""
         names = []
         for covar in self.covars:
-            names = SP.concatenate((names,covar.get_hyperparameter_names()))
+            names = SP.concatenate((names, covar.get_hyperparameter_names()))
         return names
 
-    def K(self,theta,x1,x2=None):
+    def K(self, theta, x1, x2=None):
         """
         Get Covariance matrix K with given hyperparameters
         theta and inputs x1 and x2. The result
@@ -66,19 +67,19 @@ class SumCF(CovarianceFunction):
         See :py:class:`pygp.covar.CovarianceFunction` 
         """
         #1. check theta has correct length
-        assert theta.shape[0]==self.n_hyperparameters, 'K: theta has wrong shape'
+        assert theta.shape[0] == self.n_hyperparameters, 'K: theta has wrong shape'
         #2. create sum of covarainces..
         for nc in xrange(len(self.covars)):
             covar = self.covars[nc]
             _theta = theta[self.covars_theta_I[nc]]
-            K_ = covar.K(_theta,x1,x2)
-            if (nc==0):
+            K_ = covar.K(_theta, x1, x2)
+            if (nc == 0):
                 K = K_
             else:
-                K+= K_
+                K += K_
         return K
 
-    def Kgrad_theta(self,theta, x1, i):
+    def Kgrad_theta(self, theta, x1, i):
         '''
         The partial derivative of the covariance matrix with
         respect to i-th hyperparameter.
@@ -87,32 +88,32 @@ class SumCF(CovarianceFunction):
         See :py:class:`pygp.covar.CovarianceFunction`
         '''
         #1. check theta has correct length
-        assert theta.shape[0]==self.n_hyperparameters, 'K: theta has wrong shape'
+        assert theta.shape[0] == self.n_hyperparameters, 'K: theta has wrong shape'
         nc = self.covars_covar_I[i]
         covar = self.covars[nc]
-        d  = self.covars_theta_I[nc].min()
-        j  = i-d
-        return covar.Kgrad_theta(theta[self.covars_theta_I[nc]],x1,j)
+        d = self.covars_theta_I[nc].min()
+        j = i - d
+        return covar.Kgrad_theta(theta[self.covars_theta_I[nc]], x1, j)
         
 
     #derivative with respect to inputs
-    def Kgrad_x(self,theta,x1,x2,d):
-        assert theta.shape[0]==self.n_hyperparameters, 'K: theta has wrong shape'
-        RV = SP.zeros([x1.shape[0],x1.shape[0]])
+    def Kgrad_x(self, theta, x1, x2, d):
+        assert theta.shape[0] == self.n_hyperparameters, 'K: theta has wrong shape'
+        RV = SP.zeros([x1.shape[0], x1.shape[0]])
         for nc in xrange(len(self.covars)):
             covar = self.covars[nc]
             _theta = theta[self.covars_theta_I[nc]]
-            RV += covar.Kgrad_x(_theta,x1,x2,d)
+            RV += covar.Kgrad_x(_theta, x1, x2, d)
         return RV
 
     #derivative with respect to inputs
-    def Kgrad_xdiag(self,theta,x1,d):
-        assert theta.shape[0]==self.n_hyperparameters, 'K: theta has wrong shape'
+    def Kgrad_xdiag(self, theta, x1, d):
+        assert theta.shape[0] == self.n_hyperparameters, 'K: theta has wrong shape'
         RV = SP.zeros([x1.shape[0]])
         for nc in xrange(len(self.covars)):
             covar = self.covars[nc]
             _theta = theta[self.covars_theta_I[nc]]
-            RV += covar.Kgrad_xdiag(_theta,x1,d)
+            RV += covar.Kgrad_xdiag(_theta, x1, d)
         return RV
 
 
@@ -130,7 +131,7 @@ class ProductCF(CovarianceFunction):
     """
     #    __slots__=["n_params_list","covars","covars_theta_I"]
     
-    def __init__(self,covars,*args,**kw_args):
+    def __init__(self, covars, *args, **kw_args):
         super(ProductCF, self).__init__()
         self.n_params_list = []
         self.covars = []
@@ -142,15 +143,15 @@ class ProductCF(CovarianceFunction):
         
         for nc in xrange(len(covars)):
             covar = covars[nc]
-            assert isinstance(covar,CovarianceFunction), 'ProductCF: ProductCF is constructed from a list of covaraince functions'
+            assert isinstance(covar, CovarianceFunction), 'ProductCF: ProductCF is constructed from a list of covaraince functions'
             Nparam = covar.get_number_of_parameters()
             self.n_params_list.append(Nparam)
-            self.covars_theta_I.append(SP.arange(i,i+covar.get_number_of_parameters()))
+            self.covars_theta_I.append(SP.arange(i, i + covar.get_number_of_parameters()))
             self.covars_covar_I.extend(SP.repeat(nc, Nparam))
 #            for ip in xrange(Nparam):
 #                self.covars_covar_I.append(nc)
             
-            i+=covar.get_number_of_parameters()
+            i += covar.get_number_of_parameters()
             
         self.n_params_list = SP.array(self.n_params_list)
         self.n_hyperparameters = self.n_params_list.sum()
@@ -159,11 +160,11 @@ class ProductCF(CovarianceFunction):
         """return the names of hyperparameters to make identificatio neasier"""
         names = []
         for covar in self.covars:
-            names = SP.concatenate((names,covar.get_hyperparameter_names()))
+            names = SP.concatenate((names, covar.get_hyperparameter_names()))
         return names
 
 
-    def K(self,theta,x1,x2=None):
+    def K(self, theta, x1, x2=None):
         """
         Get Covariance matrix K with given hyperparameters
         theta and inputs x1 and x2. The result
@@ -174,20 +175,20 @@ class ProductCF(CovarianceFunction):
         See :py:class:`pygp.covar.CovarianceFunction` 
         """
         #1. check theta has correct length
-        assert theta.shape[0]==self.n_hyperparameters, 'ProductCF: K: theta has wrong shape'
+        assert theta.shape[0] == self.n_hyperparameters, 'ProductCF: K: theta has wrong shape'
         #2. create sum of covarainces..
         if x2 is None:
-            K = SP.ones([x1.shape[0],x1.shape[0]])
+            K = SP.ones([x1.shape[0], x1.shape[0]])
         else:
-            K = SP.ones([x1.shape[0],x2.shape[0]])
+            K = SP.ones([x1.shape[0], x2.shape[0]])
         for nc in xrange(len(self.covars)):
             covar = self.covars[nc]
             _theta = theta[self.covars_theta_I[nc]]
-            K     *=  covar.K(_theta,x1,x2)
+            K *= covar.K(_theta, x1, x2)
         return K
 
 
-    def Kd(self,theta, x1, i):
+    def Kd(self, theta, x1, i):
         '''The derivatives of the covariance matrix for
         the i-th hyperparameter.
         
@@ -195,7 +196,7 @@ class ProductCF(CovarianceFunction):
         See :py:class:`pygp.covar.CovarianceFunction`
         '''
         #1. check theta has correct length
-        assert theta.shape[0]==self.n_hyperparameters,'ProductCF: K: theta has wrong shape'
+        assert theta.shape[0] == self.n_hyperparameters, 'ProductCF: K: theta has wrong shape'
         # nc = self.covars_covar_I[i]
         # covar = self.covars[nc]
         # d  = self.covars_theta_I[nc].min()
@@ -213,22 +214,22 @@ class ProductCF(CovarianceFunction):
         #     rv[~self.covars_theta_I[nc]] *= K_
         nc = self.covars_covar_I[i]
         covar = self.covars[nc]
-        d  = self.covars_theta_I[nc].min()
-        j  = i-d
-        Kd = covar.Kd(theta[self.covars_theta_I[nc]],x1,j)
+        d = self.covars_theta_I[nc].min()
+        j = i - d
+        Kd = covar.Kd(theta[self.covars_theta_I[nc]], x1, j)
         for ind in xrange(len(self.covars)):
             if(ind is not nc):
                 _theta = theta[self.covars_theta_I[ind]]
-                Kd *= self.covars[ind].K(_theta,x1)
+                Kd *= self.covars[ind].K(_theta, x1)
         return Kd
 
-    def get_Iexp(self,theta):
+    def get_Iexp(self, theta):
         Iexp = []
         for nc in xrange(len(self.covars)):
             covar = self.covars[nc]
             _theta = theta[self.covars_theta_I[nc]]
-            Iexp = SP.concatenate((Iexp,covar.get_Iexp(_theta)))
-        return SP.array(Iexp,dtype='bool')
+            Iexp = SP.concatenate((Iexp, covar.get_Iexp(_theta)))
+        return SP.array(Iexp, dtype='bool')
 
 class ShiftCF(CovarianceFunction):
     """
@@ -262,10 +263,10 @@ class ShiftCF(CovarianceFunction):
     """
 #    __slots__=["n_params_list","covars","covars_theta_I"]
 
-    def __init__(self,covar,replicate_indices,*args,**kw_args):
+    def __init__(self, covar, replicate_indices, *args, **kw_args):
         super(ShiftCF, self).__init__()
         #1. check that covar is covariance function
-        assert isinstance(covar,CovarianceFunction),'ShiftCF: ShiftCF is constructed from a CovarianceFunction, which provides the partial derivative for the covariance matrix K with respect to input X'
+        assert isinstance(covar, CovarianceFunction), 'ShiftCF: ShiftCF is constructed from a CovarianceFunction, which provides the partial derivative for the covariance matrix K with respect to input X'
         #2. get number of params
         self.replicate_indices = replicate_indices
         self.n_replicates = len(SP.unique(replicate_indices))
@@ -277,7 +278,7 @@ class ShiftCF(CovarianceFunction):
 #        names=SP.concatenate(self.covar.get_hyperparameter_names(),["Time-Shift rep%i" % (i) for i in SP.unique(self.replicate(indices))])
 #        return names
 
-    def K(self,theta,x1,x2=None):
+    def K(self, theta, x1, x2=None):
         """
         Get Covariance matrix K with given hyperparameters
         theta and inputs x1 and x2. The result
@@ -296,18 +297,18 @@ class ShiftCF(CovarianceFunction):
         Others see :py:class:`pygp.covar.CovarianceFunction` 
         """
         #1. check theta has correct length
-        assert theta.shape[0]==self.n_hyperparameters, 'ShiftCF: K: theta has wrong shape'
+        assert theta.shape[0] == self.n_hyperparameters, 'ShiftCF: K: theta has wrong shape'
         #2. shift inputs of covarainces..
         # get time shift parameter
         covar_n_hyper = self.covar.get_number_of_parameters()
         # shift inputs
-        T  = theta[covar_n_hyper:covar_n_hyper+self.n_replicates]
-        shift_x1 = self._shift_x(x1.copy(),T)
-        K = self.covar.K(theta[:covar_n_hyper],shift_x1,x2)
+        T = theta[covar_n_hyper:covar_n_hyper + self.n_replicates]
+        shift_x1 = self._shift_x(x1.copy(), T)
+        K = self.covar.K(theta[:covar_n_hyper], shift_x1, x2)
         return K
 
 
-    def Kgrad_theta(self,theta, x, i):
+    def Kgrad_theta(self, theta, x, i):
         """
         Get Covariance matrix K with given hyperparameters
         theta and inputs x1 and x2. The result
@@ -329,36 +330,36 @@ class ShiftCF(CovarianceFunction):
             
         """
         #1. check theta has correct length
-        assert theta.shape[0]==self.n_hyperparameters, 'ShiftCF: K: theta has wrong shape'
+        assert theta.shape[0] == self.n_hyperparameters, 'ShiftCF: K: theta has wrong shape'
         covar_n_hyper = self.covar.get_number_of_parameters()
-        T  = theta[covar_n_hyper:covar_n_hyper+self.n_replicates]
+        T = theta[covar_n_hyper:covar_n_hyper + self.n_replicates]
         shift_x = self._shift_x(x.copy(), T)        
         if i >= covar_n_hyper:
-            Kdx = self.covar.Kdx(theta[:covar_n_hyper],shift_x)
-            c = SP.array(self.replicate_indices==(i-covar_n_hyper),
-                         dtype='int')[:,SP.newaxis]
-            cdist = self._pointwise_distance(-c,-c)
-            cdist = cdist.transpose(2,0,1)
+            Kdx = self.covar.Kgrad_xdiag(theta[:covar_n_hyper], shift_x, 0)
+            c = SP.array(self.replicate_indices == (i - covar_n_hyper),
+                         dtype='int')[:, SP.newaxis]
+            cdist = dist(-c, -c)
+            cdist = cdist.transpose(2, 0, 1)
             return Kdx * cdist
         else:
-            return self.covar.Kd(theta[:covar_n_hyper],shift_x,i)
+            return self.covar.Kgrad_theta(theta[:covar_n_hyper], shift_x, i)
 
-    def get_Iexp(self, theta):
-        """
-        Return indices of which hyperparameters are to be exponentiated
-        for optimization. Here we do not want
-        
-        **Parameters:**
-        See :py:class:`pygp.covar.CovarianceFunction`
-        """
-        covar_n_hyper = self.covar.get_number_of_parameters()
-        Iexp = SP.concatenate((self.covar.get_Iexp(theta[:covar_n_hyper]),
-                               SP.zeros(self.n_replicates)))
-        Iexp = SP.array(Iexp,dtype='bool')
-        return Iexp
+#    def get_Iexp(self, theta):
+#        """
+#        Return indices of which hyperparameters are to be exponentiated
+#        for optimization. Here we do not want
+#        
+#        **Parameters:**
+#        See :py:class:`pygp.covar.CovarianceFunction`
+#        """
+#        covar_n_hyper = self.covar.get_number_of_parameters()
+#        Iexp = SP.concatenate((self.covar.get_Iexp(theta[:covar_n_hyper]),
+#                               SP.zeros(self.n_replicates)))
+#        Iexp = SP.array(Iexp,dtype='bool')
+#        return Iexp
         
     def _shift_x(self, x, T):
         # subtract T, respectively
         for i in SP.unique(self.replicate_indices):
-            x[self.replicate_indices==i] -= T[i]
+            x[self.replicate_indices == i] -= T[i]
         return x

@@ -146,7 +146,7 @@ class CovarianceFunction(object):
         RV: vector of size [x1] cotaining all partial derivatives
         d/dx1^{i,d} diag(K(X1,X2))
         """
-        LG.critical("implement Kd_dx")
+        LG.critical("implement the partial derivative w.r.t x")
         return None
 
     def get_hyperparameter_names(self):
