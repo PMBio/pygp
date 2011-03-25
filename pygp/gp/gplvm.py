@@ -2,26 +2,27 @@
 Base class for Gaussian process latent variable models
 This is really not ready for release yet but is used by the gpasso model
 """
+from pygp.gp import GP
+from pygp.optimize.optimize_base import opt_hyper
+import scipy as SP
+import scipy.linalg as linalg
 import sys
 sys.path.append('./..')
 
-from pygp.gp import GP
-import scipy as SP
-import scipy.linalg as linalg
 
 
-def PCA(Y,components):
+def PCA(Y, components):
     """run PCA, retrieving the first (components) principle components
     return [s0,w0]
     s0: factors
     w0: weights
     """
-    sv = linalg.svd(Y, full_matrices = 0);
-    [s0,w0] = [sv[0][:,0:components], SP.dot(SP.diag(sv[1]),sv[2]).T[:,0:components]]
+    sv = linalg.svd(Y, full_matrices=0);
+    [s0, w0] = [sv[0][:, 0:components], SP.dot(SP.diag(sv[1]), sv[2]).T[:, 0:components]]
     v = s0.std(axis=0)
     s0 /= v;
     w0 *= v;
-    return [s0,w0]
+    return [s0, w0]
 
     
 class GPLVM(GP):
@@ -32,28 +33,28 @@ class GPLVM(GP):
     """
     __slots__ = ["gplvm_dimensions"]
     
-    def __init__(self,gplvm_dimensions=None,**kw_args):
+    def __init__(self, gplvm_dimensions=None, **kw_args):
         """gplvm_dimensions: dimensions to learn using gplvm, default -1; i.e. all"""
         self.gplvm_dimensions = gplvm_dimensions
-        GP.__init__(self,**kw_args)
+        GP.__init__(self, **kw_args)
 
 
 
-    def setData(self,gplvm_dimensions=None,**kw_args):
-        GP.setData(self,**kw_args)
+    def setData(self, gplvm_dimensions=None, **kw_args):
+        GP.setData(self, **kw_args)
         #handle non-informative gplvm_dimensions vector
         if gplvm_dimensions is None:
             self.gplvm_dimensions = SP.arange(self.x.shape[1])
         else:
             self.gplvm_dimensions = gplvm_dimensions
         
-    def _update_inputs(self,hyperparams):
+    def _update_inputs(self, hyperparams):
         """update the inputs from gplvm models if supplied as hyperparms"""
-        self.x[:,self.gplvm_dimensions] = hyperparams['x']
+        self.x[:, self.gplvm_dimensions] = hyperparams['x']
         pass
 
   
-    def LML(self,hyperparams,priors=None,**kw_args):
+    def LML(self, hyperparams, priors=None, **kw_args):
         """
         Calculate the log Marginal likelihood
         for the given logtheta.
@@ -89,12 +90,12 @@ class GPLVM(GP):
         
         #account for prior
         if priors is not None:
-            plml = self._lml_prior(hyperparams,priors=priors,**kw_args)
-            LML -= SP.array([p[:,0].sum() for p in plml.values()]).sum()
+            plml = self._lml_prior(hyperparams, priors=priors, **kw_args)
+            LML -= SP.array([p[:, 0].sum() for p in plml.values()]).sum()
         return LML
         
 
-    def LMLgrad(self,hyperparams,priors=None,**kw_args):
+    def LMLgrad(self, hyperparams, priors=None, **kw_args):
         """
         Returns the log Marginal likelihood for the given logtheta.
 
@@ -122,15 +123,15 @@ class GPLVM(GP):
 
         #prior
         if priors is not None:
-            plml = self._lml_prior(hyperparams,priors=priors,**kw_args)
+            plml = self._lml_prior(hyperparams, priors=priors, **kw_args)
             for key in RV.keys():
-                RV[key]-=plml[key][:,1]                       
+                RV[key] -= plml[key][:, 1]                       
         return RV
 
 
     ####PRIVATE####
 
-    def _LMLgrad_x(self,hyperparams):
+    def _LMLgrad_x(self, hyperparams):
         """GPLVM derivative w.r.t. to latent variables
         """
         dlMl = SP.zeros_like(self.x)
@@ -142,31 +143,31 @@ class GPLVM(GP):
         for i in xrange(len(self.gplvm_dimensions)):
             d = self.gplvm_dimensions[i]
             #dKx is general, not knowing that we are computing the diagonal:
-            dKx = self.covar.Kgrad_x(hyperparams['covar'],self.x,self.x,d)
-            dKx_diag = self.covar.Kgrad_xdiag(hyperparams['covar'],self.x,d)
+            dKx = self.covar.Kgrad_x(hyperparams['covar'], self.x, self.x, d)
+            dKx_diag = self.covar.Kgrad_xdiag(hyperparams['covar'], self.x, d)
             #set diagonal
-            dKx.flat[::(dKx.shape[1]+1)]=dKx_diag
+            dKx.flat[::(dKx.shape[1] + 1)] = dKx_diag
             #precalc elementwise product of W and K
-            WK = W*dKx
+            WK = W * dKx
             if 0:
                 #explicit calculation, slow!
                 #this is only in here to see what is done
                 for n in xrange(self.n):
-                    dKxn = SP.zeros([self.n,self.n])
-                    dKxn[n,:] = dKx[n,:]
-                    dKxn[:,n] = dKx[n,:]
-                    dlMl[n,i] = 0.5*SP.dot(W,dKxn).trace()
+                    dKxn = SP.zeros([self.n, self.n])
+                    dKxn[n, :] = dKx[n, :]
+                    dKxn[:, n] = dKx[n, :]
+                    dlMl[n, i] = 0.5 * SP.dot(W, dKxn).trace()
                     pass
             if 1:
                 #fast calculation
                 #we need twice the sum WK because of the matrix structure above, WK.diagonal() accounts for the double counting
-                dlMl[:,i] = 0.5*( 2*WK.sum(axis=1) - WK.diagonal() )
+                dlMl[:, i] = 0.5 * (2 * WK.sum(axis=1) - WK.diagonal())
             pass
         RV = {'x':dlMl}
         return RV
         
 
-if __name__ =='__main__':
+if __name__ == '__main__':
     from pygp.covar import linear, noise, combinators
     
     import logging as LG
@@ -178,32 +179,32 @@ if __name__ =='__main__':
     D = 10
 
     
-    S = SP.random.randn(N,K)
-    W = SP.random.randn(D,K)
+    S = SP.random.randn(N, K)
+    W = SP.random.randn(D, K)
     
-    Y = SP.dot(W,S.T).T
-    Y+= 0.5*SP.random.randn(N,D)
+    Y = SP.dot(W, S.T).T
+    Y += 0.5 * SP.random.randn(N, D)
   
-    [Spca,Wpca] = PCA(Y,K)
+    [Spca, Wpca] = PCA(Y, K)
     
     #reconstruction
-    Y_ = SP.dot(Spca,Wpca.T)
+    Y_ = SP.dot(Spca, Wpca.T)
     
     #construct GPLVM model
     linear_cf = linear.LinearCFISO(n_dimensions=K)
-    noise_cf = noise.NoiseISOCF()
-    covariance = combinators.SumCF((linear_cf,noise_cf))
+    noise_cf = noise.NoiseCFISO()
+    covariance = combinators.SumCF((linear_cf, noise_cf))
 
 
     #no inputs here (later SNPs)
     X = Spca.copy()
     #X = SP.random.randn(N,K)
-    gplvm = GPLVM(covar_func=covariance,x=X,y=Y)
+    gplvm = GPLVM(covar_func=covariance, x=X, y=Y)
 
-    gpr = GP(covar_func=covariance,x=X,y=Y[:,0])
+    gpr = GP(covar_func=covariance, x=X, y=Y[:, 0])
     
     #construct hyperparams
-    covar = SP.log([1.0,0.1])
+    covar = SP.log([1.0, 0.1])
 
     #X are hyperparameters, i.e. we optimize over them also
 
@@ -217,12 +218,12 @@ if __name__ =='__main__':
     
     #evaluate log marginal likelihood
     lml = gplvm.lMl(hyperparams=hyperparams)
-    [opt_model_params,opt_lml]= opt_hyper(gplvm,hyperparams,gradcheck=False)
+    [opt_model_params, opt_lml] = opt_hyper(gplvm, hyperparams, gradcheck=False)
     Xo = opt_model_params['x']
     
 
     for k in xrange(K):
-        print SP.corrcoef(Spca[:,k],S[:,k])
+        print SP.corrcoef(Spca[:, k], S[:, k])
 
     for k in xrange(K):
-        print SP.corrcoef(Xo[:,k],S[:,k])
+        print SP.corrcoef(Xo[:, k], S[:, k])
