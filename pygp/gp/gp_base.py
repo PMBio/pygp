@@ -180,7 +180,7 @@ class GP(object):
                 RV[key] -= plml[key][:, 1]                       
         return RV
 
-    def get_covariances(self, hyperparams):
+    def get_covariances(self, hyperparams, x=None, y=None):
         """
         Return the Cholesky decompositions L and alpha::
 
@@ -188,18 +188,36 @@ class GP(object):
             L     = chol(K)
             alpha = solve(L,t)
             return [covar_struct] = get_covariances(hyperparam)
-        """       
-        if self._is_cached(hyperparams):
+            
+        **Parameters:**
+        
+        hyperparams: dict
+            The hyperparameters for cholesky decomposition
+            
+        x, y: [double]
+            input x and output y for cholesky decomposition.
+            If one/both is/are set, there will be no chaching allowed
+            
+        """
+        allow_cache=False 
+        if (x is None and y is None):
+            x=self.x; y=self.y;allow_cache=True
+        elif(x is None):
+            x=self.x;
+        elif(y is None):
+            y=self.y;
+         
+        if allow_cache and self._is_cached(hyperparams):
             pass
         else:
             Knoise = 0
             #1. use likelihood object to perform the inference
             if self.likelihood is not None:
-                Knoise = self.likelihood.K(hyperparams['lik'],self.x)
-            K = self.covar.K(hyperparams['covar'], self.x)
+                Knoise = self.likelihood.K(hyperparams['lik'],x)
+            K = self.covar.K(hyperparams['covar'], x)
             K+= Knoise
             L = jitChol(K)[0].T # lower triangular
-            alpha = solve_chol(L, self.y)
+            alpha = solve_chol(L, y)
             self._covar_cache = {'K': K, 'L':L, 'alpha':alpha}
             #store hyperparameters for cachine
             self._covar_cache['hyperparams'] = copy.deepcopy(hyperparams)
@@ -234,17 +252,16 @@ class GP(object):
         if(interval_indices is None):
             x = self.x
             y = self.y
-        elif(self.x.shape[1] > 1):
-            x = self.x[:, interval_indices]
-            y = self.y[:, interval_indices]
-        elif(self.x.shape[0] > 1):
-            x = self.x[interval_indices, :]
-            y = self.y[interval_indices, :]
+            KV = self.get_covariances(hyperparams)
         else:
-            x = self.x[interval_indices]
-            y = self.y[interval_indices]
+            if(self.x.shape[1] > 1):
+                x = self.x[:, interval_indices]
+                y = self.y[:, interval_indices]
+            else:
+                x = self.x[interval_indices]
+                y = self.y[interval_indices]
+            KV = self.get_covariances(hyperparams, x, y)
             
-        KV = self.get_covariances(hyperparams)
         #cross covariance:
         Kstar = self.covar.K(hyperparams['covar'], x, xstar)
         mu = SP.dot(Kstar.transpose(), KV['alpha'][:, output])
