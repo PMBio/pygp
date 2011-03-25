@@ -27,3 +27,7 @@ Max: why do you need pointwise_distance?
 * 23.23.2011 (OS)
 Added an interace for likelihood models to get the noise out of the covariance
 For now both interfaces are supported. demo_gpr shows how to use the new interface.
+
+* 25.03.2011
+Corrected use of interval_indices. 
+Interval_indices are the indices on which the gp will predict. 
