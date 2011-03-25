@@ -100,7 +100,6 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = 
             rv[In] = 1E6
         return rv[Ifilter_x]
 
-    pdb.set_trace()    
     #0. store parameter structure
     param_struct = dict([(name,hyperparams[name].shape) for name in hyperparams.keys()])
     
