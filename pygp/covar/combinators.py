@@ -335,11 +335,12 @@ class ShiftCF(CovarianceFunction):
         T = theta[covar_n_hyper:covar_n_hyper + self.n_replicates]
         shift_x = self._shift_x(x.copy(), T)        
         if i >= covar_n_hyper:
-            Kdx = self.covar.Kgrad_xdiag(theta[:covar_n_hyper], shift_x, 0)
+            Kdx = self.covar.Kgrad_x(theta[:covar_n_hyper], shift_x, shift_x, 0)
             c = SP.array(self.replicate_indices == (i - covar_n_hyper),
                          dtype='int')[:, SP.newaxis]
             cdist = dist(-c, -c)
             cdist = cdist.transpose(2, 0, 1)
+            #import pdb;pdb.set_trace()
             return Kdx * cdist
         else:
             return self.covar.Kgrad_theta(theta[:covar_n_hyper], shift_x, i)

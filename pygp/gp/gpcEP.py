@@ -6,7 +6,7 @@ Class for Gaussian process classification using EP
 
 import scipy as S
 
-from pygp.likelihood import ProbitLikelihood,sigmoid
+from pygp.likelihood.EP import ProbitLikelihood,sigmoid
 
 from pygp.gp.gprEP import GPEP
 

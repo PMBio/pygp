@@ -4,6 +4,7 @@
 
 import scipy as SP
 import scipy.linalg as linalg
+import logging
 
 
 
@@ -70,7 +71,7 @@ def jitChol(A, maxTries=10, warning=True):
 		    # plt.imshow(A, interpolation="nearest")
 		    # plt.colorbar()
 		    # plt.show()
-                    LG.error("Adding jitter of %f in jitChol()." % jitter)
+                    logging.error("Adding jitter of %f in jitChol()." % jitter)
                 LC = linalg.cholesky(A+jitter*SP.eye(A.shape[0]), lower=True)
 
                 return LC.T, jitter

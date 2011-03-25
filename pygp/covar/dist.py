@@ -8,7 +8,6 @@ def dist(X,Y=None):
     dist(X1,X2) : Matrix of all combinations of distances of X1i with X2j'''
     if(Y is None):
         Y=X
-        
     if(X.shape[1]>1):
         #save length and dimension
         lx = X.shape[0]

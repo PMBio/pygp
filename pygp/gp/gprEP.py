@@ -30,7 +30,7 @@ class GPEP(GP):
         self.Nep = Nep
         #split logtheta in likelihood and kernel logtheta
         Nk = self.covar.get_number_of_parameters()
-        Nl = self.likelihood.getNparams()
+        Nl = self.likelihood.get_number_of_parameters()
         Nt = Nk + Nl
         self.Nlogtheta = Nt
         self.IlogthetaK = SP.zeros([Nt], dtype='bool')
