@@ -12,7 +12,6 @@ for hyperparameters of covariance functions
 # import scipy:
 import scipy as SP
 import scipy.optimize as OPT
-import pdb
 
 import logging as LG
 
