@@ -88,7 +88,7 @@ class GP(object):
        
     def getData(self):
         """ Returns the data, currently set for this GP"""
-        return [self.x, self.y]
+        return SP.array([self.x, self.y])
 
     
     def setData(self, x, y):
