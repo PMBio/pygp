@@ -120,7 +120,8 @@ class SqexpCFARD(CovarianceFunction):
         #due to the eexp we always get he covariance as prefactors
         RV = self.K(theta,x1)
         #RV*= (-1)* (x1[:,d]-x2[:,d])/L2[d]# old one
-        RV*= (-1)* (x1[:,d].reshape(1,-1)-x2[:,d].reshape(-1,1))/L2[d]# new one
+        D = (x1[:,d].reshape(1,-1)-x2[:,d].reshape(-1,1))
+        RV*= (-1)* D/L2[d]# new one
         return RV
     
     def Kgrad_xdiag(self,theta,x1,d):
