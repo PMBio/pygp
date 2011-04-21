@@ -67,12 +67,15 @@ class ProbitLik(ALik):
 
     def K(self,theta,x1):
         zi      = x1*theta[0]/SP.sqrt(theta[1]*(1+theta[1]))
-        Fu      = cav_np[0]/cav_np[1] + t*gos(zi)/SP.sqrt(cav_np[1]*(1+cav_np[1]))
-        return Knoise
+        K      = theta[0]/theta[1] + x1*gos(zi)/SP.sqrt(theta[1]*(1+theta[1]))
+        #import pdb;pdb.set_trace()
+        return SP.diag(K)
 
     def Kdiag(self,theta,x1):
-        sigma = SP.exp(2*theta[0])
-        return sigma*SP.ones(x1.shape[0])
+        zi      = x1*theta[0]/SP.sqrt(theta[1]*(1+theta[1]))
+        K      = theta[0]/theta[1] + x1*gos(zi)/SP.sqrt(theta[1]*(1+theta[1]))
+        #import pdb;pdb.set_trace()
+        return SP.squeeze(K)
 
     def Kgrad_theta(self,theta,x1,i):
         """
@@ -84,25 +87,25 @@ class ProbitLik(ALik):
         """
         #1. calculate kernel
         #no noise
-        K = self.K(theta,x1)
-        assert i==0, 'unknown hyperparameter'
-        return 2*K
+        zi      = x1*theta[0]/SP.sqrt(theta[1]*(1+theta[1]))
+        Kgrad     = (1-gos(zi)*(zi+gos(zi))/(1+theta[1]))/theta[1]
+        return Kgrad
     
-    def calcExpectations(self,t,cav_np,x=None):
-        """calc expectation values (moments) for EP udpates
-        t: the target
-        cav_np: (nu,tau) of cavity (natural params)
-        x: (optional) input (not used in this likelihood)
-        """
-
-
-        #the derivation here follows Rasmussen & Williams
-        zi      = t*cav_np[0]/SP.sqrt(cav_np[1]*(1+cav_np[1]))
-        #0. moment
-        Z       = sigmoid(zi)
-        #1. moment
-        Fu      = cav_np[0]/cav_np[1] + t*gos(zi)/SP.sqrt(cav_np[1]*(1+cav_np[1]))
-        Fs2     = (1-gos(zi)*(zi+gos(zi))/(1+cav_np[1]))/cav_np[1]
-        
-        return S.array([Fu,Fs2,Z])
-        pass
+#    def calcExpectations(self,t,cav_np,x=None):
+#        """calc expectation values (moments) for EP udpates
+#        t: the target
+#        cav_np: (nu,tau) of cavity (natural params)
+#        x: (optional) input (not used in this likelihood)
+#        """
+#
+#
+#        #the derivation here follows Rasmussen & Williams
+#        zi      = t*cav_np[0]/SP.sqrt(cav_np[1]*(1+cav_np[1]))
+#        #0. moment
+#        Z       = sigmoid(zi)
+#        #1. moment
+#        Fu      = cav_np[0]/cav_np[1] + t*gos(zi)/SP.sqrt(cav_np[1]*(1+cav_np[1]))
+#        Fs2     = (1-gos(zi)*(zi+gos(zi))/(1+cav_np[1]))/cav_np[1]
+#        
+#        return S.array([Fu,Fs2,Z])
+#        pass
