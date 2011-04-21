@@ -78,7 +78,7 @@ def plot_training_data(x,y,
 
     return PL.plot(x_shift,y,**format_data)
 
-def plot_sausage(X,mean,std,format_fill={'alpha':0.2,'facecolor':'k'},format_line={'alpha':1, 'color':'g'}):
+def plot_sausage(X,mean,std,alpha=None,format_fill={'alpha':0.3,'facecolor':'k'},format_line=dict(alpha=1,color='g',lw=3, ls='dashed')):
     """
     plot saussage plot of GP. I.e:
 
@@ -106,12 +106,21 @@ def plot_sausage(X,mean,std,format_fill={'alpha':0.2,'facecolor':'k'},format_lin
         The format of the mean line. See http://matplotlib.sourceforge.net/ for details.
         
     """
-    Xp = S.concatenate((X,X[::-1]))
-    Yp = S.concatenate(((mean+2*std),(mean-2*std)[::-1]))
-    hf=PL.fill(Xp,Yp,**format_fill)
+    X = X.squeeze()
+    Y1 = (mean+2*std)
+    Y2 = (mean-2*std)
+    if(alpha is not None):
+        old_alpha_fill = format_fill['alpha']
+        for i,a in enumerate(alpha[:-2]):
+            format_fill['alpha'] = a * old_alpha_fill
+            hf=PL.fill_between(X[i:i+2],Y1[i:i+2],Y2[i:i+2],lw=0,**format_fill)
+    else:
+        hf=PL.fill_between(X,Y1,Y2,**format_fill)
     hp=PL.plot(X,mean,**format_line)
     return [hf,hp]
-    
+
+
+
 class CrossRect(matplotlib.patches.Rectangle):
     def __init__(self, *args, **kwargs):
         matplotlib.patches.Rectangle.__init__(self, *args, **kwargs)

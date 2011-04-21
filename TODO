@@ -1,22 +1,7 @@
 *TODOs
 
-* Add gradX derivates of squared exponential
+* Add gradX derivates of squared exponential -> done
 * Speed up the sq dist 
 * Add SVD trick to gplvm
 * Move noise covarinace to likelihood model?
 * Migrate the whoel time change point stuff from Max
-
-* This here in gp_base is not working
-      # if predicting on an subset of data only.
-        if(interval_indices is None):
-            x = self.x
-            y = self.y
-        elif(self.x.shape[1] > 1):
-            x = self.x[:, interval_indices]
-            y = self.y[:, interval_indices]
-        elif(self.x.shape[0] > 1):
-            x = self.x[interval_indices, :]
-            y = self.y[interval_indices, :]
-        else:
-            x = self.x[interval_indices]
-            y = self.y[interval_indices]

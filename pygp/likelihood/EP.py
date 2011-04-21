@@ -26,11 +26,11 @@ class ALikelihood(object):
     #logtheta:local copy of likelihood hyperparamters
     """Abstract baseclass for likelihood classes"""
 
-    def getNparams(self):
+    def get_number_of_parameters(self):
         return 0
 
     def setLogtheta(self,logthetaL):
-        assert logthetaL.shape[0]==self.getNparams(), "hyperparameters have wrong shape"
+        assert logthetaL.shape[0]==self.get_number_of_parameters(), "hyperparameters have wrong shape"
         self.logtheta = logthetaL
 
     def calcExpectations(self,t,cav_np,x=None):
@@ -45,7 +45,7 @@ class ALikelihood(object):
 class ProbitLikelihood(ALikelihood):
     """Probit likelihood for GP classification"""
 
-    def getNparams(self):
+    def get_number_of_parameters(self):
         return 0
 
     def calcExpectations(self,t,cav_np,x=None):
@@ -75,7 +75,7 @@ class GaussLikelihood(ALikelihood):
     - a dummy Class for debg purposes; in fact the likelihood is equivalent to a standard GP and hence should also yield
     identical results"""
 
-    def getNparams(self):
+    def get_number_of_parameters(self):
         return 1
 
     def setLogtheta(self,logthetaL):
@@ -122,8 +122,8 @@ class MOGLikelihood(ALikelihood):
         - mog likelihood with Ncomponents mixture components"""
         self.Ncomponents = Ncomponents
 
-    def getNparams(self):
-        """getNparams; for every mixture components 2 parametrs"""
+    def get_number_of_parameters(self):
+        """get_number_of_parameters; for every mixture components 2 parametrs"""
         return self.Ncomponents*2
 
     def setLogtheta(self,logthetaL):
@@ -134,7 +134,7 @@ class MOGLikelihood(ALikelihood):
         #set likelihood which asserts shape
         ALikelihood.setLogtheta(self,logthetaL)
         #exp. variance parameter upfront
-        np_2 = self.getNparams()/2
+        np_2 = self.get_number_of_parameters()/2
         #split in phi/sl
         self.phi = exp(logthetaL[0:np_2])
         self.sl = exp(2*logthetaL[np_2::])
@@ -188,9 +188,9 @@ class ConstrainedLikelihood(ALikelihood):
         self.alt = alt
         self.index = index
 
-    def getNparams(self):
-        """getNparams() returns the number of parameters of the alt likelihood"""
-        return self.alt.getNparams()
+    def get_number_of_parameters(self):
+        """get_number_of_parameters() returns the number of parameters of the alt likelihood"""
+        return self.alt.get_number_of_parameters()
 
     def setLogtheta(self,logthetaL):
         """set hyperparameter of likelihood :

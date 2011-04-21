@@ -254,10 +254,6 @@ class GP(object):
             y = self.y
             KV = self.get_covariances(hyperparams)
         else:
-#            if(self.x.shape[1] > 1):
-#                x = self.x[:, interval_indices]
-#                y = self.y[:, interval_indices]
-#            else:
             x = self.x[interval_indices]
             y = self.y[interval_indices]
             KV = self.get_covariances(hyperparams, x, y)

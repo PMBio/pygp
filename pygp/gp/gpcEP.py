@@ -9,13 +9,14 @@ import scipy as S
 from pygp.likelihood.EP import ProbitLikelihood,sigmoid
 
 from pygp.gp.gprEP import GPEP
+from pygp.likelihood.likelihood_base import GaussLikISO
 
 class GPCEP(GPEP):
     __slots__ = []
 
 
     def __init__(self,*argin,**kwargin):
-        likelihood = ProbitLikelihood()
+        likelihood = GaussLikISO()#ProbitLikelihood()
         #call constructor, pass on likelihood function and switch off subtraction of mean
         super(GPCEP, self).__init__(likelihood=likelihood,*argin,**kwargin)#Smean=False,likelihood=likelihood,*argin,**kwargin)
         self.Nep = 3
