@@ -76,7 +76,7 @@ class GP(object):
         x/y:        training input/targets
         '''       
         if not (x is None):
-            self.setData(x=x, y=y)
+            self.setData(x, y)
         # Store the constructor parameters
         self.covar = covar_func
         self.likelihood = likelihood
@@ -180,7 +180,7 @@ class GP(object):
                 RV[key] -= plml[key][:, 1]                       
         return RV
 
-    def get_covariances(self, hyperparams, x=None, y=None):
+    def get_covariances(self, hyperparams):
         """
         Return the Cholesky decompositions L and alpha::
 
@@ -199,32 +199,24 @@ class GP(object):
             If one/both is/are set, there will be no chaching allowed
             
         """
-        allow_cache=False 
-        if (x is None and y is None):
-            x=self.x; y=self.y;allow_cache=True
-        elif(x is None):
-            x=self.x;
-        elif(y is None):
-            y=self.y;
-         
-        if allow_cache and self._is_cached(hyperparams):
+        if self._is_cached(hyperparams):
             pass
         else:
             Knoise = 0
             #1. use likelihood object to perform the inference
             if self.likelihood is not None:
-                Knoise = self.likelihood.K(hyperparams['lik'],x)
-            K = self.covar.K(hyperparams['covar'], x)
+                Knoise = self.likelihood.K(hyperparams['lik'],self.x)
+            K = self.covar.K(hyperparams['covar'], self.x)
             K+= Knoise
             L = jitChol(K)[0].T # lower triangular
-            alpha = solve_chol(L, y)
+            alpha = solve_chol(L, self.y)
             self._covar_cache = {'K': K, 'L':L, 'alpha':alpha}
             #store hyperparameters for cachine
             self._covar_cache['hyperparams'] = copy.deepcopy(hyperparams)
         return self._covar_cache 
        
         
-    def predict(self, hyperparams, xstar, output=0, var=True, interval_indices=None):
+    def predict(self, hyperparams, xstar, output=0, var=True):
         '''
         Predict mean and variance for given **Parameters:**
 
@@ -249,17 +241,10 @@ class GP(object):
         # Get interval_indices right
         # interval_indices are meant to not must set data new, 
         # if predicting on an subset of data only.
-        if(interval_indices is None):
-            x = self.x
-            y = self.y
-            KV = self.get_covariances(hyperparams)
-        else:
-            x = self.x[interval_indices]
-            y = self.y[interval_indices]
-            KV = self.get_covariances(hyperparams, x, y)
+        KV = self.get_covariances(hyperparams)
             
         #cross covariance:
-        Kstar = self.covar.K(hyperparams['covar'], x, xstar)
+        Kstar = self.covar.K(hyperparams['covar'], self.x, xstar)
         mu = SP.dot(Kstar.transpose(), KV['alpha'][:, output])
         if(var):
             Kss_diag = self.covar.Kdiag(hyperparams['covar'], xstar)
