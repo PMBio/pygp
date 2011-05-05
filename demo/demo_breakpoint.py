@@ -162,7 +162,7 @@ for name in ['CATMA3A12810', 'CATMA3A22550' , 'CATMA4A36120', 'CATMA3A19900']:
         #[opt_model_params,opt_lml] = opt_hyper(gpr_BP,_hyper,priors=priors_BP,gradcheck=False,Ifilter=Ifilter_BP)
         #break_lml.append(opt_lml)
         
-        priors_BP[3] = [lnpriors.lngausspdf, [BP, 1]]
+        priors_BP[3] = [lnpriors.lnGauss, [BP, 1]]
         
         break_lml.append(gpr_BP.LML(_hyper, priors_BP))
 

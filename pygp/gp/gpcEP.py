@@ -6,17 +6,17 @@ Class for Gaussian process classification using EP
 
 import scipy as S
 
-from pygp.likelihood.EP import ProbitLikelihood,sigmoid
+from pygp.likelihood.EP import sigmoid
 
 from pygp.gp.gprEP import GPEP
-from pygp.likelihood.likelihood_base import GaussLikISO
+from pygp.likelihood.likelihood_base import GaussLikISO, ProbitLik
 
 class GPCEP(GPEP):
     __slots__ = []
 
 
     def __init__(self,*argin,**kwargin):
-        likelihood = GaussLikISO()#ProbitLikelihood()
+        likelihood = ProbitLik()#GaussLikISO()#ProbitLikelihood()
         #call constructor, pass on likelihood function and switch off subtraction of mean
         super(GPCEP, self).__init__(likelihood=likelihood,*argin,**kwargin)#Smean=False,likelihood=likelihood,*argin,**kwargin)
         self.Nep = 3

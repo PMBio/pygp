@@ -18,7 +18,7 @@ def plot_training_data(x,y,
                                     'color':'r',
                                     'marker':'.',
                                     'linestyle':'',
-                                    'markersize':12}):
+                                    'markersize':10}):
     """
     Plot training data input x and output y into the
     active figure (See http://matplotlib.sourceforge.net/ for details of figure).
@@ -110,10 +110,12 @@ def plot_sausage(X,mean,std,alpha=None,format_fill={'alpha':0.3,'facecolor':'k'}
     Y1 = (mean+2*std)
     Y2 = (mean-2*std)
     if(alpha is not None):
-        old_alpha_fill = format_fill['alpha']
+        old_alpha_fill = min(1, format_fill['alpha']*2)
         for i,a in enumerate(alpha[:-2]):
             format_fill['alpha'] = a * old_alpha_fill
             hf=PL.fill_between(X[i:i+2],Y1[i:i+2],Y2[i:i+2],lw=0,**format_fill)
+        i+=1
+        hf=PL.fill_between(X[i:],Y1[i:],Y2[i:],lw=0,**format_fill)
     else:
         hf=PL.fill_between(X,Y1,Y2,**format_fill)
     hp=PL.plot(X,mean,**format_line)

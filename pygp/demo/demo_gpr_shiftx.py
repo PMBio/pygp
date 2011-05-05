@@ -52,7 +52,7 @@ def run_demo():
     y2-= y2.mean()
     
     x1 = x1[:,SP.newaxis]
-    x2 = (x2-1)[:,SP.newaxis]
+    x2 = (x2-2)[:,SP.newaxis]
     
     x = SP.concatenate((x1,x2),axis=0)
     y = SP.concatenate((y1,y2),axis=0)
@@ -82,7 +82,7 @@ def run_demo():
         covar_priors.append([lnpriors.lnGammaExp,[1,1]])
     #shift
     for i in range(n_replicates):
-        covar_priors.append([lnpriors.lngausspdf,[0,.5]])    
+        covar_priors.append([lnpriors.lnGauss,[0,.5]])    
     #noise
     for i in range(n_noises):
         covar_priors.append([lnpriors.lnGammaExp,[1,1]])
@@ -97,8 +97,13 @@ def run_demo():
     [M,S] = gpr.predict(opt_model_params,X)
     
     T = opt_model_params['covar'][2:4]
-    gpr_plot.plot_sausage(X,M,SP.sqrt(S))
+    gpr_plot.plot_sausage(X,M,SP.sqrt(S),format_line=dict(alpha=1,color='g',lw=2, ls='-'))
     gpr_plot.plot_training_data(x,y,shift=T,replicate_indices=replicate_indices)
+    
+    PL.title("Example for GPTimeShift with simulated data")
+    
+    PL.xlabel("x")
+    PL.ylabel("y")
     
     PL.show()
     

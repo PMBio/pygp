@@ -67,7 +67,7 @@ class GP(object):
     # Subtract mean of Data
     # TODO: added d
     __slots__ = ["x", "y", "n", "d", "covar", "likelihood", \
-                 "_covar_cache"]
+                 "_covar_cache", '_interval_indices', '_interval_indices_changed']
     
     def __init__(self, covar_func=None, likelihood=None, x=None, y=None):
         '''GP(covar_func,likleihood,Smean=True,x=None,y=None)
@@ -104,7 +104,7 @@ class GP(object):
         #squeeeze targets; this should only be a vector
         self.y = y.squeeze()
         #assert shapes
-        if len(self.y.shape) == 1:
+        if len(self.y.shape) <= 1:
             self.y = self.y[:, SP.newaxis]
         assert self.x.shape[0] == self.y.shape[0], 'input/target shape missmatch'
         self.n = len(self.x)
@@ -115,7 +115,9 @@ class GP(object):
         self._invalidate_cache()
         pass
 
-
+    def set_interval_indices(self, interval_indices):
+        self._interval_indices_changed = True
+        self._interval_indices = interval_indices
     
 
     def LML(self, hyperparams, priors=None, *args, **kw_args):
@@ -199,20 +201,21 @@ class GP(object):
             If one/both is/are set, there will be no chaching allowed
             
         """
-        if self._is_cached(hyperparams):
+        if self._is_cached(hyperparams) and not self._interval_indices_changed:
             pass
         else:
             Knoise = 0
             #1. use likelihood object to perform the inference
             if self.likelihood is not None:
-                Knoise = self.likelihood.K(hyperparams['lik'],self.x)
-            K = self.covar.K(hyperparams['covar'], self.x)
+                Knoise = self.likelihood.K(hyperparams['lik'], self._filter_interval_indices(self.x))
+            K = self.covar.K(hyperparams['covar'], self._filter_interval_indices(self.x))
             K+= Knoise
             L = jitChol(K)[0].T # lower triangular
-            alpha = solve_chol(L, self.y)
+            alpha = solve_chol(L, self._filter_interval_indices(self.y))
             self._covar_cache = {'K': K, 'L':L, 'alpha':alpha}
             #store hyperparameters for cachine
             self._covar_cache['hyperparams'] = copy.deepcopy(hyperparams)
+            self._interval_indices_changed = False
         return self._covar_cache 
        
         
@@ -244,7 +247,7 @@ class GP(object):
         KV = self.get_covariances(hyperparams)
             
         #cross covariance:
-        Kstar = self.covar.K(hyperparams['covar'], self.x, xstar)
+        Kstar = self.covar.K(hyperparams['covar'], self._filter_interval_indices(self.x), xstar)
         mu = SP.dot(Kstar.transpose(), KV['alpha'][:, output])
         if(var):
             Kss_diag = self.covar.Kdiag(hyperparams['covar'], xstar)
@@ -271,7 +274,7 @@ class GP(object):
             return 1E6
 
         #Change: no supports multi dimensional stuff for GPLVM
-        LML = 0.5 * (KV['alpha'] * self.y).sum() + self.d * (sum(SP.log(KV['L'].diagonal())) + 0.5 * self.n * SP.log(2 * SP.pi))
+        LML = 0.5 * (KV['alpha'] * self._filter_interval_indices(self.y)).sum() + self._get_target_dimension() * (sum(SP.log(KV['L'].diagonal())) + 0.5 * self._get_input_dimension() * SP.log(2 * SP.pi))
         return LML
 
 
@@ -283,17 +286,17 @@ class GP(object):
         except linalg.LinAlgError:
             LG.error("exception caught (%s)" % (str(hyperparams)))
             return {'covar':SP.zeros(len(logtheta))}
-        n = self.n
+        n = self._get_input_dimension()
         L = KV['L']
 
         alpha = KV['alpha']
-        W = self.d * linalg.solve(L.transpose(), linalg.solve(L, SP.eye(n))) - SP.dot(alpha, alpha.transpose())
+        W = self._get_target_dimension() * linalg.solve(L.transpose(), linalg.solve(L, SP.eye(n))) - SP.dot(alpha, alpha.transpose())
         self._covar_cache['W'] = W
         
 
         LMLgrad = SP.zeros(len(logtheta))
         for i in xrange(len(logtheta)):
-            Kd = self.covar.Kgrad_theta(hyperparams['covar'], self.x, i)
+            Kd = self.covar.Kgrad_theta(hyperparams['covar'], self._filter_interval_indices(self.x), i)
             LMLgrad[i] = 0.5 * (W * Kd).sum()
         RV = {'covar': LMLgrad}
         return RV
@@ -309,7 +312,7 @@ class GP(object):
 
         LMLgrad = SP.zeros(len(logtheta))
         for i in xrange(len(logtheta)):
-            Kd = self.likelihood.Kgrad_theta(logtheta, self.x, i)
+            Kd = self.likelihood.Kgrad_theta(logtheta, self._filter_interval_indices(self.x), i)
             LMLgrad[i] = 0.5 * (W * Kd).sum()
         RV = {'lik': LMLgrad}
         return RV
@@ -317,6 +320,8 @@ class GP(object):
                    
     def _invalidate_cache(self):
         """reset cache structure"""
+        self._interval_indices = None
+        self._interval_indices_changed = False
         self._covar_cache = None
         pass
 
@@ -348,5 +353,21 @@ class GP(object):
             #otherwise they are cached:
             return True
 
-
+    def _filter_interval_indices(self, x):
+        if(self._interval_indices is None):
+            return x
+        else:
+            return x[self._interval_indices]
+        
+    def _get_target_dimension(self):
+        if(self._interval_indices is None):
+            return self.d
+        else:
+            return self._filter_interval_indices(self.y).shape[1]
+        
+    def _get_input_dimension(self):
+        if(self._interval_indices is None):
+            return self.n
+        else:
+            return len(self._filter_interval_indices(self.x))
 

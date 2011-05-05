@@ -38,7 +38,7 @@ def param_list_to_dict(list,param_struct):
     return dict(RV)
 
 
-def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = None,optimizer=OPT.fmin_tnc,**kw_args):
+def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = None,optimizer=OPT.fmin_tnc,*args,**kw_args):
     """
     Optimize hyperparemters of :py:class:`pygp.gp.basic_gp.GP` ``gpr`` starting from given hyperparameters ``hyperparams``.
 
@@ -81,7 +81,7 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = 
         x_ = X0
         x_[Ifilter_x] = x
         
-        rv =  gpr.LML(param_list_to_dict(x_,param_struct),**kw_args)
+        rv =  gpr.LML(param_list_to_dict(x_,param_struct),*args,**kw_args)
         LG.debug("L("+str(x_)+")=="+str(rv))
         if SP.isnan(rv):
             return 1E6
@@ -90,7 +90,7 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = 
     def df(x):
         x_ = X0
         x_[Ifilter_x] = x
-        rv =  gpr.LMLgrad(param_list_to_dict(x_,param_struct),**kw_args)
+        rv =  gpr.LMLgrad(param_list_to_dict(x_,param_struct),*args,**kw_args)
         #convert to list
         rv = param_dict_to_list(rv)
         LG.debug("dL("+str(x_)+")=="+str(rv))

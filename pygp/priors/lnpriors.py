@@ -75,7 +75,7 @@ def lnGammaExp(x,params):
     return rv
 
 
-def lngausspdf(x,params):
+def lnGauss(x,params):
     """
     Returns the ``log normal distribution`` and its derivation in interval x,
     given mean mu and variance sigma::
@@ -116,6 +116,6 @@ def _plotPrior(X,prior):
     PL.show()
     
 if __name__ == "__main__":
-    prior = [lngammapdf,[2,0.5]]
+    prior = [lnGamma,[2,0.5]]
     X = SP.arange(0.01,10,0.1)
     _plotPrior(X,prior)
