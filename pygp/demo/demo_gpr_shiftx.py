@@ -87,6 +87,7 @@ def run_demo():
     for i in range(n_noises):
         covar_priors.append([lnpriors.lnGammaExp,[1,1]])
     
+    covar_priors = SP.array(covar_priors)
     priors = {'covar':covar_priors}
     Ifilter = {'covar': SP.array([1,1,1,1,1],dtype='int')}
     
@@ -97,14 +98,38 @@ def run_demo():
     [M,S] = gpr.predict(opt_model_params,X)
     
     T = opt_model_params['covar'][2:4]
+    
+    PL.subplot(212)
     gpr_plot.plot_sausage(X,M,SP.sqrt(S),format_line=dict(alpha=1,color='g',lw=2, ls='-'))
     gpr_plot.plot_training_data(x,y,shift=T,replicate_indices=replicate_indices)
     
-    PL.title("Example for GPTimeShift with simulated data")
+    PL.suptitle("Example for GPTimeShift with simulated data", fontsize=23)
     
+    PL.title("Regression including time shift")
     PL.xlabel("x")
     PL.ylabel("y")
+    ylim = PL.ylim()
     
+    gpr = GP(combinators.SumCF((SECF,noiseCF)),x=x,y=y)
+    priors = {'covar':covar_priors[[0,1,-1]]}
+    hyperparams = {'covar':logthetaCOVAR[[0,1,-1]]}
+    opt_model_params = opt_hyper(gpr,hyperparams,priors=priors,gradcheck=True)[0]
+    
+    PL.subplot(211)
+    #predict
+    [M,S] = gpr.predict(opt_model_params,X)
+    
+    gpr_plot.plot_sausage(X,M,SP.sqrt(S),format_line=dict(alpha=1,color='g',lw=2, ls='-'))
+    gpr_plot.plot_training_data(x,y,replicate_indices=replicate_indices)
+    
+    PL.title("Regression without time shift")
+    PL.xlabel("x")
+    PL.ylabel("y")
+    PL.ylim(ylim)
+    
+    PL.subplots_adjust(left=.1, bottom=.1, 
+    right=.96, top=.8,
+    wspace=.4, hspace=.4)
     PL.show()
     
 if __name__ == "__main__":
