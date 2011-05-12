@@ -14,11 +14,11 @@ import matplotlib
 def plot_training_data(x,y,
                        shift=None,
                        replicate_indices=None,
-                       format_data={'alpha':1,
-                                    'color':'r',
+                       format_data={'alpha':.5,
                                     'marker':'.',
-                                    'linestyle':'',
-                                    'markersize':10}):
+                                    'linestyle':'--',
+                                    'lw':1,
+                                    'markersize':9}):
     """
     Plot training data input x and output y into the
     active figure (See http://matplotlib.sourceforge.net/ for details of figure).
@@ -61,22 +61,39 @@ def plot_training_data(x,y,
 
         _format_data = format_data.copy()
         _format_data['alpha'] = .2
-        PL.plot(x,y,**_format_data)
-
+        
+        number_of_groups = len(S.unique(replicate_indices))
+        
         for i in S.unique(replicate_indices):
             x_shift[replicate_indices==i] -= shift[i]
 
-        for i in xrange(len(x)):
-            PL.annotate("",xy=(x_shift[i],y[i]),
-                        xytext=(x[i],y[i]),
-                        arrowprops=dict(facecolor
-                                        =format_data['color'],
-                                        alpha=.3,
-                                        shrink=.2,
-                                        frac=.3))
+        for i in S.unique(replicate_indices):
+            col = matplotlib.cm.jet(256.* (i / (1. * number_of_groups)))
+            _format_data['color'] = col
+            PL.plot(x[replicate_indices==i],y[replicate_indices==i],**_format_data)
+#            for i in S.arange(len(replicate_indices))[replicate_indices==i]:
+#                PL.annotate("",xy=(x_shift[i],y[i]),
+#                            xytext=(x[i],y[i]),
+#                            arrowprops=dict(facecolor
+#                                            =col,
+#                                            alpha=.3,
+#                                            shrink=.2,
+#                                            frac=.3))
+            #PL.plot(x,y,**_format_data)
 
+        
 
-    return PL.plot(x_shift,y,**format_data)
+    if(replicate_indices is not None):
+        number_of_groups = len(S.unique(replicate_indices))
+        format_data['markersize']=13
+        format_data['alpha']=1
+        for i in S.unique(replicate_indices):
+            col = matplotlib.cm.jet(256.* (i / (1. * number_of_groups)))
+            format_data['color'] = col
+            PL.plot(x_shift[replicate_indices==i],y[replicate_indices==i],**format_data)
+    else: PL.plot(x_shift,y,**format_data)
+        
+#    return PL.plot(x_shift,y,**format_data)
 
 def plot_sausage(X,mean,std,alpha=None,format_fill={'alpha':0.3,'facecolor':'k'},format_line=dict(alpha=1,color='g',lw=3, ls='dashed')):
     """

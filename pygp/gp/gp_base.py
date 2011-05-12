@@ -105,7 +105,7 @@ class GP(object):
         self.y = y.squeeze()
         #assert shapes
         if len(self.y.shape) <= 1:
-            self.y = self.y[:, SP.newaxis]
+            self.y = self.y.reshape(-1,1)
         assert self.x.shape[0] == self.y.shape[0], 'input/target shape missmatch'
         self.n = len(self.x)
         #for GPLVM models:
