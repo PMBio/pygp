@@ -46,11 +46,11 @@ if __name__ == '__main__':
         covariance = combinators.SumCF((linear_cf,noise_cf))
         hyperparams = {'covar': SP.log([1,0.1])}
         likelihood = None
-    if 1:
-        if 0:
+    if 0:
+        if 1:
             covariance = linear.LinearCFISO(n_dimensions=K)
             hyperparams = {'covar': SP.log([1])}
-        if 1:
+        if 0:
             covariance = se.SqexpCFARD(n_dimensions=K)
             hyperparams = {'covar': SP.log([1]*(K+1)),'lik': SP.log([0.1])}
         likelihood = lik.GaussLikISO()

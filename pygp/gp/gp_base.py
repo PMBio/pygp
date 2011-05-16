@@ -76,7 +76,7 @@ class GP(object):
         x/y:        training input/targets
         '''       
         if not (x is None):
-            self.setData(x, y)
+            self.setData(x=x, y=y)
         # Store the constructor parameters
         self.covar = covar_func
         self.likelihood = likelihood

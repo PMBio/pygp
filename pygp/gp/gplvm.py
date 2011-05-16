@@ -137,7 +137,7 @@ class GPLVM(GP):
         """GPLVM derivative w.r.t. to latent variables
         """
         dlMl = SP.zeros_like(self.x)
-        W = self._cache['W']
+        W = self._covar_cache['W']
 
         #the standard procedure would be
         #dlMl[n,i] = 0.5*SP.odt(W,dKx_n,i).trace()
