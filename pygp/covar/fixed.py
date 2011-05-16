@@ -26,14 +26,17 @@ class FixedCF(CovarianceFunction):
 
     def K(self,theta,x1,x2=None):
         #get input data:
-        x1, x2 = self._filter_input_dimensions(x1,x2)
+
+        # x1, x2 = self._filter_input_dimensions(x1,x2)
+
+
         #scale parameter
         A  = SP.exp(2*theta[0])
         #if dimensions match return K
-        if (x1.shape[0]==self._K.shape[0]) & (x2.shape[0]==self._K.shape[1]):
-            return A*self._K
-        else:
-            return SP.zeros([x1.shape[0],x2.shape[0]])
+        # if (x1.shape[0]==self._K.shape[0]) & (x2.shape[0]==self._K.shape[1]):
+	return A*self._K
+        # else:
+        #     return SP.zeros([x1.shape[0],x2.shape[0]])
 
     def Kdiag(self,theta,x1,i):
         """self covariance"""
