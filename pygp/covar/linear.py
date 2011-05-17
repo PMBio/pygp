@@ -94,7 +94,7 @@ class LinearCF(CovarianceFunction):
             RV+=L[i]*SP.dot(x1[:,iid:iid+1],x2[:,iid:iid+1].T)
         return RV
 
-    def Kdiag(self,logtheta,x1,i):
+    def Kgrad_theta(self,logtheta,x1,i):
         iid = self.dimension_indices[i]
         Li = SP.exp(2*logtheta[i])
         RV = 2*Li*SP.dot(x1[:,iid:iid+1],x1[:,iid:iid+1].T)

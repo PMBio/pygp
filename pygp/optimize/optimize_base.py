@@ -14,7 +14,7 @@ import scipy as SP
 import scipy.optimize as OPT
 import logging as LG
 import pdb
-LG.basicConfig(level=LG.DEBUG)
+LG.basicConfig(level=LG.INFO)
 
 def param_dict_to_list(dict):
     """convert from param dictionary to list"""
@@ -126,7 +126,7 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = 
     x  = X0.copy()[Ifilter_x]
         
     LG.info("startparameters for opt:"+str(x))
-
+    
     if gradcheck:
         LG.info("check_grad (pre) (Enter to continue):" + str(OPT.check_grad(f,df,x)))
         raw_input()
@@ -135,7 +135,7 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = 
 
     #general optimizer interface
     opt_RV=optimizer(f, x, fprime=df, maxfun=maxiter,messages=False,bounds=bounds)
-
+    
     #get optimized parameters out
     opt_x = X0.copy()
     opt_x[Ifilter_x] = opt_RV[0]
