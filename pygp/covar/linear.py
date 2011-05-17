@@ -98,7 +98,7 @@ class LinearCFARD(CovarianceFunction):
             RV+=L[i]*SP.dot(x1[:,iid:iid+1],x2[:,iid:iid+1].T)
         return RV
 
-    def Kd(self,theta,x1,i):
+    def Kgrad_theta(self,theta,x1,i):
         iid = self.dimension_indices[i]
         #Li = SP.exp(-2*theta[i])
         Li = 1./theta[i]
@@ -106,7 +106,7 @@ class LinearCFARD(CovarianceFunction):
         return RV
     
 
-    def Kd_dx(self,theta,x1,x2,d):
+    def Kgrad_x(self,theta,x1,x2,d):
         RV = SP.zeros([x1.shape[0],x2.shape[0]])
         if d not in self.dimension_indices:
             return RV
@@ -118,7 +118,7 @@ class LinearCFARD(CovarianceFunction):
         return RV
 
     
-    def Kd_dx_diag(self,theta,x1,d):
+    def Kgrad_xdiag(self,theta,x1,d):
         """derivative w.r.t diagonal of self covariance matrix"""
         RV = SP.zeros([x1.shape[0]])
         if d not in self.dimension_indices:

@@ -2,13 +2,14 @@
 Base class for Gaussian process latent variable models
 This is really not ready for release yet but is used by the gpasso model
 """
+import sys
+sys.path.append('./../..')
 from pygp.gp import GP
 import pdb
 from pygp.optimize.optimize_base import opt_hyper
 import scipy as SP
 import scipy.linalg as linalg
-import sys
-sys.path.append('./..')
+
 
 
 
@@ -91,7 +92,7 @@ class GPLVM(GP):
         
         #account for prior
         if priors is not None:
-            plml = self._lml_prior(hyperparams, priors=priors, **kw_args)
+            plml = self._LML_prior(hyperparams, priors=priors, **kw_args)
             LML -= SP.array([p[:, 0].sum() for p in plml.values()]).sum()
         return LML
         
@@ -125,7 +126,7 @@ class GPLVM(GP):
 
         #prior
         if priors is not None:
-            plml = self._lml_prior(hyperparams, priors=priors, **kw_args)
+            plml = self._LML_prior(hyperparams, priors=priors, **kw_args)
             for key in RV.keys():
                 RV[key] -= plml[key][:, 1]                       
         return RV
