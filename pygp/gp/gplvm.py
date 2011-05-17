@@ -171,7 +171,7 @@ class GPLVM(GP):
         
 
 if __name__ == '__main__':
-    from pygp.covar import linear, noise, combinators
+    from pygp.covar import linear, noise, fixed, combinators
     
     import logging as LG
     LG.basicConfig(level=LG.DEBUG)
@@ -196,7 +196,8 @@ if __name__ == '__main__':
     #construct GPLVM model
     linear_cf = linear.LinearCFISO(n_dimensions=K)
     noise_cf = noise.NoiseCFISO()
-    covariance = combinators.SumCF((linear_cf, noise_cf))
+    mu_cf = fixed.FixedCF(SP.ones([N,N]))
+    covariance = combinators.SumCF((mu_cf, linear_cf, noise_cf))
 
 
     #no inputs here (later SNPs)
@@ -207,7 +208,7 @@ if __name__ == '__main__':
     gpr = GP(covar_func=covariance, x=X, y=Y[:, 0])
     
     #construct hyperparams
-    covar = SP.log([1.0, 0.1])
+    covar = SP.log([0.1, 1.0, 0.1])
 
     #X are hyperparameters, i.e. we optimize over them also
 
@@ -220,7 +221,7 @@ if __name__ == '__main__':
     #hyperparams = {'covar': covar}
     
     #evaluate log marginal likelihood
-    lml = gplvm.lMl(hyperparams=hyperparams)
+    lml = gplvm.LML(hyperparams=hyperparams)
     [opt_model_params, opt_lml] = opt_hyper(gplvm, hyperparams, gradcheck=False)
     Xo = opt_model_params['x']
     

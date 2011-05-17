@@ -12,7 +12,7 @@ LinearCFARD
 
 import scipy as SP
 from pygp.covar import CovarianceFunction
-
+import pdb
 
 class LinearCFISO(CovarianceFunction):
     """
@@ -63,7 +63,66 @@ class LinearCFISO(CovarianceFunction):
         RV[:] = 2*A*x1[:,d]
         return RV
 
+class LinearCF(CovarianceFunction):
 
+    def __init__(self,n_dimensions=1,dimension_indices=None):
+        if dimension_indices != None:
+            self.dimension_indices = SP.array(dimension_indices,dtype='int32')
+        elif n_dimensions:
+            self.dimension_indices = SP.arange(0,n_dimensions)
+        if (len(self.dimension_indices)>0):
+            self.n_dimensions = len(self.dimension_indices)
+            self.n_hyperparameters = self.n_dimensions
+        else:
+            self.n_dimensions = 0
+            self.n_hyperparameters = 0
+        
+        
+    def get_hyperparameter_names(self):
+        names = []
+        names.append('Amplitude')
+        return names
+
+    def K(self,logtheta,x1,x2=None):
+        if x2 is None:
+            x2 = x1
+        # 2. exponentiate params:
+        L  = SP.exp(2*logtheta[0:self.n_dimensions])
+        RV = SP.zeros([x1.shape[0],x2.shape[0]])
+        for i in xrange(self.n_dimensions):
+            iid = self.dimension_indices[i]
+            RV+=L[i]*SP.dot(x1[:,iid:iid+1],x2[:,iid:iid+1].T)
+        return RV
+
+    def Kdiag(self,logtheta,x1,i):
+        iid = self.dimension_indices[i]
+        Li = SP.exp(2*logtheta[i])
+        RV = 2*Li*SP.dot(x1[:,iid:iid+1],x1[:,iid:iid+1].T)
+        return RV
+    
+
+    def Kgrad_x(self,logtheta,x1,x2,d):
+        RV = SP.zeros([x1.shape[0],x2.shape[0]])
+        if d not in self.dimension_indices:
+            return RV
+        #get corresponding amplitude:
+        i = SP.nonzero(self.dimension_indices==d)[0][0]
+        A = SP.exp(2*logtheta[i])
+        RV[:,:] = A*x2[:,d]
+        return RV
+
+    
+    def Kgrad_xdiag(self,logtheta,x1,d):
+        """derivative w.r.t diagonal of self covariance matrix"""
+        RV = SP.zeros([x1.shape[0]])
+        if d not in self.dimension_indices:
+            return RV
+        #get corresponding amplitude:
+        i = SP.nonzero(self.dimension_indices==d)[0][0]
+        A = SP.exp(2*logtheta[i])
+        RV = SP.zeros([x1.shape[0]])
+        RV[:] = 2*A*x1[:,d]
+        return RV
 
 class LinearCFARD(CovarianceFunction):
     """identical to LinearCF, however alternative paramerterisation of the ard parameters"""
@@ -92,6 +151,7 @@ class LinearCFARD(CovarianceFunction):
         # 2. exponentiate params:
         #L  = SP.exp(-2*theta[0:self.n_dimensions])
         L  = 1./theta[0:self.n_dimensions]
+
         RV = SP.zeros([x1.shape[0],x2.shape[0]])
         for i in xrange(self.n_dimensions):
             iid = self.dimension_indices[i]

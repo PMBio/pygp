@@ -12,9 +12,9 @@ for hyperparameters of covariance functions
 # import scipy:
 import scipy as SP
 import scipy.optimize as OPT
-
 import logging as LG
-
+import pdb
+LG.basicConfig(level=LG.DEBUG)
 
 def param_dict_to_list(dict):
     """convert from param dictionary to list"""
@@ -80,7 +80,6 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = 
     def f(x):
         x_ = X0
         x_[Ifilter_x] = x
-        
         rv =  gpr.LML(param_list_to_dict(x_,param_struct),*args,**kw_args)
         LG.debug("L("+str(x_)+")=="+str(rv))
         if SP.isnan(rv):
