@@ -137,7 +137,8 @@ class GPLVM(GP):
     def _LMLgrad_x(self, hyperparams):
         """GPLVM derivative w.r.t. to latent variables
         """
-        dlMl = SP.zeros_like(self.x)
+        # dlMl = SP.zeros_like(self.x)
+	dlMl = SP.zeros([self.n,len(self.gplvm_dimensions)])
         W = self._covar_cache['W']
 
         #the standard procedure would be
@@ -172,10 +173,9 @@ class GPLVM(GP):
 
 if __name__ == '__main__':
     from pygp.covar import linear, noise, fixed, combinators
-    
     import logging as LG
     LG.basicConfig(level=LG.DEBUG)
-    
+    SP.random.seed(1)
     #1. simulate data
     N = 100
     K = 3
@@ -198,13 +198,14 @@ if __name__ == '__main__':
     noise_cf = noise.NoiseCFISO()
     mu_cf = fixed.FixedCF(SP.ones([N,N]))
     covariance = combinators.SumCF((mu_cf, linear_cf, noise_cf))
+    # covariance = combinators.SumCF((linear_cf, noise_cf))
 
 
     #no inputs here (later SNPs)
     X = Spca.copy()
     #X = SP.random.randn(N,K)
     gplvm = GPLVM(covar_func=covariance, x=X, y=Y)
-
+   
     gpr = GP(covar_func=covariance, x=X, y=Y[:, 0])
     
     #construct hyperparams
@@ -228,6 +229,6 @@ if __name__ == '__main__':
 
     for k in xrange(K):
         print SP.corrcoef(Spca[:, k], S[:, k])
-
+    print "=================="
     for k in xrange(K):
         print SP.corrcoef(Xo[:, k], S[:, k])
