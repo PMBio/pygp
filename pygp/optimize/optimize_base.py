@@ -14,6 +14,7 @@ import scipy as SP
 import scipy.optimize as OPT
 
 import logging as LG
+import pdb
 
 
 def param_dict_to_list(dict):

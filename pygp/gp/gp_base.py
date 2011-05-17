@@ -148,7 +148,7 @@ class GP(object):
             
         """
         LML = self._LML_covar(hyperparams)
-        
+        pdb.set_trace()
         #account for prior
         if priors is not None:
             plml = self._LML_prior(hyperparams, priors=priors, *args, **kw_args)
@@ -172,6 +172,7 @@ class GP(object):
         # Ideriv : 
         #      indicator which derivativse to calculate (default: all)
 
+        pdb.set_trace()
         RV = self._LMLgrad_covar(hyperparams)
         if self.likelihood is not None:
             RV.update(self._LMLgrad_lik(hyperparams))

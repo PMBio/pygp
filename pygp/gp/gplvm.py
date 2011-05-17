@@ -3,6 +3,7 @@ Base class for Gaussian process latent variable models
 This is really not ready for release yet but is used by the gpasso model
 """
 from pygp.gp import GP
+import pdb
 from pygp.optimize.optimize_base import opt_hyper
 import scipy as SP
 import scipy.linalg as linalg
@@ -50,11 +51,12 @@ class GPLVM(GP):
         
     def _update_inputs(self, hyperparams):
         """update the inputs from gplvm models if supplied as hyperparms"""
-        self.x[:, self.gplvm_dimensions] = hyperparams['x']
-        pass
+        if 'x' in hyperparams.keys():
+            self.x[:, self.gplvm_dimensions] = hyperparams['x']
 
   
     def LML(self, hyperparams, priors=None, **kw_args):
+        
         """
         Calculate the log Marginal likelihood
         for the given logtheta.
@@ -81,8 +83,7 @@ class GPLVM(GP):
             when necessary.
             
         """
-        if 'x' in hyperparams:
-            self._update_inputs(hyperparams)
+        self._update_inputs(hyperparams)
 
         #covariance hyper
         LML = self._LML_covar(hyperparams)
@@ -111,17 +112,16 @@ class GPLVM(GP):
         # Ideriv : 
         #      indicator which derivativse to calculate (default: all)
 
-        if 'x' in hyperparams:
-            self._update_inputs(hyperparams)
+        self._update_inputs(hyperparams)
             
         RV = self._LMLgrad_covar(hyperparams)
         if self.likelihood is not None:
             RV.update(self._LMLgrad_lik(hyperparams))
-        #
-        if 'x' in hyperparams:
-            RV_ = self._LMLgrad_x(hyperparams)
-            #update RV
-            RV.update(RV_)
+
+        #gradients w.r.t x:
+        RV_ = self._LMLgrad_x(hyperparams)
+        #update RV
+        RV.update(RV_)
 
         #prior
         if priors is not None:
@@ -136,6 +136,10 @@ class GPLVM(GP):
     def _LMLgrad_x(self, hyperparams):
         """GPLVM derivative w.r.t. to latent variables
         """
+
+        if not 'x' in hyperparams:
+            return {}
+        
         dlMl = SP.zeros_like(self.x)
         W = self._covar_cache['W']
 

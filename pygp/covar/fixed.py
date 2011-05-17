@@ -26,7 +26,8 @@ class FixedCF(CovarianceFunction):
 
     def K(self,theta,x1,x2=None):
         #get input data:
-        x1, x2 = self._filter_input_dimensions(x1,x2)
+        if x2 is None:
+            x2 = x1
         #scale parameter
         A  = SP.exp(2*theta[0])
         #if dimensions match return K
