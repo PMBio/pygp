@@ -19,7 +19,6 @@ Documentation API Contents:
    GP Hyperparameter optimization <opt_hyper>
    Hyperprior Distributions <priors>
    Plotting gpr output <plot_gpr>
-   Sample from GPs <gp_sample>
 
 See following examples for usage details:
 

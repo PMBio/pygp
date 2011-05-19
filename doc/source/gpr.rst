@@ -1,6 +1,2 @@
-.. automodule:: gpr
+.. automodule:: gp
   :members:
-    optHyper
-
-  .. autoclass:: gpr.GP
-    :members:

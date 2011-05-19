@@ -1,2 +1,2 @@
-.. automodule:: composite
-   :members:
+.. .. automodule:: composite
+..    :members:
