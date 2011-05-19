@@ -1,2 +1,0 @@
-#!/bin/sh
-python setupRelease.py bdist_egg sdist
