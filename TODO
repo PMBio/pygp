@@ -4,4 +4,4 @@
 * Speed up the sq dist 
 * Add SVD trick to gplvm
 * Move noise covarinace to likelihood model?
-* Migrate the whoel time change point stuff from Max
+* Migrate the whoel time change point stuff from Max -> done ?
