@@ -17,20 +17,21 @@ import pdb
 
 LG.basicConfig(level=LG.INFO)
 
-
-def param_dict_to_list(dict):
+def param_dict_to_list(dict,skeys=None):
     """convert from param dictionary to list"""
-    RV = SP.concatenate([val.flatten() for val in dict.values()])
+    #sort keys
+    RV = SP.concatenate([dict[key].flatten() for key in skeys])
     return RV
     pass
 
-def param_list_to_dict(list,param_struct):
+def param_list_to_dict(list,param_struct,skeys):
     """convert from param dictionary to list
     param_struct: structure of parameter array
     """
     RV = []
     i0= 0
-    for key,val in param_struct.iteritems():
+    for key in skeys:
+        val = param_struct[key]
         shape = SP.array(val) 
         np = shape.prod()
         i1 = i0+np
@@ -82,7 +83,7 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = 
     def f(x):
         x_ = X0
         x_[Ifilter_x] = x
-        rv =  gpr.LML(param_list_to_dict(x_,param_struct),*args,**kw_args)
+        rv =  gpr.LML(param_list_to_dict(x_,param_struct,skeys),*args,**kw_args)
         LG.debug("L("+str(x_)+")=="+str(rv))
         if SP.isnan(rv):
             return 1E6
@@ -91,9 +92,9 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = 
     def df(x):
         x_ = X0
         x_[Ifilter_x] = x
-        rv =  gpr.LMLgrad(param_list_to_dict(x_,param_struct),*args,**kw_args)
+        rv =  gpr.LMLgrad(param_list_to_dict(x_,param_struct,skeys),*args,**kw_args)
         #convert to list
-        rv = param_dict_to_list(rv)
+        rv = param_dict_to_list(rv,skeys)
         LG.debug("dL("+str(x_)+")=="+str(rv))
         if SP.isnan(rv).any():
             In = SP.isnan(rv)
@@ -101,12 +102,14 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = 
         return rv[Ifilter_x]
 
     #0. store parameter structure
-    param_struct = dict([(name,hyperparams[name].shape) for name in hyperparams.keys()])
+    skeys = SP.sort(hyperparams.keys())
+    param_struct = dict([(name,hyperparams[name].shape) for name in skeys])
+
     
     #1. convert the dictionaries to parameter lists
-    X0 = param_dict_to_list(hyperparams)
+    X0 = param_dict_to_list(hyperparams,skeys)
     if Ifilter is not None:
-        Ifilter_x = SP.array(param_dict_to_list(Ifilter),dtype='bool')
+        Ifilter_x = SP.array(param_dict_to_list(Ifilter,skeys),dtype='bool')
     else:
         Ifilter_x = SP.ones(len(X0),dtype='bool')
 
@@ -141,7 +144,7 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = 
     #get optimized parameters out
     opt_x = X0.copy()
     opt_x[Ifilter_x] = opt_RV[0]
-    opt_hyperparams = param_list_to_dict(opt_x,param_struct)
+    opt_hyperparams = param_list_to_dict(opt_x,param_struct,skeys)
     #get the log marginal likelihood at the optimum:
     opt_lml = gpr.LML(opt_hyperparams,**kw_args)
 
