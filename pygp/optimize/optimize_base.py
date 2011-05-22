@@ -41,7 +41,7 @@ def param_list_to_dict(list,param_struct,skeys):
     return dict(RV)
 
 
-def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = None,optimizer=OPT.fmin_tnc,*args,**kw_args):
+def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds = None,optimizer=OPT.fmin_tnc,*args,**kw_args):
     """
     Optimize hyperparemters of :py:class:`pygp.gp.basic_gp.GP` ``gpr`` starting from given hyperparameters ``hyperparams``.
 
@@ -139,12 +139,16 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=100,gradcheck=False,bounds = 
     LG.info("start optimization")
 
     #general optimizer interface
+    #note: x is a subset of X, indexing the parameters that are optimized over
+    #Ifilter_x pickes the subest of X, yielding x
     opt_RV=optimizer(f, x, fprime=df, maxfun=maxiter,messages=False,bounds=bounds)
+    opt_x = opt_RV[0]
     
-    #get optimized parameters out
-    opt_x = X0.copy()
-    opt_x[Ifilter_x] = opt_RV[0]
-    opt_hyperparams = param_list_to_dict(opt_x,param_struct,skeys)
+    #relate back to X
+    Xopt = X0.copy()
+    Xopt[Ifilter_x] = opt_x
+    #convert into dictionary
+    opt_hyperparams = param_list_to_dict(Xopt,param_struct,skeys)
     #get the log marginal likelihood at the optimum:
     opt_lml = gpr.LML(opt_hyperparams,**kw_args)
 

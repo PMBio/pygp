@@ -32,6 +32,7 @@ if __name__ == '__main__':
     W = SP.random.randn(D,K)
 
     Y = SP.dot(W,S.T).T
+    pdb.set_trace()
     Y+= 0.5*SP.random.randn(N,D)
 
     #use "standard PCA"
