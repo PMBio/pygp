@@ -84,7 +84,7 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds =
         x_ = X0
         x_[Ifilter_x] = x
         rv =  gpr.LML(param_list_to_dict(x_,param_struct,skeys),*args,**kw_args)
-        LG.debug("L("+str(x_)+")=="+str(rv))
+        #LG.debug("L("+str(x_)+")=="+str(rv))
         if SP.isnan(rv):
             return 1E6
         return rv
@@ -93,9 +93,8 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds =
         x_ = X0
         x_[Ifilter_x] = x
         rv =  gpr.LMLgrad(param_list_to_dict(x_,param_struct,skeys),*args,**kw_args)
-        #convert to list
         rv = param_dict_to_list(rv,skeys)
-        LG.debug("dL("+str(x_)+")=="+str(rv))
+        #LG.debug("dL("+str(x_)+")=="+str(rv))
         if SP.isnan(rv).any():
             In = SP.isnan(rv)
             rv[In] = 1E6
