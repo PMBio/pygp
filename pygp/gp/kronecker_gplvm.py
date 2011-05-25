@@ -24,7 +24,7 @@ from pygp.gp import gplvm
 import utils.ROC as ROC
 import pygp.gp.gplvm as GPLVM
 import pygp.optimize as OPT
-import optimize_test as OPT2
+#import optimize_test as OPT2
 #customized covariance function:
 import pygp.priors.lnpriors as lnpriors
 import pygp.likelihood as lik
@@ -170,28 +170,45 @@ class KroneckerGPLVM(GPLVM.GPLVM):
     def get_covariances(self, hyperparams):
         """get covariance structures and do necessary computations"""
         #check individaul components of hyperparams to avoid redunand recomputations
+        #if full covariance parameter set is identical do nothing
         if self._is_cached(hyperparams) and not self._interval_indices_changed:
             pass
         else:
+            if self._covar_cache is None:
+                self._covar_cache = {}
+            CC = self._covar_cache
+            #else partial update where needed
+            #row covaraince update?
+            if not self._is_cached(hyperparams,['covar_r']):
+                Kr = self.covar_r.K(hyperparams['covar_r'],self.x_r)
+                [Sr,Ur] = SP.linalg.eigh(Kr)
+                CC['Kr'] = Kr
+                CC['Sr'] = Sr
+                CC['Ur'] = Ur
+            if not self._is_cached(hyperparams,['covar_c']):
+                Kc = self.covar_c.K(hyperparams['covar_c'],self.x_c)
+                [Sc,Uc] = SP.linalg.eigh(Kc)
+                CC['Kc'] = Kc
+                CC['Sc'] = Sc
+                CC['Uc'] = Uc
+            #everything else is cheap and update always
+             
             #0. evaluate likelihood
             Knoise = self.likelihood.Kdiag(hyperparams['lik'],self.xx)
-            #1. evalute both covariances
-            Kr = self.covar_r.K(hyperparams['covar_r'],self.x_r) 
-            Kc = self.covar_c.K(hyperparams['covar_c'],self.x_c)
-            #2. calculate SVD for both
-            [Sr,Ur] = SP.linalg.eigh(Kr)
-            [Sc,Uc] = SP.linalg.eigh(Kc)
+                        
             # K1  = u1 * SP.diag(s1) * u1.T
             # K1_ = SP.dot(u1,SP.dot(SP.diag(s1),u1.T))
             #3. calculate rotated data matrix
-            y_rot  = kronravel(Ur.T,Uc.T,self.y)
+            y_rot  = kronravel(CC['Ur'].T,CC['Uc'].T,self.y)
             #4. get Si which we need frequently
-            Si = 1./(krondiag(Sr,Sc) + Knoise[0])
+            Si = 1./(krondiag(CC['Sr'],CC['Sc']) + Knoise[0])
             YSi = y_rot*Si
             #4. store everything
-            self._covar_cache = {'Kr': Kr,'Kc':Kc, 'Ur': Ur,'Uc':Uc,'Sr':Sr,'Sc':Sc,'Knoise':Knoise,'Si':Si,'y_rot':y_rot,'YSi':YSi}
-
-            self._covar_cache['hyperparams'] = copy.deepcopy(hyperparams)
+            CC['Knoise'] =Knoise
+            CC['Si']     =Si
+            CC['y_rot']  =y_rot
+            CC['YSi']    =YSi
+            CC['hyperparams'] = copy.deepcopy(hyperparams)
             if VERBOSE:
                 print "costly verbose debugging on"
                 #check corectness of rotation

@@ -342,13 +342,17 @@ class GP(object):
             RV[key] = pvalues
         return RV
 
-    def _is_cached(self, hyperparams):
+    def _is_cached(self, hyperparams,keys=None):
         """check whether model parameters are cached"""
         if self._covar_cache is None:
             return False
+        elif not 'hyperparams' in self._covar_cache.keys():
+            return False
         else:
+            if keys is None:
+                keys = hyperparams.keys()
             #compare
-            for key in hyperparams.keys():
+            for key in keys:
                 if not (self._covar_cache['hyperparams'][key] == hyperparams[key]).all():
                     return False
             #otherwise they are cached:
