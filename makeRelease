@@ -1,0 +1,3 @@
+#!/bin/sh
+python setup.py bdist_egg sdist
+rm -r ./build
