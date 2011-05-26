@@ -28,15 +28,16 @@ def run_demo():
     random.seed(1)
     
     #0. generate Toy-Data; just samples from a superposition of a sin + linear trend
+    n_replicates = 4
     xmin = 1
     xmax = 2.5*SP.pi
-    x1 = SP.arange(xmin,xmax,.7)
-    x2 = SP.arange(xmin,xmax,.4)
+    x1 = SP.tile(SP.arange(xmin,xmax,.7), n_replicates)
+    x2 = SP.tile(SP.arange(xmin,xmax,.4), n_replicates)
     
     C = 2       #offset
     #b = 0.5
-    sigma1 = 0.1
-    sigma2 = 0.1
+    sigma1 = 0.15
+    sigma2 = 0.15
     n_noises = 1
     
     b = 0
@@ -58,15 +59,21 @@ def run_demo():
     y = SP.concatenate((y1,y2),axis=0)
     
     #predictions:
-    X = SP.linspace(-2,10,100)[:,SP.newaxis]
+    X = SP.linspace(-2,10,100*n_replicates)[:,SP.newaxis]
     
     #hyperparamters
     dim = 1
-    replicate_indices = SP.concatenate([
-        SP.repeat(i,len(xi)) for i,xi in enumerate((x1,x2))])
+    replicate_indices = []
+    for i,xi in enumerate((x1,x2)):
+        for rep in SP.arange(i*n_replicates, (i+1)*n_replicates):
+            replicate_indices.extend(SP.repeat(rep,len(SP.unique(xi))))
+    replicate_indices = SP.array(replicate_indices)
     n_replicates = len(SP.unique(replicate_indices))
     
-    logthetaCOVAR = SP.log([1,1,SP.exp(0),SP.exp(0),sigma1])#,sigma2])
+    logthetaCOVAR = [1,1]
+    logthetaCOVAR.extend(SP.repeat(SP.exp(1),n_replicates))
+    logthetaCOVAR.extend([sigma1])
+    logthetaCOVAR = SP.log(logthetaCOVAR)#,sigma2])
     hyperparams = {'covar':logthetaCOVAR}
     
     SECF = se.SqexpCFARD(dim)
@@ -89,7 +96,7 @@ def run_demo():
     
     covar_priors = SP.array(covar_priors)
     priors = {'covar':covar_priors}
-    Ifilter = {'covar': SP.array([1,1,1,1,1],dtype='int')}
+    Ifilter = {'covar': SP.ones(n_replicates+3)}
     
     gpr = GP(CovFun,x=x,y=y) 
     opt_model_params = opt_hyper(gpr,hyperparams,priors=priors,gradcheck=False,Ifilter=Ifilter)[0]
@@ -97,7 +104,7 @@ def run_demo():
     #predict
     [M,S] = gpr.predict(opt_model_params,X)
     
-    T = opt_model_params['covar'][2:4]
+    T = opt_model_params['covar'][2:2+n_replicates]
     
     PL.subplot(212)
     gpr_plot.plot_sausage(X,M,SP.sqrt(S),format_line=dict(alpha=1,color='g',lw=2, ls='-'))
