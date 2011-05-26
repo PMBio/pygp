@@ -1,7 +1,7 @@
 *TODOs
 
 * Add gradX derivates of squared exponential -> done
-* Speed up the sq dist 
+* Speed up the sq dist (aready done, because of usage of numpy…)
 * Add SVD trick to gplvm
 * Move noise covarinace to likelihood model?
 * Migrate the whoel time change point stuff from Max -> done ?
