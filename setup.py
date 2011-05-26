@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 __description__ = """Python package for Gaussian process regression in python 
@@ -24,6 +24,6 @@ setup(name='pygp',
       author = "Oliver Stegle, Max Zwiessele",
       #author_email = 'email_not_yet@support.ed',
       #url = 'no.url.given'
-      packages = ["pygp"],
+      packages = find_packages("."),
       install_requires = ['numpy','scipy']
       )
