@@ -11,7 +11,7 @@ import pylab as PL
 import scipy as S
 import matplotlib
 
-def plot_training_data(x,y,
+def plot_training_data(x, y,
                        shift=None,
                        replicate_indices=None,
                        format_data={'alpha':.5,
@@ -19,7 +19,7 @@ def plot_training_data(x,y,
                                     'linestyle':'--',
                                     'lw':1,
                                     'markersize':9},
-                       draw_arrows=False):
+                       draw_arrows=0):
     """
     Plot training data input x and output y into the
     active figure (See http://matplotlib.sourceforge.net/ for details of figure).
@@ -51,6 +51,10 @@ def plot_training_data(x,y,
     format_data : {format}
         Format of the data points. See http://matplotlib.sourceforge.net/ for details. 
         
+    draw_arrows : int
+        draw given number of arrows (if greator than len(replicate) draw all arrows.
+        Arrows will show the time shift for time points, respectively.
+        
     """
     x = S.array(x).reshape(-1)
     y = S.array(y).reshape(-1)
@@ -58,7 +62,7 @@ def plot_training_data(x,y,
     x_shift = x.copy()
 
     if shift is not None and replicate_indices is not None:
-        assert len(shift)==len(S.unique(replicate_indices)), 'Need one shift per replicate to plot properly'
+        assert len(shift) == len(S.unique(replicate_indices)), 'Need one shift per replicate to plot properly'
 
         _format_data = format_data.copy()
         _format_data['alpha'] = .2
@@ -66,18 +70,19 @@ def plot_training_data(x,y,
         number_of_groups = len(S.unique(replicate_indices))
         
         for i in S.unique(replicate_indices):
-            x_shift[replicate_indices==i] -= shift[i]
+            x_shift[replicate_indices == i] -= shift[i]
 
         for i in S.unique(replicate_indices):
             col = matplotlib.cm.jet(i / (2. * number_of_groups))
             _format_data['color'] = col
-            PL.plot(x[replicate_indices==i],y[replicate_indices==i],**_format_data)
+            PL.plot(x[replicate_indices == i], y[replicate_indices == i], **_format_data)
             if(draw_arrows):
-                for i in S.arange(len(replicate_indices))[replicate_indices==i]:
-                    PL.annotate("",xy=(x_shift[i],y[i]),
-                                xytext=(x[i],y[i]),
-                                arrowprops=dict(facecolor
-                                                =col,
+                range = S.where(replicate_indices == i)[0]
+                for n in S.arange(range[0], range[-1], max(1, round(len(range) / draw_arrows))):
+                    n += round(max(1, round(len(range) / draw_arrows)) / 2)
+                    PL.annotate("", xy=(x_shift[n], y[n]),
+                                xytext=(x[n], y[n]),
+                                arrowprops=dict(facecolor=col,
                                                 alpha=.3,
                                                 shrink=.2,
                                                 frac=.3))
@@ -87,17 +92,17 @@ def plot_training_data(x,y,
 
     if(replicate_indices is not None):
         number_of_groups = len(S.unique(replicate_indices))
-        format_data['markersize']=13
-        format_data['alpha']=.5
+        format_data['markersize'] = 13
+        format_data['alpha'] = .5
         for i in S.unique(replicate_indices):
             col = matplotlib.cm.jet(i / (2. * number_of_groups))
             format_data['color'] = col
-            PL.plot(x_shift[replicate_indices==i],y[replicate_indices==i],**format_data)
-    else: PL.plot(x_shift,y,**format_data)
+            PL.plot(x_shift[replicate_indices == i], y[replicate_indices == i], **format_data)
+    else: PL.plot(x_shift, y, **format_data)
         
 #    return PL.plot(x_shift,y,**format_data)
 
-def plot_sausage(X,mean,std,alpha=None,format_fill={'alpha':0.3,'facecolor':'k'},format_line=dict(alpha=1,color='g',lw=3, ls='dashed')):
+def plot_sausage(X, mean, std, alpha=None, format_fill={'alpha':0.3, 'facecolor':'k'}, format_line=dict(alpha=1, color='g', lw=3, ls='dashed')):
     """
     plot saussage plot of GP. I.e:
 
@@ -126,19 +131,19 @@ def plot_sausage(X,mean,std,alpha=None,format_fill={'alpha':0.3,'facecolor':'k'}
         
     """
     X = X.squeeze()
-    Y1 = (mean+2*std)
-    Y2 = (mean-2*std)
+    Y1 = (mean + 2 * std)
+    Y2 = (mean - 2 * std)
     if(alpha is not None):
-        old_alpha_fill = min(1, format_fill['alpha']*2)
-        for i,a in enumerate(alpha[:-2]):
+        old_alpha_fill = min(1, format_fill['alpha'] * 2)
+        for i, a in enumerate(alpha[:-2]):
             format_fill['alpha'] = a * old_alpha_fill
-            hf=PL.fill_between(X[i:i+2],Y1[i:i+2],Y2[i:i+2],lw=0,**format_fill)
-        i+=1
-        hf=PL.fill_between(X[i:],Y1[i:],Y2[i:],lw=0,**format_fill)
+            hf = PL.fill_between(X[i:i + 2], Y1[i:i + 2], Y2[i:i + 2], lw=0, **format_fill)
+        i += 1
+        hf = PL.fill_between(X[i:], Y1[i:], Y2[i:], lw=0, **format_fill)
     else:
-        hf=PL.fill_between(X,Y1,Y2,**format_fill)
-    hp=PL.plot(X,mean,**format_line)
-    return [hf,hp]
+        hf = PL.fill_between(X, Y1, Y2, **format_fill)
+    hp = PL.plot(X, mean, **format_line)
+    return [hf, hp]
 
 
 
@@ -157,10 +162,10 @@ class CrossRect(matplotlib.patches.Rectangle):
         old_path = matplotlib.patches.Rectangle.get_path(self)
         verts = []
         codes = []
-        for vert,code in old_path.iter_segments():
+        for vert, code in old_path.iter_segments():
             verts.append(vert)
             codes.append(code)
-        verts.append([1,1])
+        verts.append([1, 1])
         codes.append(old_path.LINETO)
-        new_path = matplotlib.artist.Path(verts,codes) 
+        new_path = matplotlib.artist.Path(verts, codes) 
         return new_path

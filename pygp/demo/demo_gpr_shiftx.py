@@ -101,7 +101,7 @@ def run_demo():
     
     PL.subplot(212)
     gpr_plot.plot_sausage(X,M,SP.sqrt(S),format_line=dict(alpha=1,color='g',lw=2, ls='-'))
-    gpr_plot.plot_training_data(x,y,shift=T,replicate_indices=replicate_indices,draw_arrows=True)
+    gpr_plot.plot_training_data(x,y,shift=T,replicate_indices=replicate_indices,draw_arrows=2)
     
     PL.suptitle("Example for GPTimeShift with simulated data", fontsize=23)
     

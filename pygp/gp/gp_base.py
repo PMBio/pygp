@@ -358,10 +358,10 @@ class GP(object):
             #otherwise they are cached:
             return True
     def _get_x(self):
-        return self._get_x()
+        return self._active_set(self.x)
     
     def _get_y(self):
-        return self._get_y()
+        return self._active_set(self.y)
         
     def _active_set(self, x):
         if(self._interval_indices is None):
