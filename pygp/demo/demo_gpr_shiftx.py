@@ -92,7 +92,7 @@ def run_demo():
     Ifilter = {'covar': SP.array([1,1,1,1,1],dtype='int')}
     
     gpr = GP(CovFun,x=x,y=y) 
-    opt_model_params = opt_hyper(gpr,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)[0]
+    opt_model_params = opt_hyper(gpr,hyperparams,priors=priors,gradcheck=False,Ifilter=Ifilter)[0]
     
     #predict
     [M,S] = gpr.predict(opt_model_params,X)
@@ -101,7 +101,7 @@ def run_demo():
     
     PL.subplot(212)
     gpr_plot.plot_sausage(X,M,SP.sqrt(S),format_line=dict(alpha=1,color='g',lw=2, ls='-'))
-    gpr_plot.plot_training_data(x,y,shift=T,replicate_indices=replicate_indices)
+    gpr_plot.plot_training_data(x,y,shift=T,replicate_indices=replicate_indices,draw_arrows=True)
     
     PL.suptitle("Example for GPTimeShift with simulated data", fontsize=23)
     
@@ -113,7 +113,7 @@ def run_demo():
     gpr = GP(combinators.SumCF((SECF,noiseCF)),x=x,y=y)
     priors = {'covar':covar_priors[[0,1,-1]]}
     hyperparams = {'covar':logthetaCOVAR[[0,1,-1]]}
-    opt_model_params = opt_hyper(gpr,hyperparams,priors=priors,gradcheck=True)[0]
+    opt_model_params = opt_hyper(gpr,hyperparams,priors=priors,gradcheck=False)[0]
     
     PL.subplot(211)
     #predict

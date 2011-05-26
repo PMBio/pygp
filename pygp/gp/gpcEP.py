@@ -21,7 +21,6 @@ class GPCEP(GPEP):
         super(GPCEP, self).__init__(likelihood=likelihood,*argin,**kwargin)#Smean=False,likelihood=likelihood,*argin,**kwargin)
         self.Nep = 3
         
-
         
         
 
@@ -38,17 +37,19 @@ class GPCEP(GPEP):
     
 
 
-    def setData(self,x,t,*args,**kwargin):
+    def setData(self,x,y,*args,**kwargin):
         """set Data
         x: inputs [N,D]
         t: targets [N]
         - targets are either -1,+1 or False/True
         """
-        assert isinstance(t,S.ndarray), 'setData requires numpy arrays'
+        assert isinstance(y,S.ndarray), 'setData requires numpy arrays'
         #check whether t is bool
-        if t.dtype=='bool':
-            t_ = S.ones([t.shape[0]])
-            t_[t] = +1
-            t_[~t] = -1
-            t = t_
-        GPEP.setData(self,x,t,*args,**kwargin)
+        if y.dtype=='bool':
+            y_ = S.ones([y.shape[0]])
+            y_[y] = +1
+            y_[~y] = -1
+            y = y_
+        else:
+            assert len(SP.unique(y))==2, 'need either binary inputs or inputs of length 2 for classification'
+        GPEP.setData(self,x=x,y=y,*args,**kwargin)
