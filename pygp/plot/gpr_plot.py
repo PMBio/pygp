@@ -59,7 +59,7 @@ def plot_training_data(x, y,
     x = S.array(x).reshape(-1)
     y = S.array(y).reshape(-1)
 
-    x_shift = x.copy()
+    x_shift = S.array(x.copy())
 
     if shift is not None and replicate_indices is not None:
         assert len(shift) == len(S.unique(replicate_indices)), 'Need one shift per replicate to plot properly'
