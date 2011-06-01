@@ -15,7 +15,7 @@ import scipy.optimize as OPT
 import logging as LG
 import pdb
 
-LG.basicConfig(level=LG.INFO)
+# LG.basicConfig(level=LG.INFO)
 
 def param_dict_to_list(dict,skeys=None):
     """convert from param dictionary to list"""
@@ -129,18 +129,18 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds =
     #2. set stating point of optimization, truncate the non-used dimensions
     x  = X0.copy()[Ifilter_x]
         
-    LG.info("startparameters for opt:"+str(x))
+    LG.debug("startparameters for opt:"+str(x))
     
     if gradcheck:
         LG.info("check_grad (pre) (Enter to continue):" + str(OPT.check_grad(f,df,x)))
         raw_input()
     
-    LG.info("start optimization")
+    LG.debug("start optimization")
 
     #general optimizer interface
     #note: x is a subset of X, indexing the parameters that are optimized over
     #Ifilter_x pickes the subest of X, yielding x
-    opt_RV=optimizer(f, x, fprime=df, maxfun=maxiter,messages=False,bounds=bounds)
+    opt_RV=optimizer(f, x, fprime=df, maxfun=int(maxiter),messages=False,bounds=bounds)
     opt_x = opt_RV[0]
     
     #relate back to X
@@ -152,13 +152,13 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds =
     opt_lml = gpr.LML(opt_hyperparams,**kw_args)
 
     if gradcheck:
-        LG.info("check_grad (post) (Enter to continue):" + str(OPT.check_grad(f,df,opt_RV[0])))
+        LG.debug("check_grad (post) (Enter to continue):" + str(OPT.check_grad(f,df,opt_RV[0])))
         raw_input()
 
-    LG.info("old parameters:")
-    LG.info(str(hyperparams))
-    LG.info("optimized parameters:")
-    LG.info(str(opt_hyperparams))
-    LG.info("grad:"+str(df(opt_x)))
+    LG.debug("old parameters:")
+    LG.debug(str(hyperparams))
+    LG.debug("optimized parameters:")
+    LG.debug(str(opt_hyperparams))
+    LG.debug("grad:"+str(df(opt_x)))
     
     return [opt_hyperparams,opt_lml]
