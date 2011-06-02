@@ -264,10 +264,13 @@ class GP(object):
 
     ########PRIVATE FUNCTIONS########
 
-    #log marginal likelihood contributions from covaraince hyperparameters:
 
     def _LML_covar(self, hyperparams):
-        
+        """
+
+	log marginal likelihood contributions from covariance hyperparameters
+
+	"""
         try:   
             KV = self.get_covariances(hyperparams)
         except linalg.LinAlgError:
@@ -275,7 +278,7 @@ class GP(object):
             return 1E6
 
         #Change: no supports multi dimensional stuff for GPLVM
-        LML = 0.5 * (KV['alpha'] * self._get_y()).sum() + self._get_target_dimension() * (sum(SP.log(KV['L'].diagonal())) + 0.5 * self._get_input_dimension() * SP.log(2 * SP.pi))
+        LML = 0.5 * (KV['alpha'] * self._get_y()).sum() + self._get_target_dimension() * (SP.log(KV['L'].diagonal()).sum() + 0.5 * self._get_input_dimension() * SP.log(2 * SP.pi))
         return LML
 
 
