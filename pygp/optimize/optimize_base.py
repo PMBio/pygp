@@ -152,7 +152,7 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds =
     opt_lml = gpr.LML(opt_hyperparams,**kw_args)
 
     if gradcheck:
-        LG.debug("check_grad (post) (Enter to continue):" + str(OPT.check_grad(f,df,opt_RV[0])))
+        LG.info("check_grad (post) (Enter to continue):" + str(OPT.check_grad(f,df,opt_RV[0])))
         raw_input()
 
     LG.debug("old parameters:")

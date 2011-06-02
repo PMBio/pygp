@@ -320,11 +320,11 @@ class KroneckerGPLVM(GPLVM.GPLVM):
 
     def _LMLgrad_covar(self, hyperparams):
         #1. get inggredients for computations
-        try:
+        try:   
             KV = self.get_covariances(hyperparams)
         except linalg.LinAlgError:
             LG.error("exception caught (%s)" % (str(hyperparams)))
-            return 1E6
+            return {'covar_r':SP.zeros(len(hyperparams['covar_r'])),'covar_c':SP.zeros(len(hyperparams['covar_c']))}
 
         if VERBOSE:
             [K,Ki] = getK_verbose(KV)
@@ -385,11 +385,11 @@ class KroneckerGPLVM(GPLVM.GPLVM):
 
     def _LMLgrad_lik(self,hyperparams):
         """derivative of the likelihood parameters"""
-        try:
+        try:   
             KV = self.get_covariances(hyperparams)
         except linalg.LinAlgError:
             LG.error("exception caught (%s)" % (str(hyperparams)))
-            return 1E6
+            return {'lik':SP.zeros(len(hyperparams['lik']))}
 
         #note that we implicitly assume that Knoise = sigma^2* eye(n)
         logtheta = hyperparams['lik']
@@ -429,7 +429,7 @@ class KroneckerGPLVM(GPLVM.GPLVM):
             KV = self.get_covariances(hyperparams)
         except linalg.LinAlgError:
             LG.error("exception caught (%s)" % (str(hyperparams)))
-            return 1E6
+            return {'x_r': SP.zeros(hyperparams['x_r'].shape)}
         RV={}
 
         #1. GPLVM for row covariance?

@@ -7,7 +7,6 @@ Note some priors are available in a log transformed space and non-transformed sp
 
 import scipy as SP
 import scipy.special as SPs
-import pylab as PL
 
 
 def lnL1(x,params):
