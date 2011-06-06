@@ -87,11 +87,18 @@ class LinearCF(CovarianceFunction):
         if x2 is None:
             x2 = x1
         # 2. exponentiate params:
-        L  = SP.exp(2*logtheta[0:self.n_dimensions])
-        RV = SP.zeros([x1.shape[0],x2.shape[0]])
-        for i in xrange(self.n_dimensions):
-            iid = self.dimension_indices[i]
-            RV+=L[i]*SP.dot(x1[:,iid:iid+1],x2[:,iid:iid+1].T)
+        # L  = SP.exp(2*logtheta[0:self.n_dimensions])
+        # RV = SP.zeros([x1.shape[0],x2.shape[0]])
+        # for i in xrange(self.n_dimensions):
+        #     iid = self.dimension_indices[i]
+        #     RV+=L[i]*SP.dot(x1[:,iid:iid+1],x2[:,iid:iid+1].T)
+
+	if self.n_dimensions > 0:
+	    M = SP.diag(SP.exp(2*logtheta[0:self.n_dimensions]))
+	    RV = SP.dot(SP.dot(x1[:, self.dimension_indices], M), x2[:, self.dimension_indices].T)
+	else:
+	    RV = SP.zeros([x1.shape[0],x2.shape[0]])
+	    
         return RV
 
     def Kgrad_theta(self,logtheta,x1,i):
@@ -150,12 +157,15 @@ class LinearCFARD(CovarianceFunction):
             x2 = x1
         # 2. exponentiate params:
         #L  = SP.exp(-2*theta[0:self.n_dimensions])
-        L  = 1./theta[0:self.n_dimensions]
+        # L  = 1./theta[0:self.n_dimensions]
 
-        RV = SP.zeros([x1.shape[0],x2.shape[0]])
-        for i in xrange(self.n_dimensions):
-            iid = self.dimension_indices[i]
-            RV+=L[i]*SP.dot(x1[:,iid:iid+1],x2[:,iid:iid+1].T)
+        # RV = SP.zeros([x1.shape[0],x2.shape[0]])
+        # for i in xrange(self.n_dimensions):
+        #     iid = self.dimension_indices[i]
+        #     RV+=L[i]*SP.dot(x1[:,iid:iid+1],x2[:,iid:iid+1].T)
+	
+	M  = SP.diag(1./theta[0:self.n_dimensions])
+	RV = SP.dot(SP.dot(x1[:, self.dimension_indices], M), x2[:, self.dimension_indices].T)
         return RV
 
     def Kgrad_theta(self,theta,x1,i):

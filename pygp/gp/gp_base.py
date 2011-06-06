@@ -19,6 +19,7 @@ import scipy.linalg as linalg
 import scipy as SP
 import logging as LG
 from pygp.linalg import *
+import scipy.lib.lapack.flapack
 
 class GP(object):
     """
@@ -148,7 +149,7 @@ class GP(object):
             
         """
         LML = self._LML_covar(hyperparams)
-        #pdb.set_trace()
+
         #account for prior
         if priors is not None:
             plml = self._LML_prior(hyperparams, priors=priors, *args, **kw_args)
@@ -172,7 +173,7 @@ class GP(object):
         # Ideriv : 
         #      indicator which derivativse to calculate (default: all)
 
-        #pdb.set_trace()
+
         RV = self._LMLgrad_covar(hyperparams)
         if self.likelihood is not None:
             RV.update(self._LMLgrad_lik(hyperparams))
@@ -213,7 +214,18 @@ class GP(object):
             K+= Knoise
             L = jitChol(K)[0].T # lower triangular
             alpha = solve_chol(L, self._get_y())
-            self._covar_cache = {'K': K, 'L':L, 'alpha':alpha}
+
+	    # DPOTRI computes the inverse of a real symmetric positive definite
+	    # matrix A using the Cholesky factorization 
+	    Linv = scipy.lib.lapack.flapack.dpotri(L)[0]
+	    # Copy the matrix and kill the diagonal (we don't want to have 2*var)
+	    Kinv = Linv.copy()
+	    SP.fill_diagonal(Linv, 0)
+	    # build the full inverse covariance matrix. This is correct: verified
+	    # by doing SP.allclose(Kinv, linalg.inv(K))
+	    Kinv += Linv.T
+	    
+	    self._covar_cache = {'K': K, 'L':L, 'alpha':alpha, 'Kinv': Kinv}
             #store hyperparameters for cachine
             self._covar_cache['hyperparams'] = copy.deepcopy(hyperparams)
             self._interval_indices_changed = False
@@ -294,9 +306,9 @@ class GP(object):
         L = KV['L']
 
         alpha = KV['alpha']
-        W = self._get_target_dimension() * linalg.solve(L.transpose(), linalg.solve(L, SP.eye(n))) - SP.dot(alpha, alpha.transpose())
+        W = self._get_target_dimension() * KV['Kinv'] - SP.dot(alpha, alpha.transpose())
         self._covar_cache['W'] = W
-        
+
 
         LMLgrad = SP.zeros(len(logtheta))
         for i in xrange(len(logtheta)):
