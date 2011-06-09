@@ -116,7 +116,7 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds =
     if bounds is not None:
         #go through all hyperparams and build bound array (flattened)
         _b = []
-        for key in hyperparams.keys():
+        for key in skeys:
             if key in bounds.keys():
                 _b.extend(bounds[key])
             else:

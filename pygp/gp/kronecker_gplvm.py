@@ -21,7 +21,6 @@ sys.path.append('./..')
 #gplvm model
 from pygp.covar import fixed,linear, noise, combinators
 from pygp.gp import gplvm
-import utils.ROC as ROC
 import pygp.gp.gplvm as GPLVM
 import pygp.optimize as OPT
 #import optimize_test as OPT2
