@@ -84,13 +84,20 @@ def plot_training_data(x, y,
             if(draw_arrows):
                 range = S.where(replicate_indices == i)[0]
                 for n in S.arange(range[0], range[-1], max(1, round(len(range) / draw_arrows))):
-                    n += round(max(1, round(len(range) / draw_arrows)) / (i+1))
-                    PL.annotate("%.2f"%(-shift[i]), xy=(x_shift[n], y[n]),
-                                xytext=(x[n], y[n]),
+                    offset = round((len(range)-1) / draw_arrows)
+                    n += max(int((i+1)*offset/number_of_groups),1)
+                    PL.text((x_shift[n]+x[n])/2., y[n], 
+                            "%.2f"%(-shift[i]),
+                            ha='center',va='center',
+                            fontsize=10)
+                    PL.annotate('', xy=(x_shift[n], y[n]),
+                                xytext=(x[n], y[n]),va='center',
                                 arrowprops=dict(facecolor=col,
-                                                alpha=.3,
-                                                shrink=.2,
-                                                frac=.3))
+                                                alpha=.2,
+                                                shrink=.01,
+                                                frac=.2,
+                                                headwidth=11,
+                                                width=11))
             #PL.plot(x,y,**_format_data)
 
         
