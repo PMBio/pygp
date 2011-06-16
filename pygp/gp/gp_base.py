@@ -68,7 +68,7 @@ class GP(object):
     # Subtract mean of Data
     # TODO: added d
     __slots__ = ["x", "y", "n", "d", "covar", "likelihood", \
-                 "_covar_cache", '_interval_indices', '_interval_indices_changed']
+                 "_covar_cache", '_active_set_indices', '_active_set_indices_changed']
     
     def __init__(self, covar_func=None, likelihood=None, x=None, y=None):
         '''GP(covar_func,likleihood,Smean=True,x=None,y=None)
@@ -116,12 +116,12 @@ class GP(object):
         self._invalidate_cache()
         pass
 
-    def set_interval_indices(self, interval_indices):
-        self._interval_indices_changed = True
-        self._interval_indices = interval_indices
+    def set_active_set_indices(self, active_set_indices):
+        self._active_set_indices_changed = True
+        self._active_set_indices = active_set_indices
     
 
-    def LML(self, hyperparams, priors=None, *args, **kw_args):
+    def LML(self, hyperparams, priors=None):
         """
         Calculate the log Marginal likelihood
         for the given logtheta.
@@ -152,7 +152,7 @@ class GP(object):
 
         #account for prior
         if priors is not None:
-            plml = self._LML_prior(hyperparams, priors=priors, *args, **kw_args)
+            plml = self._LML_prior(hyperparams, priors=priors)
             LML -= SP.array([p[:, 0].sum() for p in plml.values()]).sum()
         return LML
         
@@ -203,7 +203,7 @@ class GP(object):
             If one/both is/are set, there will be no chaching allowed
             
         """
-        if self._is_cached(hyperparams) and not self._interval_indices_changed:
+        if self._is_cached(hyperparams) and not self._active_set_indices_changed:
             pass
         else:
             Knoise = 0
@@ -228,7 +228,7 @@ class GP(object):
 	    self._covar_cache = {'K': K, 'L':L, 'alpha':alpha, 'Kinv': Kinv}
             #store hyperparameters for cachine
             self._covar_cache['hyperparams'] = copy.deepcopy(hyperparams)
-            self._interval_indices_changed = False
+            self._active_set_indices_changed = False
         return self._covar_cache 
        
         
@@ -336,8 +336,8 @@ class GP(object):
                    
     def _invalidate_cache(self):
         """reset cache structure"""
-        self._interval_indices = None
-        self._interval_indices_changed = False
+        self._active_set_indices = None
+        self._active_set_indices_changed = False
         self._covar_cache = None
         pass
 
@@ -373,25 +373,25 @@ class GP(object):
             #otherwise they are cached:
             return True
     def _get_x(self):
-        return self._active_set(self.x)
+        return self._get_active_set(self.x)
     
     def _get_y(self):
-        return self._active_set(self.y)
+        return self._get_active_set(self.y)
         
-    def _active_set(self, x):
-        if(self._interval_indices is None):
+    def _get_active_set(self, x):
+        if(self._active_set_indices is None):
             return x
         else:
-            return x[self._interval_indices]
+            return x[self._active_set_indices]
         
     def _get_target_dimension(self):
-        if(self._interval_indices is None):
+        if(self._active_set_indices is None):
             return self.d
         else:
             return self._get_y().shape[1]
         
     def _get_input_dimension(self):
-        if(self._interval_indices is None):
+        if(self._active_set_indices is None):
             return self.n
         else:
             return len(self._get_x())

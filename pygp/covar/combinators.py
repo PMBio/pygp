@@ -7,7 +7,7 @@ Each combinator is a covariance function (CF) itself. It combines one or several
 """
 
 from pygp.covar import CovarianceFunction
-from pygp.covar.dist import sq_dist, dist
+from pygp.covar.dist import dist
 import scipy as SP
 import sys
 sys.path.append('../')
@@ -273,10 +273,9 @@ class ShiftCF(CovarianceFunction):
         self.n_hyperparameters = covar.get_number_of_parameters() + self.n_replicates
         self.covar = covar
 
-#    def get_hyperparameter_names(self):
-#        """return the names of hyperparameters to make identificatio neasier"""
-#        names=SP.concatenate(self.covar.get_hyperparameter_names(),["Time-Shift rep%i" % (i) for i in SP.unique(self.replicate(indices))])
-#        return names
+    def get_hyperparameter_names(self):
+        """return the names of hyperparameters to make identificatio neasier"""
+        return SP.concatenate((self.covar.get_hyperparameter_names(),["Time-Shift rep%i" % (i) for i in SP.unique(self.replicate_indices)]))
 
     def K(self, theta, x1, x2=None):
         """
@@ -337,11 +336,14 @@ class ShiftCF(CovarianceFunction):
         if i >= covar_n_hyper:
             Kdx = self.covar.Kgrad_x(theta[:covar_n_hyper], shift_x, shift_x, 0)
             c = SP.array(self.replicate_indices == (i - covar_n_hyper),
-                         dtype='int')[:, SP.newaxis]
+                         dtype='int').reshape(-1,1)
             cdist = dist(-c, -c)
             cdist = cdist.transpose(2, 0, 1)
-            #import pdb;pdb.set_trace()
-            return Kdx * cdist
+            try:
+                return Kdx * cdist
+            except ValueError:
+                return Kdx
+
         else:
             return self.covar.Kgrad_theta(theta[:covar_n_hyper], shift_x, i)
 
@@ -361,6 +363,7 @@ class ShiftCF(CovarianceFunction):
         
     def _shift_x(self, x, T):
         # subtract T, respectively
-        for i in SP.unique(self.replicate_indices):
-            x[self.replicate_indices == i] -= T[i]
+        if(x.shape[0]==self.replicate_indices.shape[0]):
+            for i in SP.unique(self.replicate_indices):
+                x[self.replicate_indices == i] -= T[i]
         return x

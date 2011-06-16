@@ -19,7 +19,8 @@ def plot_training_data(x, y,
                                     'linestyle':'--',
                                     'lw':1,
                                     'markersize':9},
-                       draw_arrows=0):
+                       draw_arrows=0,
+                       plot_old=False):
     """
     Plot training data input x and output y into the
     active figure (See http://matplotlib.sourceforge.net/ for details of figure).
@@ -65,7 +66,10 @@ def plot_training_data(x, y,
         assert len(shift) == len(S.unique(replicate_indices)), 'Need one shift per replicate to plot properly'
 
         _format_data = format_data.copy()
-        _format_data['alpha'] = .2
+        if(format_data.has_key('alpha')):
+            _format_data['alpha'] = .2*format_data['alpha']
+        else:
+            _format_data['alpha'] = .2
         
         number_of_groups = len(S.unique(replicate_indices))
         
@@ -75,12 +79,13 @@ def plot_training_data(x, y,
         for i in S.unique(replicate_indices):
             col = matplotlib.cm.jet(i / (2. * number_of_groups))
             _format_data['color'] = col
-            PL.plot(x[replicate_indices == i], y[replicate_indices == i], **_format_data)
+            if(plot_old):
+                PL.plot(x[replicate_indices == i], y[replicate_indices == i], **_format_data)
             if(draw_arrows):
                 range = S.where(replicate_indices == i)[0]
                 for n in S.arange(range[0], range[-1], max(1, round(len(range) / draw_arrows))):
-                    n += round(max(1, round(len(range) / draw_arrows)) / 2)
-                    PL.annotate("", xy=(x_shift[n], y[n]),
+                    n += round(max(1, round(len(range) / draw_arrows)) / (i+1))
+                    PL.annotate("%.2f"%(-shift[i]), xy=(x_shift[n], y[n]),
                                 xytext=(x[n], y[n]),
                                 arrowprops=dict(facecolor=col,
                                                 alpha=.3,
@@ -92,8 +97,8 @@ def plot_training_data(x, y,
 
     if(replicate_indices is not None):
         number_of_groups = len(S.unique(replicate_indices))
-        format_data['markersize'] = 13
-        format_data['alpha'] = .5
+        #format_data['markersize'] = 13
+        #format_data['alpha'] = .5
         for i in S.unique(replicate_indices):
             col = matplotlib.cm.jet(i / (2. * number_of_groups))
             format_data['color'] = col

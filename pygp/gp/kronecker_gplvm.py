@@ -170,7 +170,7 @@ class KroneckerGPLVM(GPLVM.GPLVM):
         """get covariance structures and do necessary computations"""
         #check individaul components of hyperparams to avoid redunand recomputations
         #if full covariance parameter set is identical do nothing
-        if self._is_cached(hyperparams) and not self._interval_indices_changed:
+        if self._is_cached(hyperparams) and not self._active_set_indices_changed:
             pass
         else:
             if self._covar_cache is None:

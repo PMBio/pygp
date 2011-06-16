@@ -21,7 +21,7 @@ class GroupGP(GP):
     __slots__ = ["N","GPs"]
 
 
-    def __init__(self,GPs=None,*args,**kw_args):
+    def __init__(self,GPs=None):
         # create a prototype of the parameter dictionary
         # additional fields will follow
         self._invalidate_cache()
