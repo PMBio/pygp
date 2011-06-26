@@ -29,11 +29,8 @@ def PCA(Y, components):
 class GPLVMARD(GPLVM.GPLVM):
     """
     derived class form GP offering GPLVM specific functionality
-    
-    
     """
 
-    
     def __init__(self, *args, **kw_args):
         """gplvm_dimensions: dimensions to learn using gplvm, default -1; i.e. all"""
         super(GPLVM.GPLVM, self).__init__(*args,**kw_args)
@@ -52,12 +49,10 @@ class GPLVMARD(GPLVM.GPLVM):
             Sn = Knoise + SP.tile(S[:,SP.newaxis],[1,10])
             #inverse
             Si = 1./Sn
-
             #rotate data
             y_rot = SP.dot(U.T,self.y)
             #also store version of data rotated and Si applied
             y_roti = (y_rot*Si)
-
             self._covar_cache = {'hyperparams':hyperparams,'S':S,'U':U,'K':K,'Knoise':Knoise,'Sn':Sn,'Si':Si,'y_rot':y_rot,'y_roti':y_roti}
             pass
         #return update covar cache
@@ -98,6 +93,7 @@ class GPLVMARD(GPLVM.GPLVM):
         return LML
 
 
+
     def _LMLgrad_covar(self, hyperparams):
         #1. get inggredients for computations
         try:   
@@ -107,6 +103,17 @@ class GPLVMARD(GPLVM.GPLVM):
             return {'covar_r':SP.zeros(len(hyperparams['covar_r'])),'covar_c':SP.zeros(len(hyperparams['covar_c']))}
         pdb.set_trace()
         pass
+
+
+    def _LMLgrad_lik(self,hyperparams):
+        """derivative of the likelihood parameters"""
+        logtheta = hyperparams['lik']
+        #note: we assume hard codede that this is called AFTER LMLgrad_covar has been called
+        KV = self._covar_cache
+        pdb.set_trace()
+
+        RV = {'lik': LMLgrad}
+        return RV
 
 
     def _LMLgrad_x(self, hyperparams):
