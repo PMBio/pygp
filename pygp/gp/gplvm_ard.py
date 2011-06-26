@@ -1,17 +1,17 @@
 """
-Base class for Gaussian process latent variable models
-This is really not ready for release yet but is used by the gpasso model
+ARD gplvm with one covaraince structure per dimension (at least implicitly)
 """
 import sys
 sys.path.append('./../..')
 from pygp.gp import GP
+import pygp.gp.gplvm as GPLVM
 import pdb
 from pygp.optimize.optimize_base import opt_hyper
 import scipy as SP
 import scipy.linalg as linalg
 
 
-
+VERBOSE=True
 
 def PCA(Y, components):
     """run PCA, retrieving the first (components) principle components
@@ -26,126 +26,101 @@ def PCA(Y, components):
     w0 *= v;
     return [s0, w0]
 
-    
-class GPLVM(GP):
+class GPLVMARD(GPLVM.GPLVM):
     """
     derived class form GP offering GPLVM specific functionality
     
     
     """
-    __slots__ = ["gplvm_dimensions"]
+
     
-    def __init__(self, gplvm_dimensions=None, **kw_args):
+    def __init__(self, *args, **kw_args):
         """gplvm_dimensions: dimensions to learn using gplvm, default -1; i.e. all"""
-        self.gplvm_dimensions = gplvm_dimensions
-        GP.__init__(self, **kw_args)
+        super(GPLVM.GPLVM, self).__init__(*args,**kw_args)
 
 
-    def setData(self, gplvm_dimensions=None, **kw_args):
-        GP.setData(self, **kw_args)
-        #handle non-informative gplvm_dimensions vector
-        if gplvm_dimensions is None:
-            self.gplvm_dimensions = SP.arange(self.x.shape[1])
-        else:
-            self.gplvm_dimensions = gplvm_dimensions
-        
-    def _update_inputs(self, hyperparams):
-        """update the inputs from gplvm models if supplied as hyperparms"""
-        if 'x' in hyperparams.keys():
-            self.x[:, self.gplvm_dimensions] = hyperparams['x']
+    def get_covariances(self,hyperparams):
+        if not self._is_cached(hyperparams) or self._active_set_indices_changed:
+            #update covariance structure
+            K = self.covar.K(hyperparams['covar'],self.x)
+            #calc eigenvalue decomposition
+            [S,U] = SP.linalg.eigh(K)
+            #noise diagonal
+            #depending on noise model this may be either a vector or a matrix 
+            Knoise = self.likelihood.Kdiag(hyperparams['lik'],self.x)
+            #noise version of S
+            Sn = Knoise + SP.tile(S[:,SP.newaxis],[1,10])
+            #inverse
+            Si = 1./Sn
 
-  
-    def LML(self, hyperparams, priors=None, **kw_args):
-#        pdb.set_trace()
-        """
-        Calculate the log Marginal likelihood
-        for the given logtheta.
+            #rotate data
+            y_rot = SP.dot(U.T,self.y)
+            #also store version of data rotated and Si applied
+            y_roti = (y_rot*Si)
 
-        **Parameters:**
-
-        hyperparams : {'covar':CF_hyperparameters, ... }
-            The hyperparameters for the log marginal likelihood.
-
-        priors : [:py:class:`lnpriors`]
-            the prior beliefs for the hyperparameter values
-
-        Ifilter : [bool]
-            Denotes which hyperparameters shall be optimized.
-            Thus ::
-
-                Ifilter = [0,1,0]
-
-            has the meaning that only the second
-            hyperparameter shall be optimized.
-
-        kw_args :
-            All other arguments, explicitly annotated
-            when necessary.
-            
-        """
-        self._update_inputs(hyperparams)
-
-        #covariance hyper
-        LML = self._LML_covar(hyperparams)
-
-        
-        #account for prior
-        if priors is not None:
-            plml = self._LML_prior(hyperparams, priors=priors, **kw_args)
-            LML -= SP.array([p[:, 0].sum() for p in plml.values()]).sum()
-        return LML
-        
-
-    def LMLgrad(self, hyperparams, priors=None, **kw_args):
-#        pdb.set_trace()
-        """
-        Returns the log Marginal likelihood for the given logtheta.
-
-        **Parameters:**
-
-        hyperparams : {'covar':CF_hyperparameters, ...}
-            The hyperparameters which shall be optimized and derived
-
-        priors : [:py:class:`lnpriors`]
-            The hyperparameters which shall be optimized and derived
-
-        """
-        # Ideriv : 
-        #      indicator which derivativse to calculate (default: all)
-
-        self._update_inputs(hyperparams)
-            
-        RV = self._LMLgrad_covar(hyperparams)
-        if self.likelihood is not None:
-            RV.update(self._LMLgrad_lik(hyperparams))
-
-        #gradients w.r.t x:
-        RV_ = self._LMLgrad_x(hyperparams)
-        #update RV
-        RV.update(RV_)
-
-        #prior
-        if priors is not None:
-            plml = self._LML_prior(hyperparams, priors=priors, **kw_args)
-            for key in RV.keys():
-                RV[key] -= plml[key][:, 1]                       
-        return RV
+            self._covar_cache = {'hyperparams':hyperparams,'S':S,'U':U,'K':K,'Knoise':Knoise,'Sn':Sn,'Si':Si,'y_rot':y_rot,'y_roti':y_roti}
+            pass
+        #return update covar cache
+        return self._covar_cache
 
 
     ####PRIVATE####
+
+    def _LML_covar(self, hyperparams):
+        """
+
+	log marginal likelihood contributions from covariance hyperparameters
+
+	"""
+        try:   
+            KV = self.get_covariances(hyperparams)
+        except linalg.LinAlgError:
+            LG.error("exception caught (%s)" % (str(hyperparams)))
+            return 1E6
+
+        #all in one go
+        #negative log marginal likelihood, see derivations
+        lquad = 0.5* (KV['y_rot']*KV['Si']*KV['y_rot']).sum()
+        ldet  = 0.5*-SP.log(KV['Si'][:,:]).sum()
+        LML   = 0.5*self.d * SP.log(2*SP.pi) + lquad + ldet
+        if VERBOSE:
+            #1. slow and explicit way
+            lmls_ = SP.zeros([self.d])
+            for i in xrange(self.d):
+                _y = self.y[:,i]
+                sigma2 = SP.exp(2*hyperparams['lik'])
+                _K = KV['K'] + sigma2[i] * SP.eye(self.n)
+                _Ki = SP.linalg.inv(_K)
+                lquad_ = 0.5 * SP.dot(_y,SP.dot(_Ki,_y))
+                ldet_ = 0.5 * SP.log(SP.linalg.det(_K))
+                lmls_[i] = 0.5 * SP.log(2*SP.pi) + lquad_ + ldet_
+            assert SP.absolute(lmls_.sum()-LML)<1E-5, 'outch'
+        return LML
+
+
+    def _LMLgrad_covar(self, hyperparams):
+        #1. get inggredients for computations
+        try:   
+            KV = self.get_covariances(hyperparams)
+        except linalg.LinAlgError:
+            LG.error("exception caught (%s)" % (str(hyperparams)))
+            return {'covar_r':SP.zeros(len(hyperparams['covar_r'])),'covar_c':SP.zeros(len(hyperparams['covar_c']))}
+        pdb.set_trace()
+        pass
+
 
     def _LMLgrad_x(self, hyperparams):
         """GPLVM derivative w.r.t. to latent variables
         """
         if not 'x' in hyperparams:
             return {}
-        
+
+        pdb.set_trace()
+        pass
+
 	dlMl = SP.zeros([self.n,len(self.gplvm_dimensions)])
         W = self._covar_cache['W']
 
-        #the standard procedure would be
-        #dlMl[n,i] = 0.5*SP.odt(W,dKx_n,i).trace()
-        #we can calcualte all the derivatives efficiently; see also interface of Kd_dx of covar
         for i in xrange(len(self.gplvm_dimensions)):
             d = self.gplvm_dimensions[i]
             #dKx is general, not knowing that we are computing the diagonal:
@@ -156,8 +131,6 @@ class GPLVM(GP):
             #precalc elementwise product of W and K
             WK = W * dKx
             if 0:
-                #explicit calculation, slow!
-                #this is only in here to see what is done
                 for n in xrange(self.n):
                     dKxn = SP.zeros([self.n, self.n])
                     dKxn[n, :] = dKx[n, :]

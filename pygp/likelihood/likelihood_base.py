@@ -48,6 +48,45 @@ class GaussLikISO(ALik):
         return 2*K
 
 
+
+class GaussLikARD(ALik):
+    """Gaussian likelihood model with one noise level per dimension
+    Note: currently this is only supported in gplvm module
+    """
+
+    def __init__(self,n_dimensions=1):
+        self.n_dimensions      = n_dimensions
+        self.n_hyperparameters = n_dimensions
+        pass
+
+    def get_number_of_parameters(self):
+        return self.n_hyperparameters
+
+    def K(self,theta,x1):
+        sigma = SP.exp(2*theta[0])
+        Knoise = sigma*SP.eye(x1.shape[0])
+        return Knoise
+
+    def Kdiag(self,theta,x1):
+        ### in ARD noise, the diagonal is a matrix with one diagonal per dimension
+        sigma = SP.exp(2*theta[0])
+        return sigma*SP.ones([x1.shape[0],self.n_dimensions])
+
+    def Kgrad_theta(self,theta,x1,i):
+        """
+        The derivative of the covariance matrix with
+        respect to i-th hyperparameter.
+
+        **Parameters:**
+        See :py:class:`pygp.covar.CovarianceFunction`
+        """
+        #1. calculate kernel
+        #no noise
+        K = self.Kdiag(theta,x1)[:,i]
+        return 2*K
+
+
+
 def n2mode(x):
     """convert from natural parameter to mode and back"""
     return SP.array([x[0]/x[1],1/x[1]])
