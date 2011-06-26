@@ -1,0 +1,475 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amssymb,amsfonts,amsmath}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subfig}
+\usepackage{color}
+\usepackage[affil-it]{authblk}
+\usepackage{multirow}
+\usepackage{fullpage}
+\usepackage{booktabs}
+\usepackage{pdfsync}
+
+%\usepackage[nofiglist, notablist, nomarkers]{endfloat}
+\input{utils.tex}
+%\title{Probabilistic learning of confounding factors in genetical
+%genomics studies}
+\title{Derivation of Gaussian process models implemented in PYGP}
+\author[1]{Oliver Stegle, Christoph Lippert, Nicolo Fusi}
+
+\affil[1]{Department Empirical Inference,
+Max Planck Institutes T\"ubingen, Germany}
+\date{}
+
+\captionsetup[subfloat]{listofformat=parens}
+\newcommand{\OLI}[1]{{\color{blue}\fbox{OLI} #1}}
+\makeatletter
+\newcommand{\rmnum}[1]{\romannumeral #1}
+\newcommand{\Rmnum}[1]{\expandafter\@slowromancap\romannumeral #1@}
+\makeatother
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
+
+%\nipsfinalcopy % Uncomment for camera-ready version
+%\newcommand{\B}[1]{\bm{#1}} Christoph:removed this to make things consistent
+\newcommand{\B}[1]{{\bf{#1}}}
+\newcommand{\Exp}{\mathbb{E}}
+\newcommand{\norma}[1]{\mathcal{N}\left(#1\right)}
+\newcommand{\eref}[1]{(\ref{#1})}
+\renewcommand{\R}{\mathbb{R}}
+\newcommand\norm[1]{\left\Vert {#1} \right\Vert}
+\newcommand\rank{\mathrm{rank}}
+\newcommand\tr{\mathrm{Tr}}
+
+
+\begin{document}
+\maketitle
+
+% \begin{center}
+%   \textbf{Keywords:} Quantitative Trait, Gene Expression, Genetic
+%   Association Study
+
+% \end{center}
+
+
+\section{Some definitions}
+\begin{itemize}
+\item $\B{A}=\B{U}\B{S}\B{U}^{\T}$ is the eigenvalue decomposition of
+  the symmetric $D$-by-$D$ matrix $\B{A}$, where $\B{U}$ is an
+  $D$-by-$D$ orthonormal matrix, holding the $D$ eigenvectors of
+  $\B{A}$ and $\B{S}$ is an $D$-by-$D$ diagonal matrix, holding the
+  corresponding eigenvalues of $\B{A}$ as diagonal entries. 
+\item $\B{A}\odot\B{B}$ is the pointwise or Hadamard product of $\B{A}$ and $\B{B}$.
+\item $\B{A}\otimes\B{B}$ is the Kronecker product of $\B{A}$ and $\B{B}$.
+\item $\B{Y}\in\mathbb{R}^{N\times G}$ is the matrix holding all samples, having $N$ rows and $G$ columns.
+\end{itemize}
+
+\section{Efficient computation of tensor GP models}
+\newcommand{\BS}{\left( \B{C} + \sigma^{2}\B{I}\right )}
+Here, we give details of an efficient implementation of the tensor
+Gaussian process model derived in the main paper.
+\subsection*{The basic model}
+We start with a general form a Gaussian process model where the
+covariance has a Kronecker structure:
+\begin{align}
+\label{eq:1}
+p(\col(\B{Y}) \given \B{K}_c \otimes \B{K}_r,\sigma^2)  =  \normal{\col(\B{Y})}{\boldzero,
+  \B{K}_c \otimes \B{K}_r + \sigma^2 \B{I}}.
+\end{align}
+Here, we defined $\B{K}_r$ as the row ``row covariance''  of the data
+matrix and $\B{K}_c$ corresponds to the column covariance. 
+The solution derived here is more general than what is described in
+the main paper. 
+Connecting to the notation used there, we set 
+$\B{K}_r = \B{K}$ and $\B{K}_c = \bSigma$. 
+
+In the following we will make the simplifying assumption that
+$\B{K}_c$ is kept constant, i.e. not updated during learning.
+Ultimately, all the calculations can also be performed with respect to
+the other covariance, for example iteratively optimizing
+hyperparameters of $\B{K}_r$ and $\B{K}_c$ in turn.
+Here, $N \cdot G$ is the total number of samples; where $N$
+is the number rows and $G$ the number of columns of the matrix normally
+distributed object $\B{Y}$.
+
+For brevity we define $\B{C} = \B{K}_c \otimes \B{K}_r$.
+
+To implement parameter optimization of the covariance parmeters of the
+model in Equation~\eqref{eq:1}, we require efficient evaluation of the
+marginal likelihood and the gradients with respect to hyperparameters.
+
+
+\subsection{Efficient evaluation of the marginal likelihood}
+The tern we want to evaluate is the log-marginal-likelihood, given by the log of the multivariate Normal density
+\begin{align}&\label{eq:lml}
+\ln p(\col(\B{Y}) \given \B{K}_c \otimes \B{K}_r,\sigma^2) = -\frac{NG}{2} \ln{2\pi}  -\frac{1}{2}\ln
+| \B{C} + \sigma^{2} \B{I}|  - \frac{1}{2} \col(\B{Y})^{\T} (\B{C} + \sigma^2
+\B{I})^{-1} \col(\B{Y}). 
+\end{align} 
+
+In the following, we make heavy use of the eigenvalue decomposition of $\B{C} = \B{U} \B{S} \B{U}^{\T}$, where $\B{U}$ is an $NG$-by-$NG$ orthonormal matrix, holding the eigenvectors of $\B{C}$ and $\B{S}$ is an $NG$-by-$NG$  diagonal matrix, holding the corrseponding eingenvalues on the diagonal.
+This decomposition can be efficiently obtained from the composition of
+the individual kronecker terms (after some reordering), i.e. 
+$\B{C} = (\B{U}_c \otimes \B{U}_r) (\B{S}_c \otimes \B{S}_r) (\B{U}_c^\T
+\otimes \B{U}_r^\T)$.
+
+We derive efficient solutions for the logarithm of the determinant of $\B{C}$ and the squared form separately.
+
+
+\subsubsection{Efficient evaluation of the log-det}
+Assuming that we have the eigenvalue decomposition for $\B{C}$,
+the logarithm of the determant can be written as\\
+\begin{align}&
+\label{eq:2}
+\ln | \B{C} + \sigma^{2} \B{I}|  =  \ln |\B{U} (\B{S} +
+\sigma^2\B{I}) \B{U}^{\T} | \\&
+   = \ln |\B{U}| |\B{S} + \sigma^2 \B{I}| |\B{U}^{\T}| \\&
+   = \ln |\B{S} + \sigma^2 \B{I}|\\&
+ = -\ln |(\B{S} + \sigma^2 \B{I})^{-1}|\\&
+ = \sum_{n=1}^{NG} -\ln \frac{1}{(\B{S}_{n,n} + \sigma^2)}.
+\end{align}
+This term can be evaluated in $O(NG)$.
+
+\subsubsection{Efficient evaluation of the squared form}
+Also the squared form in the log marginal likelihood can be evaluated efficiently as follows:\\
+\begin{align}&
+-\frac{1}{2}  \col(\B{Y})^{\T} (\B{C} + \sigma^2 \B{I})^{-1} \col(\B{Y})   = -\frac{1}{2} \col(\B{Y})^{\T}
+\B{U} (\B{S} + \sigma^2 \B{I})^{-1} \B{U}^{\T} \col(\B{Y}) \\& 
+ \text{Using orthogonality of $\B{U} = (\B{U}^{T})^{-1}$}\\&
+  =  -\frac{1}{2} \col(\B{Y})^{\T} (\B{U}_c \otimes \B{U}_r) (\B{S}_c \otimes \B{S}_r +
+\sigma^2 \B{I})^{-1} (\B{U}_c^{\T} \otimes \B{U}_r^{\T}) \col(\B{Y}) \\& 
+  =  -\frac{1}{2} \col({\bfY})^{\T} (\B{U}_c \otimes \B{U}_r) (\B{S}_c \otimes \B{S}_r +
+\sigma^2 \B{I})^{-1} (\B{U}_c^{\T} \otimes \B{U}_r^{\T}) \col({\bfY}) \\& 
+ \text{using the vectorization identities of kronecker structures}\\&
+  =  -\frac{1}{2} (\col({\B{U}_r^{\T}\bfY\B{U}_c}))^{\T} (\B{S}_c \otimes \B{S}_r +
+\sigma^2 \B{I})^{-1} \col({\B{U}_r^{\T}\bfY\B{U}_c}) 
+\end{align}
+We only need to compute the diagonal of $(\B{S}_c \otimes \B{S}_r +
+\sigma^2 \B{I})^{-1}$, which already has been computed before.
+As this term involves the rotation of the data matrix $\bfY$, it can be evaluated in $O(N^2G+NG^2)$.
+
+\subsection{Efficient evaluation of the gradients w.r.t. covariance
+  hyperparameters}
+Here, the aim is to evaluate the gradient of~\eqref{eq:1} w.r.t. 
+column covariance hyperparameters $\gamma$, row covariance hyperparameters $\theta$ and noise parameter $\sigma^2$. 
+\newcommand{\dt}{\frac{{d}}{{d }\theta}}
+\newcommand{\dg}{\frac{{d}}{{d }\gamma}}
+\newcommand{\ds}{\frac{{d}}{{d }\sigma^2}}
+\newcommand{\dsd}{\frac{{d}}{{d }\sigma^2_d}}
+\newcommand{\tbfy}{\tilde{\bfy}}
+
+\cut{
+\begin{align}&
+\dt \ln p(\col(\B{Y}) \given \B{K}_c(\btheta),\B{K}_r,\sigma^2)
+   = -\frac{1}{2} \dt \ln | \B{C} + \sigma^2\B{I}| -
+\frac{1}{2} \dt \col(\B{Y})^{\T} (\B{C} + \sigma^2\B{I})^{-1}\col(\B{Y}) 
+\end{align}
+}
+
+\subsection{Derivatiaves w.r.t. $\sigma^2$}
+\subsubsection{Derivatiaves of the log-det term w.r.t. $\sigma^2$}
+
+\begin{align}&
+\ds \ln | \B{C} + \sigma^2\B{I} |  = \Tr{\left[ (\B{C} +
+  \sigma^2\B{I})^{-1} \ds (\B{C} + \sigma^2 \B{I})\right]} \\&
+ =  \Tr{\left[ (\B{C} + \sigma^2\B{I})^{-1} \ds (\sigma^2 \B{I})\right]} \\&
+   = \Tr \left [ \B{U} (\B{S} + \sigma^2\B{I})^{-1}\B{U}^{\T} \right ] \\&
+  =  \Tr \left [ (\B{S}_c \otimes \B{S}_r + \sigma^2\B{I})^{-1} \ds (\B{C} + \sigma^2 \B{I})\right]
+\end{align}
+\subsubsection{Squared form derivatives w.r.t. $\sigma^2$}
+
+\begin{align}&
+\ds \col(\B{Y})^{\T} \BS^{-1}\col(\B{Y})  = \col(\B{Y})^{\T} \ds
+\BS^{-1} \col(\B{Y})  \\&
+ \text{using $\ds \bfA^{-1} = -\bfA^{-1} \ds \bfA \bfA^{-1}$}\\&
+  =-\col(\B{Y})^{\T} \BS^{-1} \ds \BS \BS^{-1} \col(\B{Y}) \\&
+  = -\col({\bfY})^{\T} (\B{U}_c \otimes \B{U}_r) (\B{S} + \sigma^{2}
+\B{I})^{-1} (\B{U}_c^{\T} \otimes \B{U}_r^{\T}) (\ds \sigma^2\B{I})
+(\B{U}_c \otimes \B{U}_r) (\B{S} + \sigma^{2} \B{I})^{-1} (\B{U}_c^{\T}
+\otimes \B{U}_r^{\T}) \col({\bfY}) \\&
+  = -\col (\B{U}_r^{\T} \bfY \B{U}_c)^{\T} (\B{S} + \sigma^{2}\B{I})^{-1} (\ds \sigma^2\B{I}) (\B{S} + \sigma^{2}\B{I})^{-1} \col (\B{U}_r^{\T} \bfY \B{U}_c) \\&
+\end{align}
+
+\subsubsection{Derivatives of the determinant w.r.t. $\theta$}
+
+\begin{align}&
+\dg \ln | \B{C} + \sigma^2\B{I} |  = \Tr{\left[ (\B{C} +
+  \sigma^2\B{I})^{-1} \dg (\B{C} + \sigma^2 \B{I})\right]} \\&
+  = \Tr \left [ (\B{U}_c \otimes \B{U}_r) (\B{S} +
+  \sigma^2)^{-1} (\B{U}_c^{\T} \otimes \B{U}_r^{\T})  (\dg \B{K}_c \otimes
+  \B{K}_r)\right ] \\&
+  \text{Using standard Kronecker identity}\\&
+  = \Tr \left [ (\B{U}_c \otimes \B{U}_r) (\B{S} +
+  \sigma^2\B{I})^{-1} (\B{U}_c^{\T} \dg \B{K}_c \otimes \B{U}_r^{\T} \B{K}_r) \right ]\\&
+  \text{Using $\Tr(\B{A}\B{B}) = \Tr(\B{B}\B{A})$}\\&
+  = \Tr \left [ (\B{S} + \sigma^2\B{I})^{-1} (\B{U}_c^{\T} \dg \B{K}_c \otimes \B{U}_r^{\T} \B{K}_r)  (\B{U}_c \otimes \B{U}_r) \right ] \\& 
+   =  \Tr \left [ (\B{S} + \sigma^2\B{I})^{-1} (\B{U}_c^{\T} \dg \B{K}_c  \B{U}_c \otimes \B{U}_r^{\T} \B{K}_r \B{U}_r) \right ] \\&
+   =  \Tr \left [ (\B{S}_c \otimes \B{S}_r + \sigma^2\B{I})^{-1} \Big((
+   \B{U}_c^{\T} \dg \B{K}_c  \B{U}_c) \otimes \B{S}_r\Big) \right ]
+\end{align}
+As we only need the trace, we just need the diagonal of the Kronecker
+product, which only involves the diagonal of $(
+   \B{U}_c^{\T} \dg \B{K}_c  \B{U}_c)$.
+
+For the special case, where $\dg \B{K}_c$ is a row matrix:
+\begin{align}&
+  \Tr \left [ (\B{S}_c \otimes \B{S}_r + \sigma^2\B{I})^{-1} \Big((
+   \B{U}_c^{\T} \dg \B{K}_c  \B{U}_c) \otimes \B{S}_r\Big) \right ]
+\\&
+=   \Tr \left [ (\B{S}_c \otimes \B{S}_r + \sigma^2\B{I})^{-1} \Big((
+   [\B{U}_c]_{i:}^{\T} [\dg \B{K}_c]_{i:}  \B{U}_c) \otimes \B{S}_r\Big) \right ]
+\\&
+=   \diag\left((\B{S}_c \otimes \B{S}_r + \sigma^2\B{I})^{-1}\right)^{\T} \Big(\diag(
+   [\B{U}_c]_{i:}^{\T} [\dg \B{K}_c]_{i:}  \B{U}_c) \otimes
+   \diag(\B{S}_r)\Big) 
+\\&
+=   \diag\left((\B{S}_c \otimes \B{S}_r + \sigma^2\B{I})^{-1}\right)^{\T} \left(
+   \left([\B{U}_c]_{i:} \odot\left([\dg \B{K}_c]_{i:}  \B{U}_c\right) \right) ^{\T} \otimes \diag(\B{S}_r)\right) 
+\end{align}
+For the special case, where $\dg \B{K}_c$ is a column matrix:
+\begin{align}&
+  \Tr \left [ (\B{S}_c \otimes \B{S}_r + \sigma^2\B{I})^{-1} \Big((
+   \B{U}_c^{\T} \dg \B{K}_c  \B{U}_c) \otimes \B{S}_r\Big) \right ]
+\\&
+=   \Tr \left [ (\B{S}_c \otimes \B{S}_r + \sigma^2\B{I})^{-1} \Big((
+   \B{U}_c^{\T} [\dg \B{K}_c]_{:i}  [\B{U}_c]_{i:}) \otimes \B{S}_r\Big) \right ]
+\\&
+=   \diag\left((\B{S}_c \otimes \B{S}_r + \sigma^2\B{I})^{-1}\right)^{\T} \left(\left(
+   \left(\B{U}_c^{\T} [\dg \B{K}_c]_{:i} \right) \odot [\B{U}_c]_{i:}^{\T}\right) \otimes \diag(\B{S}_r)\right) 
+\end{align}
+
+So for the case, where $\dg \B{K}_c$ is a linear kernel, we get:
+\begin{align}&
+\nonumber
+  \diag\left((\B{S}_c \otimes \B{S}_r + \sigma^2\B{I})^{-1}\right)^{\T} \left(
+   \left([\B{U}_c]_{i:} \odot\left([\dg \B{K}_c]_{i:}
+       \B{U}_c\right) \right) ^{\T} \otimes \diag(\B{S}_r)\right) +\\&
+ +\diag\left((\B{S}_c \otimes \B{S}_r + \sigma^2\B{I})^{-1}\right)^{\T} \left(\left(
+   \left(\B{U}_c^{\T} [\dg \B{K}_c]_{i:}^{\T} \right) \odot
+   [\B{U}_c]_{i:}^{\T}\right) \otimes \diag(\B{S}_r)\right) 
+\\&
+=   2\diag\left((\B{S}_c \otimes \B{S}_r + \sigma^2\B{I})^{-1}\right)^{\T} \left(
+   \left([\B{U}_c]_{i:} \odot\left([\dg \B{K}_c]_{i:}
+       \B{U}_c\right) \right) ^{\T} \otimes \diag(\B{S}_r)\right)
+\\&
+=   2 \col\left(\diag(\B{S}_r)^{\T}\colI\left(\diag\left((\B{S}_c \otimes \B{S}_r + \sigma^2\B{I})^{-1}\right)\right) 
+   \left([\B{U}_c]_{i:} \odot\left([\dg \B{K}_c]_{i:}
+       \B{U}_c\right) \right) ^{\T}\right) 
+\end{align}
+where we rearranged the transposes and used $\bfA\odot\bfB=\bfB\odot\bfA$.
+%Using the Kronecker product-vec-trick is especially useful, when simulateously
+%calculating derivatives wrt all factors.
+\subsubsection{Derivatiaves of the squared form w.r.t. $\theta$}
+(2)\\
+\begin{align*}&
+\dg \col(\B{Y})^{\T} \BS^{-1}\col(\B{Y})  = \col(\B{Y})^{\T} \dg
+\BS^{-1} \col(\B{Y})  \\&
+ \text{using $\dg \bfA^{-1} = -\bfA^{-1} \dg \bfA \bfA^{-1}$}\\&
+  =-\col(\B{Y})^{\T} \BS^{-1} \dg \BS \BS^{-1} \col(\B{Y}) \\&
+  = -\col({\bfY})^{\T} (\B{U}_c \otimes \B{U}_r) (\B{S} + \sigma^{2}
+\B{I})^{-1} (\B{U}_c^{\T} \otimes \B{U}_r^{\T}) (\dg \B{K}_c \otimes \B{K}_r)
+(\B{U}_c \otimes \B{U}_r) (\B{S} + \sigma^{2} \B{I})^{-1} (\B{U}_c^{\T}
+\otimes \B{U}_r^{\T}) {\col(\B{Y})} \\&
+  = -\col (\B{U}_r^{\T} \bfY \B{U}_c)^{\T} (\B{S} + \sigma^{2}\B{I})^{-1} (\B{U}_c^{\T}
+\otimes \B{U}_r^{\T}) (\dg \B{K}_c \otimes \B{K}_r) (\B{U}_c \otimes
+\B{U}_r)(\B{S} + \sigma^{2}\B{I})^{-1} \col (\B{U}_r^{\T} \bfY \B{U}_c) \\&
+  = -(\col (\B{U}_r^{\T} \bfY \B{U}_c))^{\T} (\B{S}_c \otimes \B{S}_r + \sigma^{2}\B{I})^{-1} (\B{U}_c^{\T}
+\dg \B{K}_c \B{U}_c \otimes \B{U}_r^{\T} \B{K}_r \B{U}_r)(\B{S}_c \otimes \B{S}_r +
+\sigma^{2}\B{I})^{-1} \col (\B{U}_r^{\T} \bfY \B{U}_c) \\& 
+  = -\col (\B{U}_r^{\T} \bfY \B{U}_c)^{\T} (\B{S}_c \otimes \B{S}_r + \sigma^{2}\B{I})^{-1} \big((\B{U}_c^{\T}
+\dg \B{K}_c \B{U}_c) \otimes \B{S}_r\Big)(\B{S}_c \otimes \B{S}_r +
+\sigma^{2}\B{I})^{-1} \col (\B{U}_r^{\T} \bfY \B{U}_c) \\&
+  = -\col (\tilde\bfY)^{\T} \big((\B{U}_c^{\T}
+\dg \B{K}_c \B{U}_c) \otimes \B{S}_r\Big) \col (\tilde {\bfY}) \\&
+   = -\col (\tilde\bfY) ^{\T}\col \big(\B{S}_r\tilde\bfY (\B{U}_c^{\T}
+ \dg \B{K}_c \B{U}_c)\big),
+ \end{align*}
+ where $\col (\tilde\bfY) = (\B{S}_c \otimes \B{S}_r +
+ \sigma^{2}\B{I})^{-1} \col (\B{U}_r^{\T} \bfY \B{U}_c)$.
+
+For the special case, where the derivative of $\B{K}_c$ is a row matrix:
+
+(3)\
+\begin{align*}&
+-\col (\tilde\bfY) ^{\T}\col \big(\B{S}_r\tilde\bfY (\B{U}_c^{\T}
+\dg \B{K}_c \B{U}_c)\big)\\&
+=- \col\left({\tilde\bfY}\right)^{\T}
+\col\left({\B{S}_r\tilde\bfY ([\B{U}_c]_{i:}^{\T}
+[\dg \B{K}_c]_{i:} \B{U}_c)}\right)
+\\&
+=- \Tr\left(\left({\tilde\bfY}^{\T}
+\B{S}_r\tilde\bfY ([\B{U}_c]_{i:}^{\T}\right)\left(
+[\dg \B{K}_c]_{i:} \B{U}_c)\right)\right)
+\\&
+=-
+{[\B{U}_c]_{i:}\tilde\bfY^{\T} \B{S}_r \tilde\bfY}
+\B{U}_c^{\T} [\dg \B{K}_c]_{i:}^{\T},
+\end{align*}
+where we use the fact that the trace of an outer product between
+vectors equals to the inner product between the vectors.
+
+For the special case, where the derivative of $\B{K}_c$ is a column matrix:
+
+(4)\
+\begin{align*}&
+-\col (\tilde\bfY) ^{\T}\col \big(\B{S}_r\tilde\bfY (\B{U}_c^{\T}
+\dg \B{K}_c \B{U}_c)\big)\\&
+=- \col\left({\tilde\bfY}\right)^{\T}
+\col\left({\B{S}_r\tilde\bfY (\B{U}_c
+[\dg \B{K}_c]_{:i} [\B{U}_c]_{i:})}\right)
+\\&
+=- \Tr\left(\left({\tilde\bfY}^{\T}
+\B{S}_r\tilde\bfY (\B{U}_c
+[\dg \B{K}_c]_{:i}\right)\left( [\B{U}_c]_{i:})\right) \right)
+\\&
+=-
+{[\dg \B{K}_c]_{:i}^{\T}\B{U}_c^{\T}\tilde\bfY^{\T} \B{S}_r \tilde\bfY}
+[\B{U}_c]_{i:}^{\T}
+\end{align*}
+So for the derivative w.r.t. hidden factors in a linear kernel we have to compute the
+following term:
+\begin{align*}&
+-{[\B{U}_c]_{i:}\tilde\bfY^{\T} \B{S}_r \tilde\bfY}
+\B{U}_c^{\T} [\dg \B{K}_c]_{i:}^{\T}
+-{[\dg \B{K}_c]_{i:}\B{U}_c^{\T}\tilde\bfY^{\T} \B{S}_r \tilde\bfY}
+[\B{U}_c]_{i:}^{\T}
+\\&
+-2 {[\dg \B{K}_c]_{i:}\B{U}_c^{\T}\tilde\bfY^{\T} \B{S}_r \tilde\bfY}
+[\B{U}_c]_{i:}^{\T}
+\end{align*}
+\subsubsection{row covariances}
+Using an analoguous derivation we get the following gradient for factors in a linear kernel $\B{K}_r$
+\begin{align*}&
+-2 {[\dt \B{K}_r]_{i:}\B{U}_r^{\T}\tilde\bfY \B{S}_c \tilde\bfY^{\T}}
+[\B{U}_r]_{i:}^{\T}
+\end{align*}
+
+\cut{
+\section{Useful kronecker identities}
+Some identities we borrow from Matrix Cookbook. 
+\paragraph{SVD}
+Assume $\B{K} = \B{K}_r \otimes \B{K}_c$ has the following SVD
+decomposition $\B{K} = \B{U} \B{S} \B{U}^{\T}$.
+Then simply substituting in the definition of the SVD leads to 
+\begin{align}&
+\B{K} = (\B{U}_c \otimes \B{U}_r) ( \B{S}_c \otimes \B{S}_r) (\B{U}_c^{\T}
+\otimes \B{U}_r^{\T}).
+\end{align}
+\paragraph{Vectorization of Kroneckers }
+\begin{align}&
+\col(\bfA \bfX \bfB)  = (\bfB^{\T} \otimes \bfA) \col \bfX\\&
+\col(\bfA \bfX \bfB)^{\T}  =  (\col \bfX)^{\T} (\bfB \otimes \bfA^{\T})
+\end{align}
+We define $\fl{x}$ as the flatten function in python and $\fli{x}$ as
+the reshape function. Then the following hold:
+\begin{align}&
+(\bfB \bfX \bfA^{\T})  = \colI\left((\bfA \otimes \bfB) \col \bfX\right) = \fli{(\bfB \otimes \bfA) \fl{\bfX})}
+\end{align}
+The following holds:
+\begin{align}&
+(\bfB\otimes\bfA)\fl{\bfX} = \fl{ \bfB\bfX\bfA^{\T} }
+\end{align}
+And this one:
+\begin{align}&
+(\bfA\otimes\bfB)\col({\bfX}) = \col({ \bfB\bfX\bfA^{\T} })
+\end{align}
+
+
+\paragraph{Inverse of K + noise}
+\begin{align}&
+(\B{K} + \sigma^2 \B{I})^{-1}  = ( \B{U} \B{S} \B{U}^{\T} +
+\sigma^2 \B{U}\B{U}^{\T})^{-1}  \\& 
+   = ( \B{U} (\B{S} + \sigma^{2}\B{I}) \B{U}^{\T})^{-1} \\&
+  = \B{U} (\B{S} + \sigma^{2}\B{I})^{-1} \B{U}^{\T}
+\end{align}
+}
+
+
+\section{Efficient computation for ARD noise GPLVM models}
+\label{sec:effic-comp-ard}
+Let us assume a standard GPLVM model with a single covariance for all
+data dimension and one noise level per feature dimension
+
+\begin{align*}
+  \ln p(\bfY \given \bfK, \bsigma) &= \sum_{d=1}^{D} 
+\ln \normal{\bfy_d}{\boldzero,\bfK + \sigma_{d}^2} \\
+ & = -0.5 D \ln (2\pi) - 0.5 \sum_{d=1}^{D}  \left [\ln \left | (\bfK +
+   \sigma_d^2 \unit)\right | + \bfy_d^{\T} \left (\bfK + \sigma_d^2
+   \unit\right )^{-1} \bfy_d \right ]\\
+&\text{Using the SVD decomposition for $\bfK=\bfU \bfS \bfU^{\T}$ it
+  follows}\\
+& = 
+\end{align*}
+
+\subsection{Efficient evaluation of the marginal likelihood}
+
+\subsubsection{Efficient evaluation of the log-det}
+Using the analogous derivation as in Equation~\eqref{eq:2}, we obtain
+\begin{align}&
+\label{eq:2}
+\ln | \B{C} + \sigma_{d}^{2} \B{I}|  
+ = \sum_{n=1}^{N} -\ln \frac{1}{(\B{S}_{n,n} + \sigma_d^2)}.
+\end{align}
+
+\subsubsection{Efficient evaluation of squared form}
+Again, taking the derivations from above
+\begin{align*}
+-0.5 \bfy_d^{\T} \left(\bfK + \sigma_d^{2} \right)^{-1} \bfy_d & = -0.5
+\bfy_{d}^{\T} \bfU (\bfS + \sigma_d^{2} \unit)^{-1} \bfU^{\T} \bfy_d
+\\
+& = -0.5 \tilde{\bfy_d}^{\T} (\bfS + \sigma_d^{2} \unit)^{-1} \tilde{\bfy}_d,
+\end{align*}
+where we defined $\tilde{\bfy}_d = \bfU^{\T} \bfy_d$.
+
+\subsection{Efficient evaluation of the gradients w.r.t. covariance
+  hyperparameters}
+
+\subsubsection{Derivative of the log-det term w.r.t $\sigma_d^{2}$}
+\begin{align}&
+\dsd \ln | \bfK + \sigma^2_d\B{I} |  \\
+&  =  \Tr \left [ ( \bfS + \sigma_d^2\B{I})^{-1} \dsd (\bfK + \sigma_d^2 \B{I})\right]
+\end{align}
+
+\subsubsection{Derivative of squared term w.r.t $\sigma_d^{2}$}
+\begin{align}&
+\dsd \bfy_d^{\T} (\bfK + \sigma_d^{2} \unit)^{-1} \bfy_d\\&
+=- \bfy_d^{\T} (\bfK + \sigma_d^{2} \unit)^{-1} \dsd (\bfK +
+\sigma_d^{2} \unit) (\bfK + \sigma_d^{2} \unit)^{-1} \bfy_d\\ &
+=- \bfy_d^{\T} \bfU ( \bfS + \sigma_d^{2} ) \bfU^{\T} (\dsd
+\sigma_d^{2} \unit) \bfU (\bfS + \sigma_d^{2}) \bfU^{\T} \bfy_d\\&
+=- \bfy_d^{\T} \bfU (\bfS + \sigma_d^{2} \unit)^{-1} (\unit) (\bfS +
+\sigma_d^{2} \unit)^{-1} \bfU^{\T} \bfy_d \\&
+= - \tbfy^{\T}  (\bfS + \sigma_d^{2} \unit)^{-1} (\unit) (\bfS +
+\sigma_d^{2} \unit)^{-1} \tbfy_d 
+\end{align}
+
+\subsubsection{Derivatives of the determinant w.r.t $\theta$}
+
+\begin{align}&
+\dg \ln | \bfK + \sigma_d^{2} \unit| = \tr \left [ (\bfK +
+  \sigma_d^{2} \unit)^{-1} \dg (\bfK + \sigma_d^{2} \unit) \right ]
+\\&
+=\tr \left [  \bfU (\bfS + \sigma_d^{2} \unit)^{-1} \bfU^{\T}  (\dg \bfK) \right ]
+\end{align}
+
+\TODO{think about special case where the derivative is a row matrix
+  (GPLVM)}
+
+\subsubsection{Derivatives of the squared term w.r.t $\theta$}
+Similar as for the derivative w.r.t to the noise level we get
+\begin{align}&
+\dg \bfy_d^{\T} (\bfK + \sigma_d^{2} \unit)^{-1} \bfy_d \\ &
+= - \bfy_d^{2} (\bfK + \sigma_d^{2} \unit)^{-1} (\dg \bfK) (\bfK +
+\sigma_d^{2} \unit)^{-1} \bfy_d\\ &
+= -\tbfy_d^{\T} (\bfS+ \sigma_d^{2} \unit)^{-1} (\dg \bfK) (\bfS +
+\sigma_d^{2} \unit)^{-1} \tbfy_d
+\end{align}
+
+\TODO{think about special case where the derivative is a row matrix
+  (GPLVM)}
+
+
+\newpage
+\end{document}
