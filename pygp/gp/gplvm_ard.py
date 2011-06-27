@@ -48,7 +48,7 @@ class GPLVMARD(GPLVM.GPLVM):
             #noise version of S
             Sn = Knoise + SP.tile(S[:,SP.newaxis],[1,10])
             #inverse
-            Si = 1./Sn
+            Si = 1./Sn 
             #rotate data
             y_rot = SP.dot(U.T,self.y)
             #also store version of data rotated and Si applied
@@ -95,24 +95,40 @@ class GPLVMARD(GPLVM.GPLVM):
 
 
     def _LMLgrad_covar(self, hyperparams):
-        #1. get inggredients for computations
-        try:   
+	logtheta = hyperparams['covar']
+	try:   
             KV = self.get_covariances(hyperparams)
         except linalg.LinAlgError:
             LG.error("exception caught (%s)" % (str(hyperparams)))
-            return {'covar_r':SP.zeros(len(hyperparams['covar_r'])),'covar_c':SP.zeros(len(hyperparams['covar_c']))}
-        pdb.set_trace()
-        pass
+            return 1E6
+
+	S = SP.dot(KV['y_rot'], KV['y_rot'].T) # TODO: not ideal
+        W = self._get_target_dimension() * SP.dot(KV['Si'], KV['Si'].T) - SP.dot(KV['y_roti'], KV['y_roti'].T) # first bit is not right.. I think
+        self._covar_cache['W'] = W
+
+
+        LMLgrad = SP.zeros(len(logtheta))
+        for i in xrange(len(logtheta)):
+            Kd = self.covar.Kgrad_theta(hyperparams['covar'], self._get_x(), i)
+            LMLgrad[i] = 0.5 * (W * Kd).sum()
+
+        RV = {'covar': LMLgrad}
+
+        return RV
 
 
     def _LMLgrad_lik(self,hyperparams):
         """derivative of the likelihood parameters"""
-        logtheta = hyperparams['lik']
-        #note: we assume hard codede that this is called AFTER LMLgrad_covar has been called
-        KV = self._covar_cache
-        pdb.set_trace()
 
+	logtheta = hyperparams['covar']
+	KV = self._covar_cache
+        W = KV['W']
+	LMLgrad = SP.zeros(len(logtheta))
+        for i in xrange(len(logtheta)):
+            Kd = self.likelihood.Kgrad_theta(logtheta, self._get_x(), i)
+            LMLgrad[i] = 0.5 * (W * Kd).sum()
         RV = {'lik': LMLgrad}
+	
         return RV
 
 
