@@ -9,7 +9,7 @@ import pdb
 from pygp.optimize.optimize_base import opt_hyper
 import scipy as SP
 import scipy.linalg as linalg
-
+import copy
 
 VERBOSE=True
 
@@ -53,7 +53,8 @@ class GPLVMARD(GPLVM.GPLVM):
             y_rot = SP.dot(U.T,self.y)
             #also store version of data rotated and Si applied
             y_roti = (y_rot*Si)
-            self._covar_cache = {'hyperparams':hyperparams,'S':S,'U':U,'K':K,'Knoise':Knoise,'Sn':Sn,'Si':Si,'y_rot':y_rot,'y_roti':y_roti}
+            self._covar_cache = {'S':S,'U':U,'K':K,'Knoise':Knoise,'Sn':Sn,'Si':Si,'y_rot':y_rot,'y_roti':y_roti}
+            self._covar_cache['hyperparams'] = copy.deepcopy(hyperparams)
             pass
         #return update covar cache
         return self._covar_cache
@@ -89,7 +90,7 @@ class GPLVMARD(GPLVM.GPLVM):
                 lquad_ = 0.5 * SP.dot(_y,SP.dot(_Ki,_y))
                 ldet_ = 0.5 * SP.log(SP.linalg.det(_K))
                 lmls_[i] = 0.5 * SP.log(2*SP.pi) + lquad_ + ldet_
-            assert SP.absolute(lmls_.sum()-LML)<1E-5, 'outch'
+            assert SP.absolute(lmls_.sum()-LML)<1E-3, 'outch'
         return LML
 
 
@@ -102,18 +103,35 @@ class GPLVMARD(GPLVM.GPLVM):
             LG.error("exception caught (%s)" % (str(hyperparams)))
             return 1E6
 
-	S = SP.dot(KV['y_rot'], KV['y_rot'].T) # TODO: not ideal
-        W = self._get_target_dimension() * SP.dot(KV['Si'], KV['Si'].T) - SP.dot(KV['y_roti'], KV['y_roti'].T) # first bit is not right.. I think
-        self._covar_cache['W'] = W
-
-
         LMLgrad = SP.zeros(len(logtheta))
         for i in xrange(len(logtheta)):
+            #1. derivative of the log det term
             Kd = self.covar.Kgrad_theta(hyperparams['covar'], self._get_x(), i)
-            LMLgrad[i] = 0.5 * (W * Kd).sum()
+            #rotate Kd with U, U.T
+            Kd_rot = SP.dot(SP.dot(KV['U'].T,Kd),KV['U'])
+            #now loop over the various different noise levels which is efficient at this point
+            dldet = 0.5*(Kd_rot.diagonal()[:,SP.newaxis]*KV['Si']).sum()            
+            #2. deriative of the quadratic term
+            y_roti = KV['y_roti']
+            DKy_roti = SP.dot(Kd_rot,KV['y_roti'])
+            dlquad  = 0.5*(y_roti*DKy_roti).sum()
 
+            if VERBOSE:
+                dldet_ = SP.zeros([self.d])
+                dlquad_ = SP.zeros([self.d])
+                for d in xrange(self.d):
+                    _K = KV['K'] + SP.diag(KV['Knoise'][:,d])
+                    _Ki = SP.linalg.inv(_K)
+                    dldet_[d] = 0.5*SP.dot(_Ki,Kd).trace()
+                    dlquad_[d] = 0.5*SP.dot(self.y[:,d],SP.dot(_Ki,SP.dot(Kd,SP.dot(_Ki,self.y[:,d]))))
+
+                    
+                assert SP.absolute(dldet-dldet_.sum())<1E-3, 'outch'
+                assert SP.absolute(dlquad-dlquad_.sum())<1E-3, 'outch'
+
+            #set results
+            LMLgrad[i] = dldet + dlquad
         RV = {'covar': LMLgrad}
-
         return RV
 
 
@@ -122,13 +140,30 @@ class GPLVMARD(GPLVM.GPLVM):
 
 	logtheta = hyperparams['covar']
 	KV = self._covar_cache
-        W = KV['W']
-	LMLgrad = SP.zeros(len(logtheta))
-        for i in xrange(len(logtheta)):
-            Kd = self.likelihood.Kgrad_theta(logtheta, self._get_x(), i)
-            LMLgrad[i] = 0.5 * (W * Kd).sum()
+
+        #loop through all dimensions
+        #logdet term:
+        Kd = 2*KV['Knoise']
+        dldet = 0.5*(Kd*KV['Si']).sum(axis=0)
+        #quadratic term
+        y_roti = KV['y_roti']
+        dlquad = 0.5 * (y_roti * Kd * y_roti).sum(axis=0)
+        if VERBOSE:
+            dldet_  = SP.zeros([self.d])
+            dlquad_ = SP.zeros([self.d])
+            for d in xrange(self.d):
+                _K = KV['K'] + SP.diag(KV['Knoise'][:,d])
+                _Ki = SP.linalg.inv(_K)
+                dldet_[d] = 0.5* SP.dot(_Ki,SP.diag(Kd[:,d])).trace()
+                dlquad_[d] = 0.5*SP.dot(self.y[:,d],SP.dot(_Ki,SP.dot(SP.diag(Kd[:,d]),SP.dot(_Ki,self.y[:,d]))))
+
+            assert (SP.absolute(dldet-dldet_)<1E-3).all(), 'outch'
+            assert (SP.absolute(dlquad-dlquad_)<1E-3).all(), 'outch'
+
+
+        LMLgrad = dldet + dlquad
         RV = {'lik': LMLgrad}
-	
+    
         return RV
 
 
@@ -170,63 +205,95 @@ class GPLVMARD(GPLVM.GPLVM):
         
 
 if __name__ == '__main__':
-    from pygp.covar import linear, noise, fixed, combinators
-    import logging as LG
-    LG.basicConfig(level=LG.DEBUG)
-    SP.random.seed(1)
-    #1. simulate data
+    from pygp.gp import gplvm
+    from pygp.covar import linear,se, noise, combinators
+
+    import pygp.optimize as opt
+    import pygp.plot.gpr_plot as gpr_plot
+    import pygp.priors.lnpriors as lnpriors
+    import pygp.likelihood as lik
+    import copy
+
+    LG.basicConfig(level=LG.INFO)
+    
+    #1. simulate data from a linear PCA model
     N = 100
     K = 3
     D = 10
 
-    
-    S = SP.random.randn(N, K)
-    W = SP.random.randn(D, K)
-    
-    Y = SP.dot(W, S.T).T
-    Y += 0.5 * SP.random.randn(N, D)
-  
-    [Spca, Wpca] = PCA(Y, K)
-    
+    SP.random.seed(1)
+    S = SP.random.randn(N,K)
+    W = SP.random.randn(D,K)
+
+    Y = SP.dot(W,S.T).T
+
+
+    sim_fa_noise = False
+    if sim_fa_nois:
+        #inerpolate noise levels
+        noise_levels = SP.linspace(0.1,1.0,Y.shape[1])
+        Ynoise =noise_levels*random.randn(N,D)
+        Y+=Ynoise
+    else:
+        Y+= 0.5*SP.random.randn(N,D)
+
+    #use "standard PCA"
+    [Spca,Wpca] = gplvm.PCA(Y,K)
+
     #reconstruction
-    Y_ = SP.dot(Spca, Wpca.T)
+    Y_ = SP.dot(Spca,Wpca.T)
+
+    covariance = linear.LinearCFISO(n_dimensions=K)
+    hyperparams = {'covar': SP.log([1.2])}
+    hyperparams_fa = {'covar': SP.log([1.2])}
+
+        
+    #factor analysis noise
+    likelihood_fa = lik.GaussLikARD(n_dimensions=D)
+    hyperparams_fa['lik'] = SP.log(0.1*SP.ones(Y.shape[1]))
     
-    #construct GPLVM model
-    linear_cf = linear.LinearCFISO(n_dimensions=K)
-    noise_cf = noise.NoiseCFISO()
-    mu_cf = fixed.FixedCF(SP.ones([N,N]))
-    covariance = combinators.SumCF((mu_cf, linear_cf, noise_cf))
-    # covariance = combinators.SumCF((linear_cf, noise_cf))
+    #standard Gaussian noise
+    likelihood = lik.GaussLikISO()
+    hyperparams['lik'] = SP.log([0.1])
+        
+    #initialization of X at arandom
+    X0 = SP.random.randn(N,K)
+    X0 = Spca
+    hyperparams['x'] = X0
 
+    g_fa = gplvm_ard.GPLVMARD(covar_func=covariance,likelihood=likelihood,x=X0,y=Y)
+    g = gplvm.GPLVM(covar_func=covariance,likelihood=likelihood,x=X0,y=Y)
 
-    #no inputs here (later SNPs)
-    X = Spca.copy()
-    #X = SP.random.randn(N,K)
-    gplvm = GPLVM(covar_func=covariance, x=X, y=Y)
-   
-    gpr = GP(covar_func=covariance, x=X, y=Y[:, 0])
+    #try evaluating marginal likelihood first
+    del(hyperparams['x'])
+    del(hyperparams_fa['x'])
+    Ifilter = {}
+    for key in hyperparams:
+        Ifilter[key] = SP.ones(hyperparams[key].shape,dtype='bool')
+    Ifilter['lik'][:] = False
+
+    hyperparams['covar'] = SP.array([-0.02438411])
+
+    if 1:
+        #manual gradcheck
+        relchange = 1E-5;
+        change = hyperparams['covar'][0]*relchange
+        hyperparams_ = copy.deepcopy(hyperparams)
+        xp = hyperparams['covar'][0] + change
+        pdb.set_trace()
+        hyperparams_['covar'][0] = xp
+        Lp = g.LML(hyperparams_)
+        xm = hyperparams['covar'][0] - change
+        hyperparams_['covar'][0] = xm
+        Lm = g.LML(hyperparams_)
+        diff = (Lp-Lm)/(2.*change)
+
+        anal = g.LMLgrad(hyperparams)
+        
     
-    #construct hyperparams
-    covar = SP.log([0.1, 1.0, 0.1])
+    if 0:
+        [opt_hyperparams,opt_lml] = opt.opt_hyper(g,hyperparams,gradcheck=True)
 
-    #X are hyperparameters, i.e. we optimize over them also
 
-    #1. this is jointly with the latent X
-    X_ = X.copy()
-    hyperparams = {'covar': covar, 'x': X_}
     
 
-    #for testing just covar params alone:
-    #hyperparams = {'covar': covar}
-    
-    #evaluate log marginal likelihood
-    lml = gplvm.LML(hyperparams=hyperparams)
-    [opt_model_params, opt_lml] = opt_hyper(gplvm, hyperparams, gradcheck=False)
-    Xo = opt_model_params['x']
-    
-
-    for k in xrange(K):
-        print SP.corrcoef(Spca[:, k], S[:, k])
-    print "=================="
-    for k in xrange(K):
-        print SP.corrcoef(Xo[:, k], S[:, k])

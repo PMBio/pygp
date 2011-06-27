@@ -429,7 +429,9 @@ where we defined $\tilde{\bfy}_d = \bfU^{\T} \bfy_d$.
 \subsubsection{Derivative of the log-det term w.r.t $\sigma_d^{2}$}
 \begin{align}&
 \dsd \ln | \bfK + \sigma^2_d\B{I} |  \\
-&  =  \Tr \left [ ( \bfS + \sigma_d^2\B{I})^{-1} \dsd (\bfK + \sigma_d^2 \B{I})\right]
+&  =  \Tr \left [ \bfU ( \bfS + \sigma_d^2\B{I})^{-1} \bfU^{\T} \dsd
+  (\bfK + \sigma_d^2 \B{I})\right]\\
+& =  \Tr \left [ (\bfS + \sigma_d^{2} \unit)^{-1} \unit \right ]
 \end{align}
 
 \subsubsection{Derivative of squared term w.r.t $\sigma_d^{2}$}
@@ -458,12 +460,12 @@ where we defined $\tilde{\bfy}_d = \bfU^{\T} \bfy_d$.
   (GPLVM)}
 
 \subsubsection{Derivatives of the squared term w.r.t $\theta$}
-Similar as for the derivative w.r.t to the noise level we get
+Similar as for the derivative w.r.t the noise level we get
 \begin{align}&
 \dg \bfy_d^{\T} (\bfK + \sigma_d^{2} \unit)^{-1} \bfy_d \\ &
-= - \bfy_d^{2} (\bfK + \sigma_d^{2} \unit)^{-1} (\dg \bfK) (\bfK +
+= - \bfy_d^{2} (\bfK + \sigma_d^{2} \unit)^{-1} \bfU^{\T} (\dg \bfK) \bfU (\bfK +
 \sigma_d^{2} \unit)^{-1} \bfy_d\\ &
-= -\tbfy_d^{\T} (\bfS+ \sigma_d^{2} \unit)^{-1} (\dg \bfK) (\bfS +
+= -\tbfy_d^{\T} (\bfS+ \sigma_d^{2} \unit)^{-1} \bfU^{\T} (\dg \bfK) \bfU (\bfS +
 \sigma_d^{2} \unit)^{-1} \tbfy_d
 \end{align}
 

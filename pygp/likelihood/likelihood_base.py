@@ -1,5 +1,6 @@
 import scipy as SP
 from pygp.linalg import *
+import pdb
 import copy 
 
 
@@ -30,7 +31,7 @@ class GaussLikISO(ALik):
         return Knoise
 
     def Kdiag(self,theta,x1):
-        sigma = SP.exp(2*theta[0])
+        sigma = SP.exp(2*theta)
         return sigma*SP.ones(x1.shape[0])
 
     def Kgrad_theta(self,theta,x1,i):
@@ -69,8 +70,9 @@ class GaussLikARD(ALik):
 
     def Kdiag(self,theta,x1):
         ### in ARD noise, the diagonal is a matrix with one diagonal per dimension
-        sigma = SP.exp(2*theta[0])
-        return sigma*SP.ones([x1.shape[0],self.n_dimensions])
+        sigma = SP.exp(2*theta)
+        RV = SP.tile(sigma[SP.newaxis,:],[x1.shape[0],1])
+        return RV
 
     def Kgrad_theta(self,theta,x1,i):
         """

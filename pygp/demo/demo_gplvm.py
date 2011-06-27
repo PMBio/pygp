@@ -14,6 +14,7 @@ import pygp.optimize as opt
 import pygp.plot.gpr_plot as gpr_plot
 import pygp.priors.lnpriors as lnpriors
 import pygp.likelihood as lik
+import copy
 
 import pylab as PL
 import scipy as SP
@@ -53,7 +54,7 @@ if __name__ == '__main__':
 
     if 1:
         covariance = linear.LinearCFISO(n_dimensions=K)
-        hyperparams = {'covar': SP.log([1])}
+        hyperparams = {'covar': SP.log([1.2])}
     if 0:
         covariance = se.SqexpCFARD(n_dimensions=K)
         hyperparams = {'covar': SP.log([1]*(K+1)),'lik': SP.log([0.1])}
@@ -61,7 +62,7 @@ if __name__ == '__main__':
     if fa_noise:
         #factor analysis noise
         likelihood = lik.GaussLikARD(n_dimensions=D)
-        hyperparams['lik'] = SP.log(SP.ones(Y.shape[1]))
+        hyperparams['lik'] = SP.log(SP.ones(Y.shape[1])+0.1*SP.random.randn(Y.shape[1]))
     else:
         #standard Gaussian noise
         likelihood = lik.GaussLikISO()
@@ -73,11 +74,39 @@ if __name__ == '__main__':
     hyperparams['x'] = X0
 
     if fa_noise:
-        g = gplvm_ard.GPLVMARD(covar_func=covariance,likelihood=likelihood,x=X0,y=Y)
+        g_fa = gplvm_ard.GPLVMARD(covar_func=covariance,likelihood=likelihood,x=X0,y=Y)
     else:
         g = gplvm.GPLVM(covar_func=covariance,likelihood=likelihood,x=X0,y=Y)
 
     #try evaluating marginal likelihood first
-    g.LML(hyperparams)
+    del(hyperparams['x'])
+    Ifilter = {}
+    for key in hyperparams:
+        Ifilter[key] = SP.ones(hyperparams[key].shape,dtype='bool')
+    Ifilter['lik'][:] = False
+
+    hyperparams['covar'] = SP.array([-0.02438411])
+
+    if 1:
+        #manual gradcheck
+        relchange = 1E-5;
+        change = hyperparams['covar'][0]*relchange
+        hyperparams_ = copy.deepcopy(hyperparams)
+        xp = hyperparams['covar'][0] + change
+        pdb.set_trace()
+        hyperparams_['covar'][0] = xp
+        Lp = g.LML(hyperparams_)
+        xm = hyperparams['covar'][0] - change
+        hyperparams_['covar'][0] = xm
+        Lm = g.LML(hyperparams_)
+        diff = (Lp-Lm)/(2.*change)
+
+        anal = g.LMLgrad(hyperparams)
         
-    [opt_hyperparams,opt_lml] = opt.opt_hyper(g,hyperparams,gradcheck=True)
+    
+    if 0:
+        [opt_hyperparams,opt_lml] = opt.opt_hyper(g,hyperparams,gradcheck=True)
+
+
+    
+
