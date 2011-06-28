@@ -11,7 +11,8 @@ import scipy as SP
 import scipy.linalg as linalg
 import copy
 
-VERBOSE=True
+#Verbose implements all gradients and evaluations using naive methods and inlcudes debug asserts
+VERBOSE=False
 
 def PCA(Y, components):
     """run PCA, retrieving the first (components) principle components
@@ -46,7 +47,7 @@ class GPLVMARD(GPLVM.GPLVM):
             #depending on noise model this may be either a vector or a matrix 
             Knoise = self.likelihood.Kdiag(hyperparams['lik'],self.x)
             #noise version of S
-            Sn = Knoise + SP.tile(S[:,SP.newaxis],[1,10])
+            Sn = Knoise + SP.tile(S[:,SP.newaxis],[1,self.d])
             #inverse
             Si = 1./Sn 
             #rotate data
@@ -78,18 +79,18 @@ class GPLVMARD(GPLVM.GPLVM):
         #negative log marginal likelihood, see derivations
         lquad = 0.5* (KV['y_rot']*KV['Si']*KV['y_rot']).sum()
         ldet  = 0.5*-SP.log(KV['Si'][:,:]).sum()
-        LML   = 0.5*self.d * SP.log(2*SP.pi) + lquad + ldet
+        LML   = 0.5*self.n*self.d * SP.log(2*SP.pi) + lquad + ldet
         if VERBOSE:
             #1. slow and explicit way
             lmls_ = SP.zeros([self.d])
             for i in xrange(self.d):
                 _y = self.y[:,i]
                 sigma2 = SP.exp(2*hyperparams['lik'])
-                _K = KV['K'] + sigma2[i] * SP.eye(self.n)
+                _K = KV['K'] + SP.diag(KV['Knoise'][:,i])
                 _Ki = SP.linalg.inv(_K)
                 lquad_ = 0.5 * SP.dot(_y,SP.dot(_Ki,_y))
                 ldet_ = 0.5 * SP.log(SP.linalg.det(_K))
-                lmls_[i] = 0.5 * SP.log(2*SP.pi) + lquad_ + ldet_
+                lmls_[i] = 0.5 * self.n* SP.log(2*SP.pi) + lquad_ + ldet_
             assert SP.absolute(lmls_.sum()-LML)<1E-3, 'outch'
         return LML
 
@@ -114,7 +115,7 @@ class GPLVMARD(GPLVM.GPLVM):
             #2. deriative of the quadratic term
             y_roti = KV['y_roti']
             DKy_roti = SP.dot(Kd_rot,KV['y_roti'])
-            dlquad  = 0.5*(y_roti*DKy_roti).sum()
+            dlquad  = -0.5*(y_roti*DKy_roti).sum()
 
             if VERBOSE:
                 dldet_ = SP.zeros([self.d])
@@ -123,7 +124,8 @@ class GPLVMARD(GPLVM.GPLVM):
                     _K = KV['K'] + SP.diag(KV['Knoise'][:,d])
                     _Ki = SP.linalg.inv(_K)
                     dldet_[d] = 0.5*SP.dot(_Ki,Kd).trace()
-                    dlquad_[d] = 0.5*SP.dot(self.y[:,d],SP.dot(_Ki,SP.dot(Kd,SP.dot(_Ki,self.y[:,d]))))
+                    dKq = SP.dot(SP.dot(_Ki,Kd),_Ki)
+                    dlquad_[d] = -0.5*SP.dot(SP.dot(self.y[:,d],dKq),self.y[:,d])
 
                     
                 assert SP.absolute(dldet-dldet_.sum())<1E-3, 'outch'
@@ -147,7 +149,7 @@ class GPLVMARD(GPLVM.GPLVM):
         dldet = 0.5*(Kd*KV['Si']).sum(axis=0)
         #quadratic term
         y_roti = KV['y_roti']
-        dlquad = 0.5 * (y_roti * Kd * y_roti).sum(axis=0)
+        dlquad = -0.5 * (y_roti * Kd * y_roti).sum(axis=0)
         if VERBOSE:
             dldet_  = SP.zeros([self.d])
             dlquad_ = SP.zeros([self.d])
@@ -155,7 +157,7 @@ class GPLVMARD(GPLVM.GPLVM):
                 _K = KV['K'] + SP.diag(KV['Knoise'][:,d])
                 _Ki = SP.linalg.inv(_K)
                 dldet_[d] = 0.5* SP.dot(_Ki,SP.diag(Kd[:,d])).trace()
-                dlquad_[d] = 0.5*SP.dot(self.y[:,d],SP.dot(_Ki,SP.dot(SP.diag(Kd[:,d]),SP.dot(_Ki,self.y[:,d]))))
+                dlquad_[d] = -0.5*SP.dot(self.y[:,d],SP.dot(_Ki,SP.dot(SP.diag(Kd[:,d]),SP.dot(_Ki,self.y[:,d]))))
 
             assert (SP.absolute(dldet-dldet_)<1E-3).all(), 'outch'
             assert (SP.absolute(dlquad-dlquad_)<1E-3).all(), 'outch'
@@ -173,32 +175,50 @@ class GPLVMARD(GPLVM.GPLVM):
         if not 'x' in hyperparams:
             return {}
 
-        pdb.set_trace()
+        try:   
+            KV = self.get_covariances(hyperparams)
+        except linalg.LinAlgError:
+            LG.error("exception caught (%s)" % (str(hyperparams)))
+            return 1E6
+
+
         pass
 
 	dlMl = SP.zeros([self.n,len(self.gplvm_dimensions)])
-        W = self._covar_cache['W']
 
+        #U*Si*y
+        UYi=SP.dot(KV['U'],KV['y_roti'])
+        
         for i in xrange(len(self.gplvm_dimensions)):
             d = self.gplvm_dimensions[i]
             #dKx is general, not knowing that we are computing the diagonal:
             dKx = self.covar.Kgrad_x(hyperparams['covar'], self.x, self.x, d)
-            dKx_diag = self.covar.Kgrad_xdiag(hyperparams['covar'], self.x, d)
-            #set diagonal
-            dKx.flat[::(dKx.shape[1] + 1)] = dKx_diag
-            #precalc elementwise product of W and K
-            WK = W * dKx
-            if 0:
-                for n in xrange(self.n):
+            #vector with all diagonals of SP.dot(SP.dot(KV['U'].T,dKxn),KV['U']) for n=1..N
+            dKx_rot = 2*KV['U']*SP.dot(dKx,KV['U'])
+            #caching for easier construction below
+            dKx_U   = SP.dot(dKx,UYi)
+            
+            for n in xrange(self.n):
+                dldet  = 0.5* (dKx_rot[n,:][:,SP.newaxis]*KV['Si']).sum()
+                #create SP.dot(dKxn,Uyi) using precaclulated dKx_U vectors
+                dxU = SP.zeros([self.n, self.d])
+                dxU[n,:] = dKx_U[n,:]
+                dxU[:,:] += SP.outer(dKx[n,:],UYi[n,:])
+                #the res ist now UYi[:,d] * dxU[:,i], pointwise multiplication to do this for all d at the same time and some over them:
+                dlquad = -0.5*(UYi*dxU).sum()
+                dlMl[n,i] = dldet + dlquad
+                if VERBOSE:
+                    #naive way
                     dKxn = SP.zeros([self.n, self.n])
-                    dKxn[n, :] = dKx[n, :]
-                    dKxn[:, n] = dKx[n, :]
-                    dlMl[n, i] = 0.5 * SP.dot(W, dKxn).trace()
-                    pass
-            if 1:
-                #fast calculation
-                #we need twice the sum WK because of the matrix structure above, WK.diagonal() accounts for the double counting
-                dlMl[:, i] = 0.5 * (2 * WK.sum(axis=1) - WK.diagonal())
+                    dKxn[n, :]  = dKx[n, :]
+                    dKxn[:, n] += dKx[n, :]
+                    Kd_rot = SP.dot(SP.dot(KV['U'].T,dKxn),KV['U'])
+                    y_roti = KV['y_roti']
+                    DKy_roti = SP.dot(Kd_rot,KV['y_roti'])
+                    dldet = 0.5*(Kd_rot.diagonal()[:,SP.newaxis]*KV['Si']).sum()            
+                    dlquad  = -0.5*(y_roti*DKy_roti).sum()
+                    assert SP.absolute(dlMl[n,i]-(dldet+dlquad)).max()<1E-5 , 'outch'
+            
             pass
         RV = {'x':dlMl}
         return RV
@@ -213,6 +233,7 @@ if __name__ == '__main__':
     import pygp.priors.lnpriors as lnpriors
     import pygp.likelihood as lik
     import copy
+    import logging as LG
 
     LG.basicConfig(level=LG.INFO)
     
@@ -229,7 +250,7 @@ if __name__ == '__main__':
 
 
     sim_fa_noise = False
-    if sim_fa_nois:
+    if sim_fa_noise:
         #inerpolate noise levels
         noise_levels = SP.linspace(0.1,1.0,Y.shape[1])
         Ynoise =noise_levels*random.randn(N,D)
@@ -260,21 +281,33 @@ if __name__ == '__main__':
     X0 = SP.random.randn(N,K)
     X0 = Spca
     hyperparams['x'] = X0
-
-    g_fa = gplvm_ard.GPLVMARD(covar_func=covariance,likelihood=likelihood,x=X0,y=Y)
-    g = gplvm.GPLVM(covar_func=covariance,likelihood=likelihood,x=X0,y=Y)
+    hyperparams_fa['x'] = X0
 
     #try evaluating marginal likelihood first
-    del(hyperparams['x'])
-    del(hyperparams_fa['x'])
+    #del(hyperparams['x'])
+    #del(hyperparams_fa['x'])
+
+
+    g_fa = GPLVMARD(covar_func=covariance,likelihood=likelihood_fa,x=X0,y=Y)
+    g = gplvm.GPLVM(covar_func=covariance,likelihood=likelihood,x=X0,y=Y)
+    dg = g.LMLgrad(hyperparams)
+    dg_fa = g_fa.LMLgrad(hyperparams_fa)
+
+
+    if 0:
+        lml=g.LML(hyperparams)
+        lml_fa = g_fa.LML(hyperparams_fa)
+        
+
+
     Ifilter = {}
     for key in hyperparams:
         Ifilter[key] = SP.ones(hyperparams[key].shape,dtype='bool')
     Ifilter['lik'][:] = False
 
-    hyperparams['covar'] = SP.array([-0.02438411])
+    #hyperparams['covar'] = SP.array([-0.02438411])
 
-    if 1:
+    if 0:
         #manual gradcheck
         relchange = 1E-5;
         change = hyperparams['covar'][0]*relchange
@@ -291,7 +324,7 @@ if __name__ == '__main__':
         anal = g.LMLgrad(hyperparams)
         
     
-    if 0:
+    if 1:
         [opt_hyperparams,opt_lml] = opt.opt_hyper(g,hyperparams,gradcheck=True)
 
 

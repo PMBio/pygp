@@ -290,8 +290,10 @@ class GP(object):
             return 1E6
 
         #Change: no supports multi dimensional stuff for GPLVM
-        LML = 0.5 * (KV['alpha'] * self._get_y()).sum() + self._get_target_dimension() * (SP.log(KV['L'].diagonal()).sum() + 0.5 * self._get_input_dimension() * SP.log(2 * SP.pi))
-        return LML
+        lml_quad = 0.5 * (KV['alpha'] * self._get_y()).sum()
+        lml_det  = self._get_target_dimension() * (SP.log(KV['L'].diagonal()).sum())
+        lml_const = 0.5 * self._get_target_dimension()*self._get_input_dimension() * SP.log(2 * SP.pi)
+        return (lml_quad+lml_det+lml_const)
 
 
     def _LMLgrad_covar(self, hyperparams):

@@ -25,9 +25,9 @@ if __name__ == '__main__':
     LG.basicConfig(level=LG.INFO)
 
     #1. simulate data from a linear PCA model
-    N = 100
-    K = 3
-    D = 10
+    N = 500
+    K = 5
+    D = 20
 
     SP.random.seed(1)
     S = SP.random.randn(N,K)
@@ -36,11 +36,15 @@ if __name__ == '__main__':
     Y = SP.dot(W,S.T).T
 
     #factor analaysis nise, i.e. one distinct noise level per feature dimension?
-    fa_noise = True        
+    sim_fa_noise = True
+    #use fa noise for analysis?
+    fa_noise = True
 
-    if fa_noise:
+    if sim_fa_noise:
         #inerpolate noise levels
-        noise_levels = SP.linspace(0.1,1.0,Y.shape[1])
+        noise_levels = 0.1*SP.ones([D])
+        #more noise level for first half of dimensions
+        noise_levels[0:D/2] = 0.5
         Ynoise =noise_levels*random.randn(N,D)
         Y+=Ynoise
     else:
@@ -57,55 +61,36 @@ if __name__ == '__main__':
         hyperparams = {'covar': SP.log([1.2])}
     if 0:
         covariance = se.SqexpCFARD(n_dimensions=K)
-        hyperparams = {'covar': SP.log([1]*(K+1)),'lik': SP.log([0.1])}
-        
-    if fa_noise:
-        #factor analysis noise
-        likelihood = lik.GaussLikARD(n_dimensions=D)
-        hyperparams['lik'] = SP.log(SP.ones(Y.shape[1])+0.1*SP.random.randn(Y.shape[1]))
-    else:
-        #standard Gaussian noise
-        likelihood = lik.GaussLikISO()
-        hyperparams['lik'] = SP.log([0.1])
-        
+        hyperparams = {'covar': SP.log([1]*(K+1))}
+
     #initialization of X at arandom
     X0 = SP.random.randn(N,K)
     X0 = Spca
     hyperparams['x'] = X0
 
-    if fa_noise:
-        g_fa = gplvm_ard.GPLVMARD(covar_func=covariance,likelihood=likelihood,x=X0,y=Y)
-    else:
-        g = gplvm.GPLVM(covar_func=covariance,likelihood=likelihood,x=X0,y=Y)
+    #copy for FA
+    hyperparams_fa = copy.deepcopy(hyperparams)
 
+    #factor analysis noise
+    likelihood_fa = lik.GaussLikARD(n_dimensions=D)
+    hyperparams_fa['lik'] = SP.log(SP.ones(Y.shape[1])+0.1*SP.random.randn(Y.shape[1]))
+    g_fa = gplvm_ard.GPLVMARD(covar_func=covariance,likelihood=likelihood_fa,x=X0,y=Y)
+    
+    #standard Gaussian noise
+    likelihood = lik.GaussLikISO()
+    hyperparams['lik'] = SP.log([0.1])
+    g = gplvm.GPLVM(covar_func=covariance,likelihood=likelihood,x=X0,y=Y)
+        
+        
     #try evaluating marginal likelihood first
     del(hyperparams['x'])
-    Ifilter = {}
-    for key in hyperparams:
-        Ifilter[key] = SP.ones(hyperparams[key].shape,dtype='bool')
-    Ifilter['lik'][:] = False
-
-    hyperparams['covar'] = SP.array([-0.02438411])
 
     if 1:
-        #manual gradcheck
-        relchange = 1E-5;
-        change = hyperparams['covar'][0]*relchange
-        hyperparams_ = copy.deepcopy(hyperparams)
-        xp = hyperparams['covar'][0] + change
-        pdb.set_trace()
-        hyperparams_['covar'][0] = xp
-        Lp = g.LML(hyperparams_)
-        xm = hyperparams['covar'][0] - change
-        hyperparams_['covar'][0] = xm
-        Lm = g.LML(hyperparams_)
-        diff = (Lp-Lm)/(2.*change)
-
-        anal = g.LMLgrad(hyperparams)
-        
-    
-    if 0:
+        print "running standard gplvm"
         [opt_hyperparams,opt_lml] = opt.opt_hyper(g,hyperparams,gradcheck=True)
+        print "running fa noise gplvm"
+        [opt_hyperparams_fa,opt_lml] = opt.opt_hyper(g_fa,hyperparams_fa,gradcheck=True)
+
 
 
     
