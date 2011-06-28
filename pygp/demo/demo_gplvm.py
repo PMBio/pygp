@@ -25,7 +25,7 @@ if __name__ == '__main__':
     LG.basicConfig(level=LG.INFO)
 
     #1. simulate data from a linear PCA model
-    N = 500
+    N = 100
     K = 5
     D = 20
 
@@ -44,7 +44,7 @@ if __name__ == '__main__':
         #inerpolate noise levels
         noise_levels = 0.1*SP.ones([D])
         #more noise level for first half of dimensions
-        noise_levels[0:D/2] = 0.5
+        noise_levels[0:D/2] = 1.0
         Ynoise =noise_levels*random.randn(N,D)
         Y+=Ynoise
     else:
@@ -83,13 +83,23 @@ if __name__ == '__main__':
         
         
     #try evaluating marginal likelihood first
-    del(hyperparams['x'])
 
-    if 1:
-        print "running standard gplvm"
-        [opt_hyperparams,opt_lml] = opt.opt_hyper(g,hyperparams,gradcheck=True)
-        print "running fa noise gplvm"
-        [opt_hyperparams_fa,opt_lml] = opt.opt_hyper(g_fa,hyperparams_fa,gradcheck=True)
+    #this works very well, without X
+    del(hyperparams['x'])
+    del(hyperparams_fa['x'])
+    print "running standard gplvm"
+    [opt_hyperparams,opt_lml] = opt.opt_hyper(g,hyperparams,gradcheck=True)
+    print "running fa noise gplvm"
+    [opt_hyperparams_fa,opt_lml_fa] = opt.opt_hyper(g_fa,hyperparams_fa,gradcheck=True)
+
+    #now include x in optimization.
+    #looks like this i more difficutl for the fa model:
+    hyperparams['x'] = X0
+    hyperparams_fa['x'] = X0
+    print "running standard gplvm"
+    [opt_hyperparams,opt_lml2] = opt.opt_hyper(g,hyperparams,gradcheck=True)
+    print "running fa noise gplvm"
+    [opt_hyperparams_fa,opt_lml_fa2] = opt.opt_hyper(g_fa,hyperparams_fa,gradcheck=True)
 
 
 

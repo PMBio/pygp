@@ -141,8 +141,12 @@ class GPLVMARD(GPLVM.GPLVM):
         """derivative of the likelihood parameters"""
 
 	logtheta = hyperparams['covar']
-	KV = self._covar_cache
-
+        try:   
+            KV = self.get_covariances(hyperparams)
+        except linalg.LinAlgError:
+            LG.error("exception caught (%s)" % (str(hyperparams)))
+            return 1E6
+	
         #loop through all dimensions
         #logdet term:
         Kd = 2*KV['Knoise']
@@ -232,13 +236,14 @@ if __name__ == '__main__':
     import pygp.plot.gpr_plot as gpr_plot
     import pygp.priors.lnpriors as lnpriors
     import pygp.likelihood as lik
+    import optimize_test
     import copy
     import logging as LG
 
     LG.basicConfig(level=LG.INFO)
     
     #1. simulate data from a linear PCA model
-    N = 100
+    N = 200
     K = 3
     D = 10
 
@@ -256,7 +261,7 @@ if __name__ == '__main__':
         Ynoise =noise_levels*random.randn(N,D)
         Y+=Ynoise
     else:
-        Y+= 0.5*SP.random.randn(N,D)
+        Y+= 0.1*SP.random.randn(N,D)
 
     #use "standard PCA"
     [Spca,Wpca] = gplvm.PCA(Y,K)
@@ -284,29 +289,23 @@ if __name__ == '__main__':
     hyperparams_fa['x'] = X0
 
     #try evaluating marginal likelihood first
-    #del(hyperparams['x'])
-    #del(hyperparams_fa['x'])
+    del(hyperparams['x'])
+    del(hyperparams_fa['x'])
 
 
     g_fa = GPLVMARD(covar_func=covariance,likelihood=likelihood_fa,x=X0,y=Y)
     g = gplvm.GPLVM(covar_func=covariance,likelihood=likelihood,x=X0,y=Y)
-    dg = g.LMLgrad(hyperparams)
-    dg_fa = g_fa.LMLgrad(hyperparams_fa)
 
 
-    if 0:
+    if 1:
         lml=g.LML(hyperparams)
         lml_fa = g_fa.LML(hyperparams_fa)
+        dg = g.LMLgrad(hyperparams)
+        dg_fa = g_fa.LMLgrad(hyperparams_fa)
+
         
 
-
-    Ifilter = {}
-    for key in hyperparams:
-        Ifilter[key] = SP.ones(hyperparams[key].shape,dtype='bool')
-    Ifilter['lik'][:] = False
-
     #hyperparams['covar'] = SP.array([-0.02438411])
-
     if 0:
         #manual gradcheck
         relchange = 1E-5;
@@ -324,8 +323,39 @@ if __name__ == '__main__':
         anal = g.LMLgrad(hyperparams)
         
     
-    if 1:
-        [opt_hyperparams,opt_lml] = opt.opt_hyper(g,hyperparams,gradcheck=True)
+
+    Ifilter_fa = {}
+    for key in hyperparams_fa:
+        Ifilter_fa[key] = SP.ones(hyperparams_fa[key].shape,dtype='bool')
+    #Ifilter_fa['lik'][:] = False
+
+    Ifilter = {}
+    for key in hyperparams:
+        Ifilter[key] = SP.ones(hyperparams[key].shape,dtype='bool')
+    #Ifilter['lik'][:] = False
+
+
+    [opt_hyperparams,opt_lml] = opt.opt_hyper(g,hyperparams,gradcheck=True,Ifilter=Ifilter)
+#    hyperparams['covar'] = opt_hyperparams['covar']
+#    hyperparams['x']     = opt_hyperparams['x']
+#    hyperparams_fa['covar'] = opt_hyperparams['covar']
+#    hyperparams_fa['x']     = opt_hyperparams['x']
+
+
+    [opt_hyperparams_fa,opt_lml_fa] = opt.opt_hyper(g_fa,hyperparams_fa,gradcheck=True,Ifilter=Ifilter)
+    #[opt_hyperparams_fa,opt_lml_fa] = optimize_test.opt_hyper(g_fa,g,hyperparams_fa,hyperparams,Ifilter=Ifilter_fa,Ifilter2=Ifilter,gradcheck=True)
+    
+    if 0:
+    
+
+        lml=g.LML(opt_hyperparams)
+        lml_fa = g_fa.LML(hyperparams_fa)
+        dg = g.LMLgrad(opt_hyperparams)
+        dg_fa = g_fa.LMLgrad(hyperparams_fa)
+
+        
+        #[opt_hyperparams,opt_lml] = opt.opt_hyper(g_fa,hyperparams_fa,gradcheck=True,Ifilter=Ifilter_fa)
+
 
 
     
