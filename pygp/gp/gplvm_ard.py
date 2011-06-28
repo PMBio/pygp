@@ -189,6 +189,8 @@ class GPLVMARD(GPLVM.GPLVM):
         pass
 
 	dlMl = SP.zeros([self.n,len(self.gplvm_dimensions)])
+        #dlMl_det  = SP.zeros([self.n,len(self.gplvm_dimensions)])
+        #dlMl_quad = SP.zeros([self.n,len(self.gplvm_dimensions)])
 
         #U*Si*y
         UYi=SP.dot(KV['U'],KV['y_roti'])
@@ -201,12 +203,25 @@ class GPLVMARD(GPLVM.GPLVM):
             dKx_rot = 2*KV['U']*SP.dot(dKx,KV['U'])
             #caching for easier construction below
             dKx_U   = SP.dot(dKx,UYi)
-            
+            if 0:
+                # an attept to vectorize this but I think we should use pyrex and dont make this code completely unreadable.
+                #log det
+                dKx_rot_tile  = SP.tile(dKx_rot[:,:,SP.newaxis],[1,1,self.d])
+                Si_tile       = SP.tile(KV['Si'][SP.newaxis,:,:],[self.n,1,1])
+                dlMl_det[:,i] = 0.5*( dKx_rot_tile*Si_tile).sum(axis=2).sum(axis=1)
+                #quad
+                UYi_tile = SP.tile(UYi[SP.newaxis,:,:],[self.n,1,1])
+                dxU_tile = SP.zeros([self.n,self.n,self.d])
+                dxU_tile[:,:,:] = SP.tile(dKx[:,:,SP.newaxis],[1,1,self.d])
+                dxU_tile[:,:,:] *= SP.tile(UYi[:,SP.newaxis,:],[1,self.n,1])
+                #dxU_tile[:,:,:] += SP.tile(dKx_U[:,SP.newaxis,:],[1,self.n,1])
+                dlMl_quad[:,i]  = -0.5*dxU_tile.sum(axis=2).sum(axis=1)            
             for n in xrange(self.n):
                 dldet  = 0.5* (dKx_rot[n,:][:,SP.newaxis]*KV['Si']).sum()
                 #create SP.dot(dKxn,Uyi) using precaclulated dKx_U vectors
                 dxU = SP.zeros([self.n, self.d])
                 dxU[n,:] = dKx_U[n,:]
+                
                 dxU[:,:] += SP.outer(dKx[n,:],UYi[n,:])
                 #the res ist now UYi[:,d] * dxU[:,i], pointwise multiplication to do this for all d at the same time and some over them:
                 dlquad = -0.5*(UYi*dxU).sum()
@@ -222,8 +237,7 @@ class GPLVMARD(GPLVM.GPLVM):
                     dldet = 0.5*(Kd_rot.diagonal()[:,SP.newaxis]*KV['Si']).sum()            
                     dlquad  = -0.5*(y_roti*DKy_roti).sum()
                     assert SP.absolute(dlMl[n,i]-(dldet+dlquad)).max()<1E-5 , 'outch'
-            
-            pass
+        pass
         RV = {'x':dlMl}
         return RV
         
@@ -289,8 +303,8 @@ if __name__ == '__main__':
     hyperparams_fa['x'] = X0
 
     #try evaluating marginal likelihood first
-    del(hyperparams['x'])
-    del(hyperparams_fa['x'])
+    #del(hyperparams['x'])
+    #del(hyperparams_fa['x'])
 
 
     g_fa = GPLVMARD(covar_func=covariance,likelihood=likelihood_fa,x=X0,y=Y)
@@ -335,12 +349,11 @@ if __name__ == '__main__':
     #Ifilter['lik'][:] = False
 
 
-    [opt_hyperparams,opt_lml] = opt.opt_hyper(g,hyperparams,gradcheck=True,Ifilter=Ifilter)
+    #[opt_hyperparams,opt_lml] = opt.opt_hyper(g,hyperparams,gradcheck=True,Ifilter=Ifilter)
 #    hyperparams['covar'] = opt_hyperparams['covar']
 #    hyperparams['x']     = opt_hyperparams['x']
 #    hyperparams_fa['covar'] = opt_hyperparams['covar']
 #    hyperparams_fa['x']     = opt_hyperparams['x']
-
 
     [opt_hyperparams_fa,opt_lml_fa] = opt.opt_hyper(g_fa,hyperparams_fa,gradcheck=True,Ifilter=Ifilter)
     #[opt_hyperparams_fa,opt_lml_fa] = optimize_test.opt_hyper(g_fa,g,hyperparams_fa,hyperparams,Ifilter=Ifilter_fa,Ifilter2=Ifilter,gradcheck=True)

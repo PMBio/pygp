@@ -27,7 +27,7 @@ if __name__ == '__main__':
     #1. simulate data from a linear PCA model
     N = 100
     K = 5
-    D = 20
+    D = 100
 
     SP.random.seed(1)
     S = SP.random.randn(N,K)
@@ -87,21 +87,23 @@ if __name__ == '__main__':
     #this works very well, without X
     del(hyperparams['x'])
     del(hyperparams_fa['x'])
-    print "running standard gplvm"
-    [opt_hyperparams,opt_lml] = opt.opt_hyper(g,hyperparams,gradcheck=True)
-    print "running fa noise gplvm"
-    [opt_hyperparams_fa,opt_lml_fa] = opt.opt_hyper(g_fa,hyperparams_fa,gradcheck=True)
+    if 0:
+        print "running standard gplvm"
+        [opt_hyperparams,opt_lml] = opt.opt_hyper(g,hyperparams,gradcheck=True)
+        print "running fa noise gplvm"
+        [opt_hyperparams_fa,opt_lml_fa] = opt.opt_hyper(g_fa,hyperparams_fa,gradcheck=True)
 
     #now include x in optimization.
     #looks like this i more difficutl for the fa model:
+
+
+    bounds = {}
+    bounds['lik'] = SP.array([[-5.,5.]]*D)
     hyperparams['x'] = X0
     hyperparams_fa['x'] = X0
     print "running standard gplvm"
     [opt_hyperparams,opt_lml2] = opt.opt_hyper(g,hyperparams,gradcheck=True)
+
     print "running fa noise gplvm"
-    [opt_hyperparams_fa,opt_lml_fa2] = opt.opt_hyper(g_fa,hyperparams_fa,gradcheck=True)
-
-
-
-    
-
+    [opt_hyperparams_fa,opt_lml_fa2] = opt.opt_hyper(g_fa,hyperparams_fa,gradcheck=True,bounds=bounds)
+   
