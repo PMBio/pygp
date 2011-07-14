@@ -25,9 +25,9 @@ if __name__ == '__main__':
     LG.basicConfig(level=LG.INFO)
 
     #1. simulate data from a linear PCA model
-    N = 100
+    N = 50
     K = 5
-    D = 100
+    D = 200
 
     SP.random.seed(1)
     S = SP.random.randn(N,K)
@@ -102,8 +102,9 @@ if __name__ == '__main__':
     hyperparams['x'] = X0
     hyperparams_fa['x'] = X0
     print "running standard gplvm"
-    [opt_hyperparams,opt_lml2] = opt.opt_hyper(g,hyperparams,gradcheck=True)
-
-    print "running fa noise gplvm"
-    [opt_hyperparams_fa,opt_lml_fa2] = opt.opt_hyper(g_fa,hyperparams_fa,gradcheck=True,bounds=bounds)
+    [opt_hyperparams,opt_lml2] = opt.opt_hyper(g,hyperparams,gradcheck=False)
+    
+    if 0:
+        print "running fa noise gplvm"
+        [opt_hyperparams_fa,opt_lml_fa2] = opt.opt_hyper(g_fa,hyperparams_fa,gradcheck=True,bounds=bounds)
    

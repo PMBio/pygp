@@ -10,6 +10,7 @@ from pygp.covar import CovarianceFunction
 from pygp.covar.dist import dist
 import scipy as SP
 import sys
+import pdb
 sys.path.append('../')
 
 
