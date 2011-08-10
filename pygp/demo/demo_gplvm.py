@@ -62,7 +62,7 @@ if __name__ == '__main__':
     if 0:
         covariance = se.SqexpCFARD(n_dimensions=K)
         hyperparams = {'covar': SP.log([1]*(K+1))}
-
+    import pdb;pdb.set_trace()
     #initialization of X at arandom
     X0 = SP.random.randn(N,K)
     X0 = Spca
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     hyperparams_fa['x'] = X0
     print "running standard gplvm"
     [opt_hyperparams,opt_lml2] = opt.opt_hyper(g,hyperparams,gradcheck=False)
-    
+    import pdb;pdb.set_trace()
     if 0:
         print "running fa noise gplvm"
         [opt_hyperparams_fa,opt_lml_fa2] = opt.opt_hyper(g_fa,hyperparams_fa,gradcheck=True,bounds=bounds)
