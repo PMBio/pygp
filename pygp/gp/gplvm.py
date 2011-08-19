@@ -38,15 +38,15 @@ class GPLVM(GP):
     def __init__(self, gplvm_dimensions=None, **kw_args):
         """gplvm_dimensions: dimensions to learn using gplvm, default -1; i.e. all"""
         self.gplvm_dimensions = gplvm_dimensions
-        GP.__init__(self, **kw_args)
+        super(GPLVM, self).__init__(**kw_args)
 
 
     def setData(self, gplvm_dimensions=None, **kw_args):
         GP.setData(self, **kw_args)
         #handle non-informative gplvm_dimensions vector
-        if gplvm_dimensions is None:
+        if self.gplvm_dimensions is None and gplvm_dimensions is None:
             self.gplvm_dimensions = SP.arange(self.x.shape[1])
-        else:
+        elif gplvm_dimensions is not None:
             self.gplvm_dimensions = gplvm_dimensions
         
     def _update_inputs(self, hyperparams):
@@ -140,9 +140,9 @@ class GPLVM(GP):
         if not 'x' in hyperparams:
             return {}
         
-	dlMl = SP.zeros([self.n,len(self.gplvm_dimensions)])
+        dlMl = SP.zeros([self.n,len(self.gplvm_dimensions)])
         W = self._covar_cache['W']
-
+        
         #the standard procedure would be
         #dlMl[n,i] = 0.5*SP.odt(W,dKx_n,i).trace()
         #we can calcualte all the derivatives efficiently; see also interface of Kd_dx of covar

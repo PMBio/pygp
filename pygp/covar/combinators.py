@@ -144,7 +144,7 @@ class ProductCF(CovarianceFunction):
         
         for nc in xrange(len(covars)):
             covar = covars[nc]
-            assert isinstance(covar, CovarianceFunction), 'ProductCF: ProductCF is constructed from a list of covaraince functions'
+            #assert isinstance(covar, CovarianceFunction), 'ProductCF: ProductCF is constructed from a list of covaraince functions'
             Nparam = covar.get_number_of_parameters()
             self.n_params_list.append(Nparam)
             self.covars_theta_I.append(SP.arange(i, i + covar.get_number_of_parameters()))
@@ -152,7 +152,7 @@ class ProductCF(CovarianceFunction):
 #            for ip in xrange(Nparam):
 #                self.covars_covar_I.append(nc)
             
-            i += covar.get_number_of_parameters()
+            i += Nparam
             
         self.n_params_list = SP.array(self.n_params_list)
         self.n_hyperparameters = self.n_params_list.sum()
@@ -189,7 +189,7 @@ class ProductCF(CovarianceFunction):
         return K
 
 
-    def Kd(self, theta, x1, i):
+    def Kgrad_theta(self, theta, x, i):
         '''The derivatives of the covariance matrix for
         the i-th hyperparameter.
         
@@ -217,20 +217,78 @@ class ProductCF(CovarianceFunction):
         covar = self.covars[nc]
         d = self.covars_theta_I[nc].min()
         j = i - d
-        Kd = covar.Kd(theta[self.covars_theta_I[nc]], x1, j)
+        Kd = covar.Kgrad_theta(theta[self.covars_theta_I[nc]], x, j)
         for ind in xrange(len(self.covars)):
             if(ind is not nc):
                 _theta = theta[self.covars_theta_I[ind]]
-                Kd *= self.covars[ind].K(_theta, x1)
+                Kd *= self.covars[ind].K(_theta, x)
         return Kd
 
-    def get_Iexp(self, theta):
-        Iexp = []
+    #derivative with respect to inputs
+    def Kgrad_x(self, theta, x1, x2, d):
+        assert theta.shape[0] == self.n_hyperparameters, 'K: theta has wrong shape'
+        RV_sum = SP.zeros([x1.shape[0], x1.shape[0]])
+        RV_prod = SP.ones([x1.shape[0], x1.shape[0]])
         for nc in xrange(len(self.covars)):
-            covar = self.covars[nc]
-            _theta = theta[self.covars_theta_I[nc]]
-            Iexp = SP.concatenate((Iexp, covar.get_Iexp(_theta)))
-        return SP.array(Iexp, dtype='bool')
+            RV_prod = SP.ones([x1.shape[0], x1.shape[0]])
+            for j in xrange(len(self.covars)):
+                _theta = theta[self.covars_theta_I[j]]
+                covar = self.covars[j]
+                if(j==nc):
+                    RV_prod*=covar.Kgrad_x(_theta,x1,x2,d)
+                else:
+                    RV_prod*=covar.K(_theta, x1, x2)
+            RV_sum += RV_prod
+        return RV_sum
+#            covar = self.covars[nc]
+#            if(d in covar.dimension_indices):
+#                dims = covar.dimension_indices.copy()
+#                #covar.set_dimension_indices([d])
+#                _theta = theta[self.covars_theta_I[nc]]
+#                K = covar.K(_theta,x1,x2)
+#                RV_sum += covar.Kgrad_x(_theta, x1, x2, d)/K
+#                #import pdb;pdb.set_trace()
+#                RV_prod *= K
+#                #covar.set_dimension_indices(dims)
+#        return RV_sum*RV_prod
+    
+    def Kgrad_xdiag(self, theta, x1, d):
+        assert theta.shape[0] == self.n_hyperparameters, 'K: theta has wrong shape'
+#        RV_sum = SP.zeros([x1.shape[0], x1.shape[0]])
+#        RV_prod = SP.ones([x1.shape[0], x1.shape[0]])
+#        for nc in xrange(len(self.covars)):
+#            covar = self.covars[nc]
+#            _theta = theta[self.covars_theta_I[nc]]
+#            if(d in covar.dimension_indices):
+#                dims = covar.dimension_indices.copy()
+#                #covar.set_dimension_indices([d])
+#                _theta = theta[self.covars_theta_I[nc]]
+#                K = covar.Kdiag(_theta,x1)
+#                RV_sum += covar.Kgrad_xdiag(_theta, x1, d)/K
+#                RV_prod *= K
+#                #covar.set_dimension_indices(dims)
+#        return RV_sum * RV_prod
+        RV_sum = SP.zeros([x1.shape[0], x1.shape[0]])
+        #RV_prod = SP.ones([x1.shape[0], x1.shape[0]])
+        for nc in xrange(len(self.covars)):
+            RV_prod = SP.ones([x1.shape[0], x1.shape[0]])
+            for j in xrange(len(self.covars)):
+                _theta = theta[self.covars_theta_I[j]]
+                covar = self.covars[j]
+                if(j==nc):
+                    RV_prod*=covar.Kgrad_xdiag(_theta,x1,d)
+                else:
+                    RV_prod*=covar.K(_theta, x1, x1)
+            RV_sum += RV_prod
+        return RV_sum
+
+#    def get_Iexp(self, theta):
+#        Iexp = []
+#        for nc in xrange(len(self.covars)):
+#            covar = self.covars[nc]
+#            _theta = theta[self.covars_theta_I[nc]]
+#            Iexp = SP.concatenate((Iexp, covar.get_Iexp(_theta)))
+#        return SP.array(Iexp, dtype='bool')
 
 class ShiftCF(CovarianceFunction):
     """

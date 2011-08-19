@@ -90,6 +90,7 @@ class CovarianceFunction(object):
 
         """
         LG.critical("implement K")
+        print("%s: Function K not yet implemented"%(self.__class__))
         return None
         pass
 
@@ -102,6 +103,7 @@ class CovarianceFunction(object):
         more efficiently.
         """
         LG.debug("No Kdiag specified; Return default naive computation.")
+        print("%s: Function Kdiag not yet implemented"%(self.__class__))
         return self.K(theta,x1).diagonal()
         
         
@@ -138,6 +140,7 @@ class CovarianceFunction(object):
         d/dx1^{i,d} K(X1,X2)
         """
         LG.critical("implement Kgrad_x")
+        print("%s: Function Kgrad_x not yet implemented"%(self.__class__))
         return None
 
     def Kgrad_xdiag(self,theta,x1,d):
@@ -147,6 +150,7 @@ class CovarianceFunction(object):
         d/dx1^{i,d} diag(K(X1,X2))
         """
         LG.critical("implement the partial derivative w.r.t x")
+        print("%s: Function Kgrad_xdiag not yet implemented"%(self.__class__))
         return None
 
     def get_hyperparameter_names(self):

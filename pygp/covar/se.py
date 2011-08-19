@@ -79,6 +79,7 @@ class SqexpCFARD(CovarianceFunction):
         See :py:class:`pygp.covar.CovarianceFunction`
         """
         #diagonal is independent of data
+        x1 = self._filter_x(x1)
         V0 = SP.exp(2*theta[0])
         return V0*SP.exp(0)*SP.ones([x1.shape[0]])
     
@@ -115,10 +116,13 @@ class SqexpCFARD(CovarianceFunction):
         **Parameters:**
         See :py:class:`pygp.covar.CovarianceFunction`
         """
+        if(d not in self.dimension_indices):
+            return SP.zeros([x1.shape[0],x2.shape[0]])
+        RV = self.K(theta,x1)
         x1, x2 = self._filter_input_dimensions(x1,x2)
+        d -= self.dimension_indices.min()
         L2  = SP.exp(2*theta[1:1+self.n_dimensions])
         #due to the eexp we always get he covariance as prefactors
-        RV = self.K(theta,x1)
         #RV*= (-1)* (x1[:,d]-x2[:,d])/L2[d]# old one
         D = (x1[:,d].reshape(1,-1)-x2[:,d].reshape(-1,1))
         RV*= (-1)* D/L2[d]# new one

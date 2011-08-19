@@ -31,9 +31,9 @@ class LinearCFISO(CovarianceFunction):
         RV = A*SP.dot(x1,x2.T)
         return RV
 
-    def Kdiag(self,theta,x1,i):
+    def Kdiag(self,theta,x1):
         x1 = self._filter_x(x1)
-        RV = SP.dot(x1,x1).sum(axis=1)
+        RV = SP.dot(x1,x1.T).sum(axis=1)
         RV*=2
         return RV
 
@@ -46,20 +46,23 @@ class LinearCFISO(CovarianceFunction):
 
 
     def Kgrad_x(self,theta,x1,x2,d):
-        A = SP.exp(2*theta[0])
+        x1, x2 = self._filter_input_dimensions(x1,x2)
         RV = SP.zeros([x1.shape[0],x2.shape[0]])
         if d not in self.dimension_indices:
             return RV
+        d-=self.dimension_indices.min()
+        A = SP.exp(2*theta[0])
         RV[:,:] = A*x2[:,d]
         return RV
 
     
     def Kgrad_xdiag(self,theta,x1,d):
         """derivative w.r.t diagonal of self covariance matrix"""
-        A = SP.exp(2*theta[0])
+        x1 = self._filter_x(x1)
         RV = SP.zeros([x1.shape[0]])
         if d not in self.dimension_indices:
             return RV
+        A = SP.exp(2*theta[0])
         RV[:] = 2*A*x1[:,d]
         return RV
 
