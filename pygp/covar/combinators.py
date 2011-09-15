@@ -215,14 +215,25 @@ class ProductCF(CovarianceFunction):
         #     rv[~self.covars_theta_I[nc]] *= K_
         nc = self.covars_covar_I[i]
         covar = self.covars[nc]
-        d = self.covars_theta_I[nc].min()
-        j = i - d
-        Kd = covar.Kgrad_theta(theta[self.covars_theta_I[nc]], x, j)
-        for ind in xrange(len(self.covars)):
-            if(ind is not nc):
-                _theta = theta[self.covars_theta_I[ind]]
-                Kd *= self.covars[ind].K(_theta, x)
-        return Kd
+        d = i - self.covars_theta_I[nc].min()
+        RV_sum = SP.zeros([x.shape[0], x.shape[0]])
+        RV_prod = SP.ones([x.shape[0], x.shape[0]])
+        for nc in xrange(len(self.covars)):
+            RV_prod = SP.ones([x.shape[0], x.shape[0]])
+            for j in xrange(len(self.covars)):
+                _theta = theta[self.covars_theta_I[j]]
+                covar = self.covars[j]
+                if(j==nc):
+                    RV_prod*=covar.Kgrad_theta(_theta,x,d)
+                else:
+                    RV_prod*=covar.K(_theta, x)
+            RV_sum += RV_prod
+        return RV_sum
+#        for ind in xrange(len(self.covars)):
+#            if(ind is not nc):
+#                _theta = theta[self.covars_theta_I[ind]]
+#                Kd *= self.covars[ind].K(_theta, x)
+#        return Kd
 
     #derivative with respect to inputs
     def Kgrad_x(self, theta, x1, x2, d):

@@ -1,4 +1,4 @@
-"""
+    """
 Demo Application for Gaussian process latent variable models
 ====================================
 
