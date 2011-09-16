@@ -63,6 +63,7 @@ class LinearCFISO(CovarianceFunction):
         RV = SP.zeros([x1.shape[0]])
         if d not in self.dimension_indices:
             return RV
+        d-=self.dimension_indices.min()
         A = SP.exp(2*theta[0])
         RV[:] = 2*A*x1[:,d]
         return RV
