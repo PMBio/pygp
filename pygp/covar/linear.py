@@ -39,6 +39,7 @@ class LinearCFISO(CovarianceFunction):
 
 
     def Kgrad_theta(self,theta,x1,i):
+        assert i==0, 'LinearCF: Kgrad_theta: only one hyperparameter for linear covariance'
         RV = self.K(theta,x1)
         #derivative w.r.t. to amplitude
         RV*=2

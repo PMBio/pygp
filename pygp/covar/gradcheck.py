@@ -24,21 +24,11 @@ def grad_check_logtheta(K,logtheta,x0,dimensions=None):
     #ana
     ana = SP.zeros([n,nx,nx])
     for iid in xrange(n):
-        dKtheta = K.Kgrad_x(x1,x0,x0,iid)
-        #dKx_diag = K.Kgrad_xdiag(logtheta,x1,d)
-        #dKx.flat[::(dKx.shape[1] + 1)] = dKx_diag
-        for iin in xrange(n):
-            dKxn = SP.zeros([n, n])
-            dKxn[iin, :] = dKtheta[iin, :]
-            dKxn[:, iin] += dKtheta[iin, :]
-        ana[iid,:,:] = dKxn
-            
+        ana[iid,:,:] = K.Kgrad_theta(x1,x0,iid)
     delta = (ana -diff)/(diff+1E-10)
     print "delta %.2f" % SP.absolute(delta).max()
     pdb.set_trace()
     pass
-
-
 
 def grad_check_Kx(K,logtheta,x0,dimensions=None):
     """perform grad check with respect to input x"""

@@ -46,7 +46,7 @@ class SumCF(CovarianceFunction):
             self.n_params_list.append(Nparam)
             self.covars_theta_I.append(SP.arange(i, i + covar.get_number_of_parameters()))
             self.covars_covar_I.extend(SP.repeat(nc, Nparam))
-            i += covar.get_number_of_parameters()            
+            i += covar.get_number_of_parameters()
         self.n_params_list = SP.array(self.n_params_list)
         self.n_hyperparameters = self.n_params_list.sum()
 
@@ -216,28 +216,16 @@ class ProductCF(CovarianceFunction):
         nc = self.covars_covar_I[i]
         covar = self.covars[nc]
         d = i - self.covars_theta_I[nc].min()
-        RV_sum = SP.zeros([x.shape[0], x.shape[0]])
-        RV_prod = SP.ones([x.shape[0], x.shape[0]])
-        for nc in xrange(len(self.covars)):
-            RV_prod = SP.ones([x.shape[0], x.shape[0]])
-            for j in xrange(len(self.covars)):
-                _theta = theta[self.covars_theta_I[j]]
-                covar = self.covars[j]
-                if(j==nc):
-                    RV_prod*=covar.Kgrad_theta(_theta,x,d)
-                else:
-                    RV_prod*=covar.K(_theta, x)
-            RV_sum += RV_prod
-        return RV_sum
-#        for ind in xrange(len(self.covars)):
-#            if(ind is not nc):
-#                _theta = theta[self.covars_theta_I[ind]]
-#                Kd *= self.covars[ind].K(_theta, x)
-#        return Kd
+        Kd = covar.Kgrad_theta(theta[self.covars_theta_I[nc]],x,d)
+        for ind in xrange(len(self.covars)):
+            if(ind != nc):
+                _theta = theta[self.covars_theta_I[ind]]
+                Kd *= self.covars[ind].K(_theta, x)
+        return Kd
 
     #derivative with respect to inputs
     def Kgrad_x(self, theta, x1, x2, d):
-        assert theta.shape[0] == self.n_hyperparameters, 'K: theta has wrong shape'
+        assert theta.shape[0] == self.n_hyperparameters, 'Product CF: K: theta has wrong shape'
         RV_sum = SP.zeros([x1.shape[0], x1.shape[0]])
         RV_prod = SP.ones([x1.shape[0], x1.shape[0]])
         for nc in xrange(len(self.covars)):
