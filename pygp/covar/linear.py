@@ -67,6 +67,11 @@ class LinearCFISO(CovarianceFunction):
         RV[:] = 2*A*x1[:,d]
         return RV
 
+    def get_hyperparameter_names(self):
+        names = []
+        names.append('LinearCFISO Amplitude')
+        return names
+    
 class LinearCF(CovarianceFunction):
 
     def __init__(self,n_dimensions=1,dimension_indices=None):

@@ -60,5 +60,8 @@ class FixedCF(CovarianceFunction):
         RV = SP.zeros([x1.shape[0]])
         return RV
 
-
+    def get_hyperparameter_names(self):
+        names = []
+        names.append('FixedCF Amplitude')
+        return names
 

@@ -42,7 +42,7 @@ class SqexpCFARD(CovarianceFunction):
         make identification easier
         """
         names = []
-        names.append('Amplitude')
+        names.append('SECF Amplitude')
         for dim in self.dimension_indices:
             names.append('%d.D Length-Scale' % dim)
         return names

@@ -161,7 +161,7 @@ class ProductCF(CovarianceFunction):
         """return the names of hyperparameters to make identificatio neasier"""
         names = []
         for covar in self.covars:
-            names = SP.concatenate((names, covar.get_hyperparameter_names()))
+            names.extend(covar.get_hyperparameter_names())
         return names
 
 
