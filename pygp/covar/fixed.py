@@ -11,7 +11,7 @@ FixedCF
 
 import scipy as SP
 from pygp.covar import CovarianceFunction
-
+import pdb
 
 class FixedCF(CovarianceFunction):
     """
@@ -65,3 +65,54 @@ class FixedCF(CovarianceFunction):
         names.append('FixedCF Amplitude')
         return names
 
+
+
+class SqexpFixed(CovarianceFunction):
+    """
+    Fixed covariance function with lengthscale parameter for exponentiation
+    (e.g. matrix of pairwise distances)
+    """
+
+    def __init__(self,K,**kw_args):
+        """K: the fixed pairwise distance matrix"""
+        super(CovarianceFunction, self).__init__(**kw_args)
+        self._K = K 
+        self.n_hyperparameters = 2
+
+    def K(self,theta,x1,x2=None):
+        #get input data:
+        if x2 is None:
+            x2 = x1
+        #scale parameter
+        A  = SP.exp(2*theta[0])
+        #lengthscale
+        L  = SP.exp(theta[1])
+        #rescaled distances (squared)
+        Dr  = (self._K/L)**2
+        K   = SP.exp(-0.5*Dr)
+        #if dimensions match return K
+        if (x1.shape[0]==self._K.shape[0]) & (x2.shape[0]==self._K.shape[1]):
+            return A*K
+        else:
+            return SP.zeros([x1.shape[0],x2.shape[0]])
+
+    def Kgrad_theta(self,theta,x1,i):
+        #calc covariance
+        RV = self.K(theta,x1)
+        if i==0:
+            #derivative w.r.t. to amplitude
+            RV*=2
+        elif i==1:
+            #lengthscale
+            L  = SP.exp(theta[1])
+            #rescaled distances (squared)
+            Dr  = (self._K/L)**2
+            RV *= Dr         
+        return RV
+
+
+    def get_hyperparameter_names(self):
+        names = []
+        names.append('SqexpFixed Amplitude')
+        names.append('SqexpFixed Lengthscale')
+        return names
