@@ -10,6 +10,7 @@ import scipy as SP
 from pygp.covar import CovarianceFunction
 
 import logging as LG
+from scipy import special
 
 class DivergeCF(CovarianceFunction):
 
@@ -49,15 +50,15 @@ class DivergeCF(CovarianceFunction):
         # self.replicate_indices = replicate_indices
         #self.group_indices = group_indices
         #self.n_replicates = len(SP.unique(replicate_indices))
-        self.n_hyperparameters = 1
-        assert self.n_hyperparameters == 1, "Not implemented yet for %i groups" % (self.n_hyperparameters)
+        self.n_hyperparameters = 2
+        assert self.n_hyperparameters == 2, "Not implemented yet for %i groups" % (self.n_hyperparameters)
         
     def get_hyperparameter_names(self):
         """
         return the names of hyperparameters to
         make identification easier
         """
-        names = ['Breakpoint']
+        names = ['Breakpoint', "Breakpoint Length-Scale"]
         return names
    
     def get_number_of_parameters(self):
@@ -75,28 +76,31 @@ class DivergeCF(CovarianceFunction):
         See :py:class:`pygp.covar.CovarianceFunction`
         """
         x1_f,x2_f = self._filter_input_dimensions(x1,x2)
+        BP = logtheta[0]
+        L = logtheta[1]
 
-        if(x1.shape[1] > 1):
-            grouping_1 = x1[:,1]
-        else:
-            grouping_1 = SP.repeat(-1,x1_f.shape[0])
-
-        if(x2 is not None and x2.shape[1] > 1):
-            grouping_2 = x2[:,1]
-        elif(x2 is None):
-            grouping_2 = grouping_1
-        else:
-            grouping_2 = SP.repeat(-1,x2_f.shape[0])
-
-        BP  = logtheta[0]
-        BPs1 = SP.array((x1_f<BP),dtype="int8")
-        BPs2 = SP.array((x2_f<BP),dtype="int8")
-        BPs = BPs1 * BPs2.reshape(-1)
-        grouping = grouping_1.reshape(-1) == grouping_2.reshape(1,-1)
-        if (False):
-            import pdb
-            pdb.set_trace()
-        return (SP.exp(k*BPs)+SP.exp(k*grouping)) / SP.exp(k)
+#        if(x1.shape[1] > 1):
+#            grouping_1 = x1[:,1]
+#        else:
+#            grouping_1 = SP.repeat(-1,x1_f.shape[0])
+#
+#        if(x2 is not None and x2.shape[1] > 1):
+#            grouping_2 = x2[:,1]
+#        elif(x2 is None):
+#            grouping_2 = grouping_1
+#        else:
+#            grouping_2 = SP.repeat(-1,x2_f.shape[0])
+#
+#        BP  = logtheta[0]
+#        BPs1 = SP.array((x1_f<BP),dtype="int8")
+#        BPs2 = SP.array((x2_f<BP),dtype="int8")
+#        BPs = BPs1 * BPs2.reshape(-1)
+#        grouping = grouping_1.reshape(-1) == grouping_2.reshape(1,-1)
+#        if (False):
+#            import pdb
+#            pdb.set_trace()
+#        return (SP.exp(k*BPs)+SP.exp(k*grouping)) / SP.exp(k)
+        return -.5 * special.erf(((1./L) * (SP.dot(x1_f,x2_f))) - BP) + .5
 
     def Kd(self, logtheta, x1, i):
         """

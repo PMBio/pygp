@@ -81,15 +81,17 @@ for name in ['CATMA3A12810', 'CATMA3A22550' , 'CATMA4A36120', 'CATMA3A19900']:
     C = probe['C']
     T = probe['T']
 
-    x1 = C[0][0].reshape(-1, 1)
-    x1_rep = SP.repeat(0, len(x1)).reshape(-1, 1)
-    x1 = SP.concatenate((x1, x1_rep), axis=1)
-    x2 = T[0][0].reshape(-1, 1)
-    x2_rep = SP.repeat(1, len(x2)).reshape(-1, 1)
-    x2 = SP.concatenate((x2, x2_rep), axis=1)
+    replicates = 4
+
+    x1 = C[0]
+    x1_rep = SP.array([SP.repeat(i, len(x)) for i,x in enumerate(x1)])
+    #x1 = SP.concatenate((x1, x1_rep), axis=1)
+    x2 = T[0]
+    x2_rep = SP.array([SP.repeat(i, len(x)) for i,x in enumerate(x2)])
+    #x2 = SP.concatenate((x2, x2_rep), axis=1)
 
     x = SP.concatenate((x1, x2), axis=0)
-    y = SP.concatenate((C[1][0], T[1][0]), axis=0).reshape(-1, 1)
+    y = SP.concatenate((C[1], T[1]), axis=0)
     
     #predictions:
     X = SP.linspace(2, x2.max(), 100)[:, SP.newaxis]
@@ -100,6 +102,7 @@ for name in ['CATMA3A12810', 'CATMA3A22550' , 'CATMA4A36120', 'CATMA3A19900']:
     dim = 1
     group_indices = SP.concatenate([SP.repeat(i, len(xi)) for i, xi in enumerate((C[0].reshape(-1, 1),
                                                                                 T[0].reshape(-1, 1)))])
+    
     SECF = se.SqexpCFARD(dim, dimension_indices=[0])
     breakpointCF = breakpoint.DivergeCF(dimension_indices=[0])
     #noiseCF = noise.NoiseReplicateCF(replicate_indices)
@@ -118,6 +121,7 @@ for name in ['CATMA3A12810', 'CATMA3A22550' , 'CATMA4A36120', 'CATMA3A19900']:
     #breakpoint, no knowledge
     for i in range(1):
         covar_priors.append([lnpriors.lnuniformpdf, [0, 0]])    
+        covar_priors.append([lnpriors.lnGammaExp, [1, .5]])
 
     logthetaCOVAR = SP.log([.4, 3.2, 0.3])#,sigma2])
     hyperparams = {'covar':logthetaCOVAR}
@@ -131,13 +135,13 @@ for name in ['CATMA3A12810', 'CATMA3A22550' , 'CATMA4A36120', 'CATMA3A19900']:
     #gpr_BP = GPR.GP(CovFun,x=x,y=y)
     gpr_BP = GP(CovFun, x=x, y=y)
 #    gpr_opt_hyper = GP(combinators.SumCF((SECF,noiseCF)),x=x,y=y)
-    gpr_opt_hyper = GroupGP((GP(combinators.SumCF((SECF, noiseCF)), x=x1, y=C[1][0]),
-                             GP(combinators.SumCF((SECF, noiseCF)), x=x2, y=T[1][0])))
+    gpr_opt_hyper = GroupGP((GP(combinators.SumCF((SECF, noiseCF)), x=x1.reshape(-1,1), y=C[1].reshape(-1,1)),
+                             GP(combinators.SumCF((SECF, noiseCF)), x=x2.reshape(-1,1), y=T[1].reshape(-1,1))))
 
     [opt_model_params, opt_lml] = opt_hyper(gpr_opt_hyper, hyperparams, priors=priors, gradcheck=False, Ifilter=Ifilter)
 #    opt_model_params = hyperparams
     print SP.exp(opt_model_params['covar'])
-
+    
 #    import copy
 #    _hyperparams = copy.deepcopy(opt_model_params)
     # _logtheta = SP.array([0,0,0,0],dtype='double')
@@ -149,15 +153,21 @@ for name in ['CATMA3A12810', 'CATMA3A22550' , 'CATMA4A36120', 'CATMA3A19900']:
 
     import pygp.plot.gpr_plot as gpr_plot
     first = True
+    [M, S] = gpr_opt_hyper.predict(opt_model_params, X)
+    gpr_plot.plot_sausage(X, M[0], SP.sqrt(S[0]))
+    gpr_plot.plot_sausage(X, M[1], SP.sqrt(S[1]))
+    gpr_plot.plot_training_data(x1, C[1], replicate_indices=x1_rep.reshape(-1))
+    gpr_plot.plot_training_data(x2, T[1], replicate_indices=x2_rep.reshape(-1))
+    
     norm = PL.Normalize()
 
     break_lml = []
     plots = SP.int_(SP.sqrt(24) + 1)
-    for i, BP in enumerate(x[:24, 0]):
+    for i, BP in enumerate(x1[0,:]):
         #PL.subplot(plots,plots,i+1)
         _hyper = copy.deepcopy(opt_model_params)
         _logtheta = _hyper['covar']
-        _logtheta = SP.concatenate((_logtheta, [BP]))
+        _logtheta = SP.concatenate((_logtheta, [BP,.5]))
         _hyper['covar'] = _logtheta
         #[opt_model_params,opt_lml] = opt_hyper(gpr_BP,_hyper,priors=priors_BP,gradcheck=False,Ifilter=Ifilter_BP)
         #break_lml.append(opt_lml)
@@ -211,14 +221,14 @@ for name in ['CATMA3A12810', 'CATMA3A22550' , 'CATMA4A36120', 'CATMA3A19900']:
         # predict
         # PL.subplot(plots,plots,i+1)
         
-        if(BP == 20):
+        if(False):#BP == 20):
             [M, S] = gpr_BP.predict(_hyper, X)
             gpr_plot.plot_sausage(X, M, SP.sqrt(S))
             PL.plot(C[0].transpose(), C[1].transpose(), '-+b')
             PL.plot(T[0].transpose(), T[1].transpose(), '-+r')
         
     PL.figure()
-    PL.plot(x[:24], break_lml)
+    PL.plot(x1[0], break_lml)
 
     PL.show()
 
