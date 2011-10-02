@@ -56,7 +56,6 @@ class GPLVM(GP):
 
   
     def LML(self, hyperparams, priors=None, **kw_args):
-#        pdb.set_trace()
         """
         Calculate the log Marginal likelihood
         for the given logtheta.

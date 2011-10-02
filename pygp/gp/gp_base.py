@@ -290,7 +290,7 @@ class GP(object):
             return 1E6
 
         #Change: no supports multi dimensional stuff for GPLVM
-        lml_quad = 0.5 * (KV['alpha'] * self._get_y()).sum()
+        lml_quad = 0.5 * (KV['alpha'] * self._get_y(hyperparams)).sum()
         lml_det  = self._get_target_dimension() * (SP.log(KV['L'].diagonal()).sum())
         lml_const = 0.5 * self._get_target_dimension()*self._get_input_dimension() * SP.log(2 * SP.pi)
         return (lml_quad+lml_det+lml_const)
@@ -374,10 +374,11 @@ class GP(object):
                     return False
             #otherwise they are cached:
             return True
-    def _get_x(self):
+    def _get_x(self,*args,**kw_args):
         return self._get_active_set(self.x)
     
-    def _get_y(self):
+    def _get_y(self,*args,**kw_args):
+        """get y values"""
         return self._get_active_set(self.y)
         
     def _get_active_set(self, x):
