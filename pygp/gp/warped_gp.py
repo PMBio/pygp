@@ -58,7 +58,7 @@ class TanhWarpingFunction(WarpingFunction):
         mpsi = psi.copy()
         #mpsi[:,0:2] = SP.exp(mpsi[:,0:2])
 
-	z = y
+	z = y.copy()
 	for i in range(len(mpsi)):
 	    a,b,c = mpsi[i]
 	    z += a*SP.tanh(b*(y+c))
@@ -90,11 +90,11 @@ class TanhWarpingFunction(WarpingFunction):
         #mpsi[:,0:2] = SP.exp(mpsi[:,0:2])
 
 	gradients = []
-	
+	pdb.set_trace()
 	for i in range(len(mpsi)):
 	    a,b,c = mpsi[i]
-	    grad_a = b*self.sech(b*(c+y), 2)
-	    grad_b = a*(1-2*b*(c+y)*SP.tanh(b*(c+y)))*self.sech(b*(c+y), 2)
+	    grad_a = b*self.sech(b*(c+y), 2)  
+	    grad_b = a*(1-2*b*(c+y)*SP.tanh(b*(c+y)))*self.sech(b*(c+y), 2)    
 	    grad_c = -2*a*(b**2)*SP.tanh(b*(c+y))* self.sech(b*(c+y),2)
 	    
 	    gradients.append([grad_a.flatten(), grad_b.flatten(), grad_c.flatten()])
@@ -108,9 +108,9 @@ class TanhWarpingFunction(WarpingFunction):
 class WARPEDGP(GP):
     __slots__ = ["warping_function"]
 
-    def __init__(self, warping_function = None, n_terms = None, **kw_args):
+    def __init__(self, warping_function = None, **kw_args):
         """warping_function: warping function of type WarpingFunction"""
-        self.warping_function = warping_function(n_terms = n_terms)
+        self.warping_function = warping_function
         super(WARPEDGP, self).__init__(**kw_args)
     
     def _get_y(self,hyperparams):
@@ -197,7 +197,7 @@ if __name__ == '__main__':
     import pygp.plot.gpr_plot as gpr_plot
     import pygp.priors.lnpriors as lnpriors
 
-    LG.basicConfig(level=LG.INFO)
+    LG.basicConfig(level=LG.DEBUG)
     SP.random.seed(1)
 
     n_dimensions = 1
@@ -221,11 +221,13 @@ if __name__ == '__main__':
     x = x[:,SP.newaxis]
     
 
-    
+    n_terms = 1
     # build GP
     likelihood = lik.GaussLikISO()
     covar_parms = SP.log([1,1])
-    hyperparams = {'covar':covar_parms,'lik':SP.log([1]), 'warping': SP.log(SP.random.randn(2,3))}
+    #hyperparams = {'covar':covar_parms,'lik':SP.log([1]), 'warping': (SP.random.randn(n_terms,3))}
+    hyperparams = {'covar':covar_parms,'lik':SP.log([1]), 'warping': SP.ones([n_terms,3])}
+    
     #hyperparams = {'covar':covar_parms,'lik':SP.log([1])}    
     SECF = se.SqexpCFARD(n_dimensions=n_dimensions)
     covar = SECF
@@ -237,10 +239,34 @@ if __name__ == '__main__':
     # noise
     lik_priors.append([lnpriors.lnGammaExp,[1,1]])
     priors = {'covar':covar_priors,'lik':lik_priors}
+    warping_function = TanhWarpingFunction(n_terms=n_terms)
 
-    gp = WARPEDGP(warping_function = TanhWarpingFunction, n_terms = 2, covar_func=covar, likelihood=likelihood, x=x, y=y)
+    gp = WARPEDGP(warping_function = warping_function, covar_func=covar, likelihood=likelihood, x=x, y=y)
+    
+    if 1:
+        #check gradients of warping function
+        from pygp.optimize.optimize_base import checkgrad,OPT
+        
+        # derivative w.r.t. y
+        # derivative w.r.t y psi
+        def f1(x):
+            return warping_function.f(x,hyperparams['warping'])
+        def df1(x):
+            return warping_function.fgrad_y(x,hyperparams['warping'])
+        def f2(x):
+            return warping_function.fgrad_y(gp.y[0:1,:],x)
+        def df2(x):
+            return warping_function.fgrad_y_psi(gp.y[0:1,:],x)
+        checkgrad(f1,df1,gp.y[0:1,:])
+
+        pdb.set_trace()
+        checkgrad(f2,df2,hyperparams['warping'])
+        
+    lmld= gp.LMLgrad(hyperparams)
+    print lmld
+    
     #gp = GP(covar,likelihood=likelihood,x=x,y=y)    
-    opt_model_params = opt_hyper(gp,hyperparams,priors=priors,gradcheck=True)[0]
+    opt_model_params = opt_hyper(gp,hyperparams,gradcheck=True)[0]
     
     #predict
     [M,S] = gp.predict(opt_model_params,X)
