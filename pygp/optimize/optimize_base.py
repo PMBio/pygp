@@ -41,6 +41,42 @@ def param_list_to_dict(list,param_struct,skeys):
     return dict(RV)
 
 
+def checkgrad(f,fprime,x,step=1e-6, tolerance = 1e-4, *args):
+	"""check the gradient function fprime by comparing it to a numerical estiamte from the function f"""
+	import numpy as np
+	import scipy as sp
+	#choose a random direction to step in:
+	dx = step*np.sign(np.random.uniform(-1,1,x.shape))
+
+	#evaulate around the point x
+	f1 = f(x+dx,*args)
+	f2 = f(x-dx,*args)
+
+	numerical_gradient = (f1-f2)/(2*dx)
+	gradient = fprime(x,*args)
+	ratio = (f1-f2)/(2*np.dot(dx,gradient))
+	print "gradient = ",gradient
+	print "numerical gradient = ",numerical_gradient
+	print "ratio = ", ratio, '\n'
+
+	if np.abs(1-ratio)>tolerance:
+		print "Ratio far from unity. Testing individual gradients"
+		for i in range(len(x)):
+			dx = np.zeros(x.shape)
+			dx[i] = step*np.sign(np.random.uniform(-1,1,x[i].shape))
+
+			f1 = f(x+dx,*args)
+			f2 = f(x-dx,*args)
+
+			numerical_gradient = (f1-f2)/(2*dx)
+			gradient = fprime(x,*args)
+			print i,"th element"
+			#print "gradient = ",gradient
+			#print "numerical gradient = ",numerical_gradient
+			ratio = (f1-f2)/(2*np.dot(dx,gradient))
+			print "ratio = ",ratio,'\n'
+
+
 def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds = None,optimizer=OPT.fmin_tnc,*args,**kw_args):
     """
     Optimize hyperparemters of :py:class:`pygp.gp.basic_gp.GP` ``gpr`` starting from given hyperparameters ``hyperparams``.
@@ -134,7 +170,7 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds =
     if gradcheck:
         LG.info("check_grad (pre) (Enter to continue):" + str(OPT.check_grad(f,df,x)))
         raw_input()
-    
+	
     LG.debug("start optimization")
 
     #general optimizer interface
@@ -155,6 +191,8 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds =
         LG.info("check_grad (post) (Enter to continue):" + str(OPT.check_grad(f,df,opt_RV[0])))
         raw_input()
 
+    checkgrad(f,df,opt_RV[0])
+    pdb.set_trace()
     LG.debug("old parameters:")
     LG.debug(str(hyperparams))
     LG.debug("optimized parameters:")

@@ -213,7 +213,7 @@ class GP(object):
             K = self.covar.K(hyperparams['covar'], self._get_x())
             K+= Knoise
             L = jitChol(K)[0].T # lower triangular
-            alpha = solve_chol(L, self._get_y())
+            alpha = solve_chol(L, self._get_y(hyperparams)) # TODO: not sure about this one
 
 	    # DPOTRI computes the inverse of a real symmetric positive definite
 	    # matrix A using the Cholesky factorization 
@@ -290,7 +290,7 @@ class GP(object):
             return 1E6
 
         #Change: no supports multi dimensional stuff for GPLVM
-        lml_quad = 0.5 * (KV['alpha'] * self._get_y(hyperparams)).sum()
+	lml_quad = 0.5 * (KV['alpha'] * self._get_y(hyperparams)).sum()
         lml_det  = self._get_target_dimension() * (SP.log(KV['L'].diagonal()).sum())
         lml_const = 0.5 * self._get_target_dimension()*self._get_input_dimension() * SP.log(2 * SP.pi)
         return (lml_quad+lml_det+lml_const)
