@@ -54,8 +54,8 @@ def checkgrad(f,fprime,x,step=1e-3, tolerance = 1e-4, *args,**kw_args):
                     dx = step*SP.absolute(x[i,j])
                     x_ = SP.zeros_like(x)
                     x_[i,j]=dx
-                    f1 = f(x+dx,*args,**kw_args)
-                    f2 = f(x-dx,*args,**kw_args)
+                    f1 = f(x+x_,*args,**kw_args)
+                    f2 = f(x-x_,*args,**kw_args)
                     ng = (f1-f2)/(2*dx)
                     numerical_gradient[i,j] = ng
             gradient = SP.squeeze(fprime(x,*args,**kw_args))
@@ -196,7 +196,9 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds =
     #general optimizer interface
     #note: x is a subset of X, indexing the parameters that are optimized over
     #Ifilter_x pickes the subest of X, yielding x
-    opt_RV=optimizer(f, x, fprime=df, maxfun=int(maxiter),messages=False,bounds=bounds)
+    opt_RV=optimizer(f, x, fprime=df, maxfun=int(maxiter),messages=True,bounds=bounds)
+#     optimizer = OPT.fmin_l_bfgs_b
+#     opt_RV=optimizer(f, x, fprime=df, maxfun=int(maxiter),iprint = 1,bounds=bounds)
     opt_x = opt_RV[0]
     
     #relate back to X
@@ -211,8 +213,6 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds =
         LG.info("check_grad (post) (Enter to continue):" + str(OPT.check_grad(f,df,opt_RV[0])))
         raw_input()
 
-    checkgrad(f,df,opt_RV[0])
-    pdb.set_trace()
     LG.debug("old parameters:")
     LG.debug(str(hyperparams))
     LG.debug("optimized parameters:")
