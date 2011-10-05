@@ -41,6 +41,61 @@ def param_list_to_dict(list,param_struct,skeys):
     return dict(RV)
 
 
+def checkgrad(f,fprime,x,step=1e-3, tolerance = 1e-4, *args,**kw_args):
+	"""check the gradient function fprime by comparing it to a numerical estiamte from the function f"""
+	import numpy as np
+	import scipy as sp
+
+        if 1:
+            numerical_gradient = SP.zeros_like(x)
+            for i in xrange(x.shape[0]):
+                for j in xrange(x.shape[1]):
+                    #choose a random direction to step in:
+                    dx = step*SP.absolute(x[i,j])
+                    x_ = SP.zeros_like(x)
+                    x_[i,j]=dx
+                    f1 = f(x+x_,*args,**kw_args)
+                    f2 = f(x-x_,*args,**kw_args)
+                    ng = (f1-f2)/(2*dx)
+                    numerical_gradient[i,j] = ng
+            gradient = SP.squeeze(fprime(x,*args,**kw_args))
+            ratio = (gradient - numerical_gradient)/(gradient+1E-10)
+
+        if 0:
+            dx = step*np.sign(np.random.uniform(-1,1,x.shape))
+
+            #evaulate around the point x
+            f1 = f(x+dx,*args,**kw_args)
+            f2 = f(x-dx,*args,**kw_args)
+
+            numerical_gradient = (f1-f2)/(2*dx)
+            gradient = fprime(x,*args,**kw_args)
+            ratio = (gradient - numerical_gradient)/(gradient+1E-10)
+        #ratio = (f1-f2)/(2*np.dot(dx,gradient))
+	print "gradient = ",gradient
+	print "numerical gradient = ",numerical_gradient
+	print "ratio = ", ratio, '\n'
+
+	if (np.abs(ratio)>tolerance).any():
+            print "outch"
+            pdb.set_trace()
+            pass
+		## print "Ratio far from unity. Testing individual gradients"
+		## for i in range(len(x)):
+		## 	dx = np.zeros(x.shape)
+		## 	dx[i] = step*np.sign(np.random.uniform(-1,1,x[i].shape))
+
+		## 	f1 = f(x+dx,*args,**kw_args)
+		## 	f2 = f(x-dx,*args,**kw_args)
+
+		## 	numerical_gradient = (f1-f2)/(2*dx)
+		## 	gradient = fprime(x,*args,**kw_args)
+		## 	print i,"th element"
+		## 	#print "gradient = ",gradient
+		## 	#print "numerical gradient = ",numerical_gradient
+		## 	ratio = (f1-f2)/(2*np.dot(dx,gradient))
+		## 	print "ratio = ",ratio,'\n'
+
 
 def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds = None,optimizer=OPT.fmin_tnc,*args,**kw_args):
     """
@@ -141,7 +196,9 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds =
     #general optimizer interface
     #note: x is a subset of X, indexing the parameters that are optimized over
     #Ifilter_x pickes the subest of X, yielding x
-    opt_RV=optimizer(f, x, fprime=df, maxfun=int(maxiter),messages=False,bounds=bounds)
+    opt_RV=optimizer(f, x, fprime=df, maxfun=int(maxiter),messages=True,bounds=bounds)
+#     optimizer = OPT.fmin_l_bfgs_b
+#     opt_RV=optimizer(f, x, fprime=df, maxfun=int(maxiter),iprint = 1,bounds=bounds)
     opt_x = opt_RV[0]
     
     #relate back to X
