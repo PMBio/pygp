@@ -36,7 +36,7 @@ class FixedCF(CovarianceFunction):
         else:
             return SP.zeros([x1.shape[0],x2.shape[0]])
 
-    def Kdiag(self,theta,x1,i):
+    def Kdiag(self,theta,x1):
         """self covariance"""
         if (x1.shape[0]==self._K.shape[0]):
             return self._K.diagonal()

@@ -11,7 +11,7 @@ from pygp.covar.dist import dist
 import scipy as sp
 import sys
 sys.path.append('../')
-
+import pdb
 
 
 class SumCF(CovarianceFunction):
@@ -266,17 +266,18 @@ class ProductCF(CovarianceFunction):
 #                RV_prod *= K
 #                #covar.set_dimension_indices(dims)
 #        return RV_sum * RV_prod
-        RV_sum = sp.zeros([x1.shape[0], x1.shape[0]])
-        #RV_prod = sp.ones([x1.shape[0], x1.shape[0]])
+
+#        pdb.set_trace()
+        RV_sum = sp.zeros([x1.shape[0]])
         for nc in xrange(len(self.covars)):
-            RV_prod = sp.ones([x1.shape[0], x1.shape[0]])
+            RV_prod = sp.ones([x1.shape[0]])
             for j in xrange(len(self.covars)):
                 _theta = theta[self.covars_theta_I[j]]
                 covar = self.covars[j]
                 if(j==nc):
                     RV_prod*=covar.Kgrad_xdiag(_theta,x1,d)
                 else:
-                    RV_prod*=covar.K(_theta, x1, x1)
+                    RV_prod*=covar.Kdiag(_theta, x1)
             RV_sum += RV_prod
         return RV_sum
 
