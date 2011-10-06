@@ -107,6 +107,7 @@ def lnuniformpdf(x,params):
     return [0,0]
 
 def _plotPrior(X,prior):
+    import pylab as PL
     Y = SP.array(prior[0](X,prior[1]))
     PL.hold(True)
     PL.plot(X,SP.exp(Y[0,:]))
@@ -115,6 +116,6 @@ def _plotPrior(X,prior):
     PL.show()
     
 if __name__ == "__main__":
-    prior = [lnGamma,[2,0.5]]
+    prior = [lnGammaExp,[4,2]]
     X = SP.arange(0.01,10,0.1)
     _plotPrior(X,prior)
