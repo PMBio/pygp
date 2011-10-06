@@ -103,12 +103,12 @@ for name in ['CATMA3A12810', 'CATMA3A22550' , 'CATMA4A36120', 'CATMA3A19900']:
     group_indices = SP.concatenate([SP.repeat(i, len(xi)) for i, xi in enumerate((C[0].reshape(-1, 1),
                                                                                 T[0].reshape(-1, 1)))])
     
-    SECF = se.SqexpCFARD(dim, dimension_indices=[0])
-    breakpointCF = breakpoint.DivergeCF(dimension_indices=[0])
+    SECF = se.SqexpCFARD(dim)
+    breakpointCF = breakpoint.DivergeCF()
     #noiseCF = noise.NoiseReplicateCF(replicate_indices)
-    noiseCF = noise.NoiseCFISO(dimension_indices=[0])
-    SECF_noise = combinators.SumCF((SECF, noiseCF), dimension_indices=[0])
-    CovFun = combinators.ProductCF((SECF_noise, breakpointCF), dimension_indices=[0])
+    noiseCF = noise.NoiseCFISO()
+    SECF_noise = combinators.SumCF((SECF, noiseCF))
+    CovFun = combinators.ProductCF((SECF_noise, breakpointCF))
 
     covar_priors = []
     #scale
@@ -133,7 +133,7 @@ for name in ['CATMA3A12810', 'CATMA3A22550' , 'CATMA4A36120', 'CATMA3A19900']:
     Ifilter_BP = {'covar' : SP.array([1, 1, 1, 0], dtype='int')}
 
     #gpr_BP = GPR.GP(CovFun,x=x,y=y)
-    gpr_BP = GP(CovFun, x=x, y=y)
+    gpr_BP = GP(CovFun, x=x.reshape(-1,1), y=y.reshape(-1,1))
 #    gpr_opt_hyper = GP(combinators.SumCF((SECF,noiseCF)),x=x,y=y)
     gpr_opt_hyper = GroupGP((GP(combinators.SumCF((SECF, noiseCF)), x=x1.reshape(-1,1), y=C[1].reshape(-1,1)),
                              GP(combinators.SumCF((SECF, noiseCF)), x=x2.reshape(-1,1), y=T[1].reshape(-1,1))))
@@ -221,18 +221,15 @@ for name in ['CATMA3A12810', 'CATMA3A22550' , 'CATMA4A36120', 'CATMA3A19900']:
         # predict
         # PL.subplot(plots,plots,i+1)
         
-        if(False):#BP == 20):
+        if(BP == 20):
+            PL.figure()
             [M, S] = gpr_BP.predict(_hyper, X)
             gpr_plot.plot_sausage(X, M, SP.sqrt(S))
-            PL.plot(C[0].transpose(), C[1].transpose(), '-+b')
-            PL.plot(T[0].transpose(), T[1].transpose(), '-+r')
+            gpr_plot.plot_training_data(x1, C[1], replicate_indices=x1_rep.reshape(-1))
+            gpr_plot.plot_training_data(x2, T[1], replicate_indices=x2_rep.reshape(-1))
+            
         
     PL.figure()
     PL.plot(x1[0], break_lml)
 
-    PL.show()
-
-    #pdb.set_trace() 
-
-    #PL.close()
-    #PL.clf()
+    PL.figure()
