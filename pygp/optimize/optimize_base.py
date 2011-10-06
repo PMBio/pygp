@@ -70,11 +70,11 @@ def checkgrad(f,fprime,x,step=1e-3, tolerance = 1e-4, *args,**kw_args):
 
             numerical_gradient = (f1-f2)/(2*dx)
             gradient = fprime(x,*args,**kw_args)
-            ratio = (gradient - numerical_gradient)/(gradient+1E-10)
+            ratio = (gradient - numerical_gradient)
         #ratio = (f1-f2)/(2*np.dot(dx,gradient))
 	print "gradient = ",gradient
 	print "numerical gradient = ",numerical_gradient
-	print "ratio = ", ratio, '\n'
+	print "Delta = ", ratio, '\n'
 
 	if (np.abs(ratio)>tolerance).any():
             print "outch"
