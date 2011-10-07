@@ -37,7 +37,11 @@ class WarpingFunction(object):
         """inverse function transformation"""
         pass
 
+    def get_bounds(self, bounds_dict):
+	""" returns the optimization bounds for the warping function """
+	pass
 
+    
 class TanhWarpingFunction(WarpingFunction):
     """implementaiton of the tanh warping fuction thing from Ed Snelson"""
 
@@ -138,6 +142,7 @@ class TanhWarpingFunction(WarpingFunction):
 	    gradients[:,i,2] = (-2*a*(b**2)*r[i]*((1.0/SP.cosh(s[i]))**2)).flatten()
 
 	covar_grad_chain = SP.zeros((y.shape[0], len(mpsi), 3))
+	import numpy as NP
 	for i in range(len(mpsi)):
 	    a,b,c = mpsi[i]
 	    covar_grad_chain[:, i, 0] = a*(r[i])
@@ -148,6 +153,33 @@ class TanhWarpingFunction(WarpingFunction):
 	    return gradients, covar_grad_chain
 	return gradients
 
+    def get_bounds(self, bounds_dict = None):
+	"""
+	Optimization bounds for the warping function. Returns a dictionary
+	that contains (n_terms*3, 2) bounds (flattened)
+
+	Input:
+
+	bounds_dict -> dictionary containing existing bounds (default None)
+	
+	"""
+
+	if bounds_dict == None:
+	    bounds_dict = {}
+
+	bounds = SP.zeros((self.n_terms, 3, 2))
+
+	# upper and lower bounds for a and b
+	bounds[:,0:2,0] = -30
+	bounds[:,0:2,1] = 30
+	# upper and lower bounds for c 
+	bounds[:,2] = SP.array((-30, 30))
+	# flatten the bounds matrix across the first dimension
+	bounds = bounds.reshape((bounds.shape[0]*bounds.shape[1], 2))
+
+	bounds_dict["warping"] = bounds.tolist()
+	
+	return bounds_dict
 	   
 
 class WARPEDGP(GP):
@@ -341,7 +373,9 @@ if __name__ == '__main__':
 
     
     #gp = GP(covar,likelihood=likelihood,x=x,y=y)    
-    opt_model_params = opt_hyper(gp,hyperparams, gradcheck=True)[0]
+    opt_model_params = opt_hyper(gp, hyperparams,
+				 bounds = warping_function.get_bounds(),
+				 gradcheck=True)[0]
 
     
     PL.figure(2)
