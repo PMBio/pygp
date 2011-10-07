@@ -66,11 +66,22 @@ class TanhWarpingFunction(WarpingFunction):
 	    a,b,c = mpsi[i]
 	    z += a*SP.tanh(b*(y+c))	    
         return z
+
+    def f_inv(self, y, psi, iterations = 10):
+        """
+	calculate the numerical inverse of f
+
+	== input ==
+	iterations: number of N.R. iterations
 	
-    def f_inv(self,z,psi):
-        """calculate numerical inverse of f"""
-        #TODO
-        pass
+	"""
+	y = y.copy()
+	z = self.f(y, psi)
+
+	for i in range(iterations):
+	    y -= (self.f(y, psi) - z)/self.fgrad_y(y,psi)
+	
+        return y
    
     def fgrad_y(self, y, psi, return_precalc = False):
         """
@@ -267,7 +278,6 @@ if __name__ == '__main__':
     def Itrafo(y):
         return y**(1/float(3))
 
-    pdb.set_trace()
     z = trafo(y)
     L = (z.max()-z.min())
     z /= L
@@ -293,7 +303,6 @@ if __name__ == '__main__':
     PL.plot(z_values,warping_function.f(z_values,hyperparams['warping']))
     PL.legend('real inverse','learnt inverse')
 
-    pdb.set_trace()    
     if 0:
         #check gradients of warping function
         from pygp.optimize.optimize_base import checkgrad,OPT
@@ -328,13 +337,22 @@ if __name__ == '__main__':
 
     lmld= gp.LMLgrad(hyperparams)
     print lmld
+
+
     
     #gp = GP(covar,likelihood=likelihood,x=x,y=y)    
     opt_model_params = opt_hyper(gp,hyperparams, gradcheck=True)[0]
 
+    
     PL.figure(2)
     z_values = SP.linspace(z.min(),z.max(),100)
-    PL.plot(z_values,Itrafo(L*z_values))
-    PL.plot(z_values,warping_function.f(z_values,opt_model_params['warping']))
-    PL.plot(z,y,'r.')
-    PL.legend(['real inverse','learnt inverse','data'])
+    PL.plot(Itrafo(gp.y))
+    #opt_hyperparamsPL.plot(z_values,Itrafo(L*z_values))
+    pred_inverse = warping_function.f_inv(gp.y,
+					  opt_model_params['warping'],
+					  iterations = 10)
+    PL.plot(pred_inverse)
+    #PL.plot(z,y,'r.')
+    #PL.legend(['real inverse','learnt inverse','data'])
+
+
