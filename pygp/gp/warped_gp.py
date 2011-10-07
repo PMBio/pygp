@@ -10,6 +10,32 @@ from pygp.optimize.optimize_base import opt_hyper
 import scipy as SP
 import scipy.linalg as linalg
 
+class MeanFunction(object):
+    """
+    abstract base clase for mean functions
+    """
+
+    def __init__(self):
+        pass
+
+    def f(self,psi):
+        pass
+
+    def fgrad_psi(self,psi):
+        pass
+
+
+class LinMeanFunction(MeanFunction):
+
+    def __init__(self,X):
+        self.X = X
+
+    def f(self,psi):
+        return SP.dot(self.X,psi)
+
+    def fgrad_psi(self,psi):
+        return self.X
+
 class WarpingFunction(object):
     """
     abstract function for warping
@@ -169,11 +195,12 @@ class TanhWarpingFunction(WarpingFunction):
 
 	bounds = SP.zeros((self.n_terms, 3, 2))
 
-	# upper and lower bounds for a and b
-	bounds[:,0:2,0] = -30
-	bounds[:,0:2,1] = 30
-	# upper and lower bounds for c 
-	bounds[:,2] = SP.array((-30, 30))
+	# no bounds for all parametrs
+        bounds[:,:,0] = -SP.inf
+        bounds[:,:,1] = +SP.inf
+        # but the second one
+        bounds[:,1,0] = -SP.inf
+        bounds[:,1,1] = SP.log(20)
 	# flatten the bounds matrix across the first dimension
 	bounds = bounds.reshape((bounds.shape[0]*bounds.shape[1], 2))
 
@@ -183,11 +210,12 @@ class TanhWarpingFunction(WarpingFunction):
 	   
 
 class WARPEDGP(GP):
-    __slots__ = ["warping_function","test","lml_quad"]
+    __slots__ = ["warping_function","mean_function"]
 
-    def __init__(self, warping_function = None, **kw_args):
+    def __init__(self, warping_function = None, mean_function = None, **kw_args):
         """warping_function: warping function of type WarpingFunction"""
         self.warping_function = warping_function
+        self.mean_function    = mean_function
         super(WARPEDGP, self).__init__(**kw_args)
 	
     def _get_y(self,hyperparams):
@@ -195,10 +223,11 @@ class WARPEDGP(GP):
         #transform data using warping hyperparameters
         y_ = self._get_active_set(self.y)
         if self.warping_function is not None:
-            return self.warping_function.f(y_,hyperparams['warping'])
-        else:
-            return y_
-    
+            y_  = self.warping_function.f(y_,hyperparams['warping'])
+        if self.mean_function is not None:
+            y_ = y_ - self.mean_function.f(hyperparams['mean']) 
+        return y_
+            
     def LML(self,hyperparams, *args, **kw_args):
         """
         Calculate the log Marginal likelihood
@@ -241,9 +270,24 @@ class WARPEDGP(GP):
         #2. add warping if in hyperparameter object
         if self.warping_function is not None:
             RV.update(self._LMLgrad_warping(hyperparams))
+
+        #3. add mean funciton derivative
+        if self.mean_function is not None:
+            RV.update(self._LMLgrad_mean(hyperparams))
 	    
         return RV
 
+
+    def _LMLgrad_mean(self,hyperparams):
+
+        # 2. derivative of quadtratic term in LML
+        grad_f_psi = self.mean_function.fgrad_psi(hyperparams['mean'])
+        #scale up K^{-1}*y (Kiy) for matrix operations with grad_psi
+        Kiy = super(WARPEDGP, self).get_covariances(hyperparams)['alpha']
+        mean_grad_quad = -1.0*SP.dot(grad_f_psi.T,Kiy[:,0]).T
+
+        RV ={'mean': mean_grad_quad}
+        return RV
 
     def _LMLgrad_warping(self,hyperparams):
         """gradient with respect to warping function parameters"""
@@ -326,8 +370,12 @@ if __name__ == '__main__':
     muCF = mu.MuCF(N=X.shape[0])
     covar = combinators.SumCF([SECF,muCF])
     warping_function = TanhWarpingFunction(n_terms=n_terms)
+    mean_function    = LinMeanFunction(X= SP.ones([x.shape[0],1]))
+    
+    gp = WARPEDGP(warping_function = warping_function, mean_function = mean_function, covar_func=covar, likelihood=likelihood, x=x, y=z)
 
-    gp = WARPEDGP(warping_function = warping_function, covar_func=covar, likelihood=likelihood, x=x, y=z)
+    hyperparams['mean'] = SP.log(1)
+
 
     PL.figure(1)
     z_values = SP.linspace(z.min(),z.max(),100)
