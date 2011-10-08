@@ -66,13 +66,16 @@ if __name__ == '__main__':
     muCF = mu.MuCF(N=X.shape[0])
     covar = combinators.SumCF([SECF,muCF])
     warping_function = TanhWarpingFunction(n_terms=n_terms)
-    mean_function    = None#LinMeanFunction(X= SP.ones([x.shape[0],1]))
-    
+    mean_function    = LinMeanFunction(X= SP.ones([x.shape[0],1]))
+    hyperparams['mean'] = 1E-2* SP.randn(1)
+    bounds = {}
+    bounds.update(warping_function.get_bounds())
+
     gp = WARPEDGP(warping_function = warping_function,
 		  mean_function = mean_function,
 		  covar_func=covar, likelihood=likelihood, x=x, y=z)
     opt_model_params = opt.opt_hyper(gp, hyperparams,
-				 bounds = warping_function.get_bounds(),
+				 bounds = bounds,
 				 gradcheck=True)[0]
 
     print "WARPED GP (neg) likelihood: ", gp.LML(hyperparams)
@@ -89,6 +92,7 @@ if __name__ == '__main__':
     PL.legend(['real inverse','learnt inverse'])
 
     hyperparams.pop("warping")
+    hyperparams.pop("mean")    
     gp = GP(covar,likelihood=likelihood,x=x,y=y)
     opt_model_params = opt.opt_hyper(gp,hyperparams,
 				     gradcheck=True)[0]
