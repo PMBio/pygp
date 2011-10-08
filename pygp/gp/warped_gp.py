@@ -31,7 +31,7 @@ class LinMeanFunction(MeanFunction):
         self.X = X
 
     def f(self,psi):
-        return SP.dot(self.X,psi)
+        return SP.dot(self.X,psi)[:,SP.newaxis]
 
     def fgrad_psi(self,psi):
         return self.X
@@ -279,7 +279,6 @@ class WARPEDGP(GP):
 
 
     def _LMLgrad_mean(self,hyperparams):
-
         # 2. derivative of quadtratic term in LML
         grad_f_psi = self.mean_function.fgrad_psi(hyperparams['mean'])
         #scale up K^{-1}*y (Kiy) for matrix operations with grad_psi
@@ -362,26 +361,36 @@ if __name__ == '__main__':
     # build GP
     likelihood = lik.GaussLikISO()
     covar_parms = SP.log([1,1,1E-5])
-    hyperparams = {'covar':covar_parms,'lik':SP.log([sigma]), 'warping': (1E-2*SP.random.randn(n_terms,3))}
-    hyperparams["warping"][:,0] += 0
-    hyperparams['warping'][:,1] += 0
+    hyperparams = {'covar':covar_parms,'lik':SP.log([sigma])}
 
+    
     SECF = se.SqexpCFARD(n_dimensions=n_dimensions)
     muCF = mu.MuCF(N=X.shape[0])
     covar = combinators.SumCF([SECF,muCF])
-    warping_function = TanhWarpingFunction(n_terms=n_terms)
-    mean_function    = LinMeanFunction(X= SP.ones([x.shape[0],1]))
-    
+
+    warping_function = None
+    mean_function = None
+    bounds = {}
+    if 1:
+        warping_function = TanhWarpingFunction(n_terms=n_terms)
+        hyperparams['warping'] = 1E-2*SP.random.randn(n_terms,3)
+        bounds.update(warping_function.get_bounds())
+        
+    if 1:
+        mean_function    = LinMeanFunction(X= SP.ones([x.shape[0],1]))
+        hyperparams['mean'] = 1E-2* SP.randn(1)
+
     gp = WARPEDGP(warping_function = warping_function, mean_function = mean_function, covar_func=covar, likelihood=likelihood, x=x, y=z)
 
-    hyperparams['mean'] = SP.log(1)
 
 
-    PL.figure(1)
-    z_values = SP.linspace(z.min(),z.max(),100)
-    PL.plot(z_values,Itrafo(L*z_values))
-    PL.plot(z_values,warping_function.f(z_values,hyperparams['warping']))
-    PL.legend('real inverse','learnt inverse')
+    if warping_function is not None:
+        PL.figure(1)
+        z_values = SP.linspace(z.min(),z.max(),100)
+        PL.plot(z_values,Itrafo(L*z_values))
+        PL.plot(z_values,warping_function.f(z_values,hyperparams['warping']))
+        PL.legend('real inverse','learnt inverse')
+
 
     if 0:
         #check gradients of warping function
@@ -422,7 +431,7 @@ if __name__ == '__main__':
     
     #gp = GP(covar,likelihood=likelihood,x=x,y=y)    
     opt_model_params = opt_hyper(gp, hyperparams,
-				 bounds = warping_function.get_bounds(),
+				 bounds = bounds,
 				 gradcheck=True)[0]
 
     
