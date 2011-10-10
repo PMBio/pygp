@@ -6,8 +6,8 @@ def dist(X,Y=None):
     '''calcualte disntance of all inputs:
     dist(X)     : Matrix of all combinations of distances of Xi with Xj
     dist(X1,X2) : Matrix of all combinations of distances of X1i with X2j'''
-    if(len(X.shape)<1):
-        X.reshape(-1,1)
+    if(len(X.shape)<=1):
+        X=X.reshape(-1,1)
     if(Y is None):
         Y=X
     if(X.shape[1]>1):

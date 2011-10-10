@@ -116,18 +116,25 @@ class SqexpCFARD(CovarianceFunction):
         **Parameters:**
         See :py:class:`pygp.covar.CovarianceFunction`
         """
+        # if we are not meant return zeros:
         if(d not in self.dimension_indices):
             return SP.zeros([x1.shape[0],x2.shape[0]])
-        RV = self.K(theta,x1)
+        rv = self.K(theta,x1,x2)
+#        #1. get inputs and dimension
         x1, x2 = self._filter_input_dimensions(x1,x2)
         d -= self.dimension_indices.min()
-        L2  = SP.exp(2*theta[1:1+self.n_dimensions])
-        #due to the eexp we always get he covariance as prefactors
-        #RV*= (-1)* (x1[:,d]-x2[:,d])/L2[d]# old one
-        D = dist.dist(x1[:,d],x2[:,d])[:,:,0]
-        RV*= (-1)* D/L2[d]# new one
-#        RV*= D/L2[d]# new one
-        return RV
+#        #2. exponentialte parameters
+#        V0 = SP.exp(2*theta[0])
+#        L  = SP.exp(theta[1:1+self.n_dimensions])[d]
+        L2 = SP.exp(2*theta[1:1+self.n_dimensions])
+#        # get squared distance in right dimension:
+#        sqd = dist.sq_dist(x1[:,d]/L,x2[:,d]/L)
+#        #3. calculate the whole covariance matrix:
+#        rv = V0*SP.exp(-0.5*sqd)
+        #4. get non-squared distance in right dimesnion:
+        nsdist = -SP.absolute(dist.dist(x1,x2)[:,:,d])/L2[d]
+        
+        return rv * nsdist
     
     def Kgrad_xdiag(self,theta,x1,d):
         """"""

@@ -1,6 +1,7 @@
 """ cheeck for covarince matrices"""
 import scipy as SP
 import pdb
+import pylab
 
 relchange = 1E-5;
 
@@ -67,5 +68,16 @@ def grad_check_Kx(K,logtheta,x0,dimensions=None):
             
     delta = (ana -diff)/(diff+1E-10)
     print "delta %.2f" % SP.absolute(delta).max()
-    pdb.set_trace()
+    for d in xrange(nd):
+        pylab.close("all")
+        pylab.figure()
+        pylab.pcolor(ana[:,d,:,:].sum(0))
+        pylab.title("analytical")
+        pylab.colorbar()
+        
+        pylab.figure()
+        pylab.pcolor(diff[:,d,:,:].sum(0))
+        pylab.title("numerical")
+        pylab.colorbar()
+        import pdb;pdb.set_trace()
     pass
