@@ -293,6 +293,7 @@ class GP(object):
 	lml_quad = 0.5 * (KV['alpha'] * self._get_y(hyperparams)).sum()
         lml_det  = self._get_target_dimension() * (SP.log(KV['L'].diagonal()).sum())
         lml_const = 0.5 * self._get_target_dimension()*self._get_input_dimension() * SP.log(2 * SP.pi)
+
         return (lml_quad+lml_det+lml_const)
 
 
