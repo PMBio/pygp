@@ -63,7 +63,7 @@ def _dist_1_dimension(X,Y=None):
     if(Y is None):
         Y=X
     #reshape stuff and copy it.
-    rv = Y.reshape(-1,1) - X.reshape(-1,1,1)   
+    rv = X.reshape(-1,1,1) - Y.reshape(-1,1)   
     return rv
    
     

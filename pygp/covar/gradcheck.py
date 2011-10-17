@@ -2,6 +2,7 @@
 import scipy as SP
 import pdb
 import pylab
+from matplotlib.pyplot import get_current_fig_manager
 
 relchange = 1E-5;
 
@@ -62,22 +63,25 @@ def grad_check_Kx(K,logtheta,x0,dimensions=None):
         #dKx.flat[::(dKx.shape[1] + 1)] = dKx_diag
         for iin in xrange(n):
             dKxn = SP.zeros([n, n])
-            dKxn[iin, :] = dKx[iin, :]
-            dKxn[:, iin] += dKx[iin, :]
+            dKxn[iin, :] = 1.*dKx[iin, :]
+            dKxn[:, iin] += 1.*dKx[iin, :]
             ana[iin,iid,:,:] = dKxn
             
     delta = (ana -diff)/(diff+1E-10)
     print "delta %.2f" % SP.absolute(delta).max()
     for d in xrange(nd):
         pylab.close("all")
-        pylab.figure()
-        pylab.pcolor(ana[:,d,:,:].sum(0))
+        pylab.matshow(ana[:,d,:,:].sum(0))
         pylab.title("analytical")
         pylab.colorbar()
         
-        pylab.figure()
-        pylab.pcolor(diff[:,d,:,:].sum(0))
+        pylab.matshow(diff[:,d,:,:].sum(0))
         pylab.title("numerical")
         pylab.colorbar()
         import pdb;pdb.set_trace()
+#        for i in [0,n-1]: 
+#            pylab.close("all")
+#            pylab.matshow(diff[i,d,:,:]) ; pylab.colorbar() ; pylab.title("Numerical")
+#            pylab.matshow(ana[i,d,:,:]) ; pylab.colorbar() ; pylab.title("Analytical")
+#            pylab.show()
     pass

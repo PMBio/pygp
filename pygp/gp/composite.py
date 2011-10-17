@@ -49,7 +49,7 @@ class GroupGP(GP):
             R = R+L
         return R
 
-    def LMLgrad(self,hyperparams,priors=None,**lml_kwargs):
+    def LMLgrad(self,hyperparams,**lml_kwargs):
         """
         Returns the log Marginal likelihood for the given logtheta.
 
@@ -125,7 +125,8 @@ class GroupGP(GP):
         means = []
         var = []
         for n in range(self.N):
-            means.append(self.GPs[n].predict(*args,**kwargs)[0])
-            var.append(self.GPs[n].predict(*args,**kwargs)[1])
+            prediction = self.GPs[n].predict(*args,**kwargs)
+            means.append(prediction[0])
+            var.append(prediction[1])
             
         return SP.array([means,var])

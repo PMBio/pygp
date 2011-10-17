@@ -132,7 +132,7 @@ class SqexpCFARD(CovarianceFunction):
 #        #3. calculate the whole covariance matrix:
 #        rv = V0*SP.exp(-0.5*sqd)
         #4. get non-squared distance in right dimesnion:
-        nsdist = dist.dist(x1,x2)[:,:,d]/L2[d]
+        nsdist = -dist.dist(x1,x2)[:,:,d]/L2[d]
         
         return rv * nsdist
     
