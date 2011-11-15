@@ -278,6 +278,20 @@ class WARPEDGP(GP):
         return RV
 
 
+    def predict(self, hyperparams, xstar, output=0, var=True):
+        R = super(WARPEDGP, self).predict(hyperparams,xstar,output,var)
+        #add mean prediction
+        if self.mean_function is not None:
+            mean = self.mean_function.f(hyperparams['mean'])
+
+            if var:
+                R[0] += mean[:,0]
+            else:
+                R += mean[:,0]
+        return R
+        
+        
+
     def _LMLgrad_mean(self,hyperparams):
         # 2. derivative of quadtratic term in LML
         grad_f_psi = self.mean_function.fgrad_psi(hyperparams['mean'])
