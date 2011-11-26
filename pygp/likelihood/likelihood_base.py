@@ -11,6 +11,40 @@ class ALik(object):
 
 
 
+class GaussGroupLikISO(ALik):
+    """Gaussian isotropic noise with a specific noise parameter per group
+    """
+
+    def __init__(self,n_groups=2,column=0):
+        self.n_hyperparameters = n_groups
+        self.column = column
+        pass
+
+    def get_number_of_parameters(self):
+        return self.n_hyperparameters
+
+    def K(self,theta,x1):
+        return SP.diag(self.Kdiag(theta,x1))
+
+    def Kdiag(self,theta,x1):
+        sigma = SP.exp(2*theta)
+        Knoise = SP.zeros([x1.shape[0]])
+        for i in xrange(len(theta)):
+            Knoise += sigma[i]*(1.0*(x1[:,self.column]==i))
+        return Knoise
+
+    def Kgrad_theta(self,theta,x1,i):
+        """
+        The derivative of the covariance matrix with
+        respect to i-th hyperparameter.
+
+        **Parameters:**
+        See :py:class:`pygp.covar.CovarianceFunction`
+        """
+        sigma = SP.exp(2*theta[i])
+        Knoise = SP.diag(2*sigma*(1.0*(x1[:,self.column]==i)))
+        return Knoise
+
 
 class GaussLikISO(ALik):
     """Gaussian isotropic likelihood model

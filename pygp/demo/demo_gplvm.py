@@ -1,4 +1,4 @@
-    """
+"""
 Demo Application for Gaussian process latent variable models
 ====================================
 
@@ -71,15 +71,16 @@ if __name__ == '__main__':
     #copy for FA
     hyperparams_fa = copy.deepcopy(hyperparams)
 
-    #factor analysis noise
-    likelihood_fa = lik.GaussLikARD(n_dimensions=D)
-    hyperparams_fa['lik'] = SP.log(SP.ones(Y.shape[1])+0.1*SP.random.randn(Y.shape[1]))
-    g_fa = gplvm_ard.GPLVMARD(covar_func=covariance,likelihood=likelihood_fa,x=X0,y=Y)
+    if 0:
+        #factor analysis noise
+        likelihood_fa = lik.GaussLikARD(n_dimensions=D)
+        hyperparams_fa['lik'] = SP.log(SP.ones(Y.shape[1])+0.1*SP.random.randn(Y.shape[1]))
+        g_fa = gplvm_ard.GPLVMARD(covar_func=covariance,likelihood=likelihood_fa,x=X0,y=Y,gplvm_dimensions=SP.arange(X0.shape[1]))
     
     #standard Gaussian noise
     likelihood = lik.GaussLikISO()
     hyperparams['lik'] = SP.log([0.1])
-    g = gplvm.GPLVM(covar_func=covariance,likelihood=likelihood,x=X0,y=Y)
+    g = gplvm.GPLVM(covar_func=covariance,likelihood=likelihood,x=X0,y=Y,gplvm_dimensions=SP.arange(X0.shape[1]))
         
         
     #try evaluating marginal likelihood first
