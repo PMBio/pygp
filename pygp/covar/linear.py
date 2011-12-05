@@ -54,7 +54,6 @@ class LinearCFISO(CovarianceFunction):
         d-=self.dimension_indices.min()
         A = SP.exp(2*theta[0])
         RV[:,:] = A*x2[:,d]
-        pdb.set_trace()
         return RV
 
     
