@@ -31,7 +31,9 @@ class FixedCF(CovarianceFunction):
         #scale parameter
         A  = SP.exp(2*theta[0])
         #if dimensions match return K
-        if (x1.shape[0]==self._K.shape[0]) & (x2.shape[0]==self._K.shape[1]):
+        if (x1.shape[0]==self._K.shape[0]) and (x2.shape[0]==self._K.shape[1]):
+            # debug:
+            #import pdb;pdb.set_trace()
             return A*self._K
         else:
             return SP.zeros([x1.shape[0],x2.shape[0]])
@@ -48,7 +50,6 @@ class FixedCF(CovarianceFunction):
         #derivative w.r.t. to amplitude
         RV*=2
         return RV
-
 
     def Kgrad_x(self,theta,x1,x2,d):
         RV = SP.zeros([x1.shape[0],x2.shape[0]])
