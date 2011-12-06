@@ -196,7 +196,7 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds =
     #general optimizer interface
     #note: x is a subset of X, indexing the parameters that are optimized over
     #Ifilter_x pickes the subest of X, yielding x
-    opt_RV=optimizer(f, x, fprime=df, maxfun=int(maxiter),messages=True,bounds=bounds)
+    opt_RV=optimizer(f, x, fprime=df, maxfun=int(maxiter),messages=False,bounds=bounds)
 #     optimizer = OPT.fmin_l_bfgs_b
 #     opt_RV=optimizer(f, x, fprime=df, maxfun=int(maxiter),iprint = 1,bounds=bounds)
     opt_x = opt_RV[0]
