@@ -59,29 +59,13 @@ def grad_check_Kx(K,logtheta,x0,dimensions=None):
     for iid in xrange(nd):
         d = dimensions[iid]
         dKx = K.Kgrad_x(logtheta,x1,x1,d)
-        #dKx_diag = K.Kgrad_xdiag(logtheta,x1,d)
-        #dKx.flat[::(dKx.shape[1] + 1)] = dKx_diag
         for iin in xrange(n):
             dKxn = SP.zeros([n, n])
             dKxn[iin, :] = 1.*dKx[iin, :]
             dKxn[:, iin] += 1.*dKx[iin, :]
             ana[iin,iid,:,:] = dKxn
             
-    delta = (ana -diff)/(diff+1E-10)
+    delta = ((ana -diff)**2).sum()
     print "delta %.2f" % SP.absolute(delta).max()
-    for d in xrange(nd):
-        pylab.close("all")
-        pylab.matshow(ana[:,d,:,:].sum(0))
-        pylab.title("analytical")
-        pylab.colorbar()
-        
-        pylab.matshow(diff[:,d,:,:].sum(0))
-        pylab.title("numerical")
-        pylab.colorbar()
-        import pdb;pdb.set_trace()
-#        for i in [0,n-1]: 
-#            pylab.close("all")
-#            pylab.matshow(diff[i,d,:,:]) ; pylab.colorbar() ; pylab.title("Numerical")
-#            pylab.matshow(ana[i,d,:,:]) ; pylab.colorbar() ; pylab.title("Analytical")
-#            pylab.show()
+    pdb.set_trace()
     pass
