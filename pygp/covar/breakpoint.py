@@ -100,9 +100,9 @@ class DivergeCF(CovarianceFunction):
 #            import pdb
 #            pdb.set_trace()
 #        return (SP.exp(k*BPs)+SP.exp(k*grouping)) / SP.exp(k)
-        return -.5 * special.erf(((1./L) * (SP.dot(x1_f,x2_f))) - BP) + .5
+        return -.5 * special.erf(((1./L) * (SP.dot(x1_f,x2_f.T))) - BP) + .5
 
-    def Kd(self, logtheta, x1, i):
+    def Kgrad_theta(self, theta, x1, i):
         """
         The derivatives of the covariance matrix for
         each hyperparameter, respectively.
@@ -110,7 +110,7 @@ class DivergeCF(CovarianceFunction):
         **Parameters:**
         See :py:class:`pygp.covar.CovarianceFunction`
         """
-        return self.K(logtheta, x1)[i]
+        return self.K(theta, x1)[i]
 
     def Kdiag(self,logtheta, x1):
         """
@@ -124,7 +124,7 @@ class DivergeCF(CovarianceFunction):
         return self.K(logtheta,x1).diagonal()
     
 
-    def Kd_dx(self,logtheta,x):
+    def Kgrad_x(self, logtheta, x, d):
         """
         The partial derivative of the covariance matrix with
         respect to x, given hyperparameters `logtheta`.

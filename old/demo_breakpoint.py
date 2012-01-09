@@ -8,25 +8,27 @@ This Example shows the Squared Exponential CF
 (using :py:class:`covar.combinators.SumCF`).
 """
 
+from pygp.covar import se, noise, combinators, breakpoint
+from pygp.gp import GP
+from pygp.gp.composite import GroupGP
+from pygp.optimize import opt_hyper
 import cPickle
+import copy
+import logging
+import numpy.random as random
+import os
+import pygp.priors.lnpriors as lnpriors
+import pylab as PL
+import scipy as SP
+from numpy.linalg.linalg import LinAlgError
+import pygp
+from pygp import linalg
 
 #import sys
 #sys.path.append('/kyb/agbs/stegle/work/ibg/lib')
 
-import pylab as PL
-import scipy as SP
-import numpy.random as random
 
-from pygp.covar import se, noise, combinators, breakpoint
-import pygp.priors.lnpriors as lnpriors
-
-import logging
-import copy
-import os
-
-from pygp.gp import GP
-from pygp.gp.composite import GroupGP
-from pygp.optimize import opt_hyper
+PL.close("all")
 
 logging.basicConfig(level=logging.INFO)
 
@@ -159,23 +161,34 @@ for name in ['CATMA3A12810', 'CATMA3A22550' , 'CATMA4A36120', 'CATMA3A19900']:
     gpr_plot.plot_training_data(x1, C[1], replicate_indices=x1_rep.reshape(-1))
     gpr_plot.plot_training_data(x2, T[1], replicate_indices=x2_rep.reshape(-1))
     
-    norm = PL.Normalize()
+#    norm = PL.Normalize()
 
     break_lml = []
     plots = SP.int_(SP.sqrt(24) + 1)
+    PL.figure()
     for i, BP in enumerate(x1[0,:]):
         #PL.subplot(plots,plots,i+1)
         _hyper = copy.deepcopy(opt_model_params)
         _logtheta = _hyper['covar']
-        _logtheta = SP.concatenate((_logtheta, [BP,.5]))
+        _logtheta = SP.concatenate((_logtheta, [BP, 10]))#SP.var(y[:,i])]))
         _hyper['covar'] = _logtheta
-        #[opt_model_params,opt_lml] = opt_hyper(gpr_BP,_hyper,priors=priors_BP,gradcheck=False,Ifilter=Ifilter_BP)
+
+        
+        priors_BP[3] = [lnpriors.lnGauss, [BP, 3]]
+#        [opt_model_params,opt_lml] = opt_hyper(gpr_BP,_hyper,priors=priors_BP,gradcheck=False,Ifilter=Ifilter_BP)
         #break_lml.append(opt_lml)
         
-        priors_BP[3] = [lnpriors.lnGauss, [BP, 1]]
-        
-        break_lml.append(gpr_BP.LML(_hyper, priors_BP))
-
+        try:
+            break_lml.append(gpr_BP.LML(_hyper, priors_BP))
+            print "Variance: %s" % (_logtheta) 
+#            PL.figure()
+#            [M, S] = gpr_BP.predict(_hyper, X)
+#            gpr_plot.plot_sausage(X, M, SP.sqrt(S))
+#            gpr_plot.plot_training_data(x1, C[1], replicate_indices=x1_rep.reshape(-1))
+#            gpr_plot.plot_training_data(x2, T[1], replicate_indices=x2_rep.reshape(-1))
+        except:
+            break_lml.append(0)
+             
         # PL.plot(C[0].transpose(),C[1].transpose(),'+b',markersize=10)
         # PL.plot(T[0].transpose(),T[1].transpose(),'+r',markersize=10)
 
@@ -221,15 +234,10 @@ for name in ['CATMA3A12810', 'CATMA3A22550' , 'CATMA4A36120', 'CATMA3A19900']:
         # predict
         # PL.subplot(plots,plots,i+1)
         
-        if(BP == 20):
-            PL.figure()
-            [M, S] = gpr_BP.predict(_hyper, X)
-            gpr_plot.plot_sausage(X, M, SP.sqrt(S))
-            gpr_plot.plot_training_data(x1, C[1], replicate_indices=x1_rep.reshape(-1))
-            gpr_plot.plot_training_data(x2, T[1], replicate_indices=x2_rep.reshape(-1))
+        
             
         
     PL.figure()
     PL.plot(x1[0], break_lml)
-
-    PL.figure()
+    import pdb;pdb.set_trace()
+    PL.close("all")

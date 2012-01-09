@@ -97,7 +97,7 @@ def checkgrad(f,fprime,x,step=1e-3, tolerance = 1e-4, *args,**kw_args):
 		## 	print "ratio = ",ratio,'\n'
 
 
-def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds = None,optimizer=OPT.fmin_tnc,*args,**kw_args):
+def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds = None,optimizer=OPT.fmin_tnc,gradient_tolerance=1E-4,*args,**kw_args):
     """
     Optimize hyperparemters of :py:class:`pygp.gp.basic_gp.GP` ``gpr`` starting from given hyperparameters ``hyperparams``.
 
@@ -196,7 +196,7 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds =
     #general optimizer interface
     #note: x is a subset of X, indexing the parameters that are optimized over
     #Ifilter_x pickes the subest of X, yielding x
-    opt_RV=optimizer(f, x, fprime=df, maxfun=int(maxiter),messages=True,bounds=bounds)
+    opt_RV=optimizer(f, x, fprime=df, maxfun=int(maxiter),pgtol=gradient_tolerance,messages=True,bounds=bounds)
 #     optimizer = OPT.fmin_l_bfgs_b
 #     opt_RV=optimizer(f, x, fprime=df, maxfun=int(maxiter),iprint = 1,bounds=bounds)
     opt_x = opt_RV[0]
