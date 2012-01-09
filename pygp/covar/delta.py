@@ -119,9 +119,9 @@ class CovarCF(CovarianceFunction):
         ic = 0
         for i in xrange(self.n_groups):
             for j in xrange(i+1):
-                #A = SP.exp(theta[ic])
                 A = theta[ic]
                 #if (i==j):
+                #    A = SP.exp(2*theta[ic])
                 x1_ = (x1==i)
                 x2_ = (x2==j)
                 K0_ = (SP.outer(x1_,x2_) | SP.outer(x2_,x1_))
@@ -136,10 +136,9 @@ class CovarCF(CovarianceFunction):
             for j in xrange(i+1):
                 #select corresponding parameter
                 if (ic==d):
-                    #A = SP.exp(theta[ic])
-                    #if (i==j):
-                    #else:
                     A = 1.0
+                    #if (i==j):
+                    #    A = 2*SP.exp(2*theta[ic])
                     x1_ = (x1==i)
                     x2_ = (x1==j)
                     K0_ = (SP.outer(x1_,x2_) | SP.outer(x2_,x1_))
