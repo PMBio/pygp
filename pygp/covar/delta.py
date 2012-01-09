@@ -40,7 +40,6 @@ class DeltaCFISO(CovarianceFunction):
         RV = SP.exp(2*theta[0])*x1.shape[1]
         return RV
 
-
     def Kgrad_theta(self,theta,x1,i):
         assert i==0, 'LinearCF: Kgrad_theta: only one hyperparameter for linear covariance'
         RV = self.K(theta,x1)
@@ -48,6 +47,16 @@ class DeltaCFISO(CovarianceFunction):
         RV*=2
         return RV
 
+    def Kgrad_x(self,theta,x1,x2,d):
+        RV = SP.zeros([x1.shape[0],x2.shape[0]])
+        return RV
+
+    
+    def Kgrad_xdiag(self,theta,x1,d):
+        """derivative w.r.t diagonal of self covariance matrix"""
+        RV = SP.zeros([x1.shape[0]])
+        return RV
+    
     def get_hyperparameter_names(self):
         names = []
         names.append('DeltaCFISO Amplitude')
