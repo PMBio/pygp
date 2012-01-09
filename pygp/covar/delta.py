@@ -86,6 +86,23 @@ class DeltaCF(CovarianceFunction):
         #derivative w.r.t. to amplitude
         return K
 
+    def Kdiag(self,theta,x1):
+        """self covariance"""
+        if (x1.shape[0]==self._K.shape[0]):
+            return self._K.diagonal()
+        else:
+            return SP.zeros([x1.shape[0]])
+
+    def Kgrad_x(self,theta,x1,x2,d):
+        RV = SP.zeros([x1.shape[0],x2.shape[0]])
+        return RV
+
+    
+    def Kgrad_xdiag(self,theta,x1,d):
+        """derivative w.r.t diagonal of self covariance matrix"""
+        RV = SP.zeros([x1.shape[0]])
+        return RV
+    
     def get_hyperparameter_names(self):
         names = []
         names.append('DeltaCFISO Amplitude')
