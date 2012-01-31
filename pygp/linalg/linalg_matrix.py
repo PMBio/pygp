@@ -67,7 +67,7 @@ def jitChol(A, maxTries=10, warning=True):
                 return LC.T, 0.0
             else:
                 if warning:
-                    pdb.set_trace()
+                    # pdb.set_trace()
 		    # plt.figure()
 		    # plt.imshow(A, interpolation="nearest")
 		    # plt.colorbar()

@@ -200,7 +200,8 @@ class TanhWarpingFunction(WarpingFunction):
         bounds[:,:,1] = +SP.inf
         # but the second one
         bounds[:,1,0] = -SP.inf
-        bounds[:,1,1] = SP.log(20)
+        bounds[:,1,1] = SP.log(20)	
+
 	# flatten the bounds matrix across the first dimension
 	bounds = bounds.reshape((bounds.shape[0]*bounds.shape[1], 2))
 
@@ -297,9 +298,11 @@ class WARPEDGP(GP):
         grad_f_psi = self.mean_function.fgrad_psi(hyperparams['mean'])
         #scale up K^{-1}*y (Kiy) for matrix operations with grad_psi
         Kiy = super(WARPEDGP, self).get_covariances(hyperparams)['alpha']
+
         mean_grad_quad = -1.0*SP.dot(grad_f_psi.T,Kiy[:,0]).T
 
         RV ={'mean': mean_grad_quad}
+	
         return RV
 
     def _LMLgrad_warping(self,hyperparams):
