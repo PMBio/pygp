@@ -266,6 +266,7 @@ class GP(object):
             Kss_diag = self.covar.Kdiag(hyperparams['covar'], xstar)
             if self.likelihood is not None:
                 Kss_diag += self.likelihood.Kdiag(hyperparams['lik'],xstar)
+            pdb.set_trace()
             v = linalg.solve(KV['L'], Kstar)
             S2 = Kss_diag - sum(v * v, 0).transpose()
             S2 = abs(S2)
