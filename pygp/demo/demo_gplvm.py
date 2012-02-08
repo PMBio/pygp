@@ -56,9 +56,6 @@ if __name__ == '__main__':
     X0 = SP.random.randn(N,K)
     X0 = Spca
     hyperparams['x'] = X0
-
-    #copy for FA
-    hyperparams_fa = copy.deepcopy(hyperparams)
     
     #standard Gaussian noise
     likelihood = lik.GaussLikISO()
