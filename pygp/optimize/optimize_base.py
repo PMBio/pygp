@@ -60,14 +60,7 @@ def checkgrad(f, fprime, x, *args,**kw_args):
     analytical_gradient = fprime(x, *args, **kw_args)
     ratio = (f_ph - f_mh)/(2*np.dot(h, analytical_gradient))
 
-
-    print "numerical gradient: ", numerical_gradient
-    print "analytical gradient: ",  analytical_gradient
-    print "ratio: ", ratio
-
-    if np.abs(1.0 - ratio) > 1e-3:
-	print "ratio far from 1, checking individual gradients"
-
+    if True:
 	h = np.zeros_like(x)
 	
 	for i in range(len(x)):
@@ -85,7 +78,6 @@ def checkgrad(f, fprime, x, *args,**kw_args):
 								     analytical_gradient,
 								     ratio)
 	    
-	pdb.set_trace()
 
 
 def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds = None,optimizer=OPT.fmin_tnc,gradient_tolerance=1E-4,*args,**kw_args):
@@ -186,10 +178,10 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds =
 
     #general optimizer interface
     #note: x is a subset of X, indexing the parameters that are optimized over
-    #Ifilter_x pickes the subest of X, yielding x
-    opt_RV=optimizer(f, x, fprime=df, maxfun=int(maxiter),pgtol=gradient_tolerance,messages=True,bounds=bounds)
+    # Ifilter_x pickes the subest of X, yielding x
+    opt_RV=optimizer(f, x, fprime=df, maxfun=int(maxiter),pgtol=gradient_tolerance, messages=True, bounds=bounds)
     # optimizer = OPT.fmin_l_bfgs_b
-    # opt_RV=optimizer(f, x, fprime=df, maxfun=int(maxiter),iprint = 1,bounds=bounds)
+    # opt_RV=optimizer(f, x, fprime=df, maxfun=int(maxiter),iprint =1, bounds=bounds, factr=10.0, pgtol=1e-10)
     opt_x = opt_RV[0]
     
     #relate back to X
@@ -201,9 +193,11 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds =
     opt_lml = gpr.LML(opt_hyperparams,**kw_args)
 
     if gradcheck:
-	# checkgrad(f, df, opt_RV[0])
+	checkgrad(f, df, opt_RV[0])
         LG.info("check_grad (post) (Enter to continue):" + str(OPT.check_grad(f,df,opt_RV[0])))
-        raw_input()
+
+	pdb.set_trace()
+        # raw_input()
 
     LG.debug("old parameters:")
     LG.debug(str(hyperparams))
