@@ -142,7 +142,7 @@ def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds =
         rv =  gpr.LMLgrad(param_list_to_dict(x_,param_struct,skeys),*args,**kw_args)
         rv = param_dict_to_list(rv,skeys)
         #LG.debug("dL("+str(x_)+")=="+str(rv))
-        if SP.isnan(rv).any():
+        if not SP.isfinite(rv).all(): #SP.isnan(rv).any():
             In = SP.isnan(rv)
             rv[In] = 1E6
         return rv[Ifilter_x]
