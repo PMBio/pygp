@@ -1,0 +1,218 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Application Example of GP regression &mdash; PythonGPRegression 0.7.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.7.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PythonGPRegression 0.7.0 documentation" href="index.html" />
+    <link rel="prev" title="Application Example of GP regression" href="demo_gpr.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="demo_gpr.html" title="Application Example of GP regression"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">PythonGPRegression 0.7.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="application-example-of-gp-regression">
+<h1>Application Example of GP regression<a class="headerlink" href="#application-example-of-gp-regression" title="Permalink to this headline">¶</a></h1>
+<p>This Example shows the Squared Exponential CF
+(<tt class="xref py py-class docutils literal"><span class="pre">pygp.covar.se.SEARDCF</span></tt>) preprocessed by
+shiftCF(:py:class`covar.combinators.ShiftCF) and combined with noise
+<tt class="xref py py-class docutils literal"><span class="pre">pygp.covar.noise.NoiseISOCF</span></tt> by summing them up
+(using <a class="reference internal" href="covars.html#pygp.covar.combinators.SumCF" title="pygp.covar.combinators.SumCF"><tt class="xref py py-class docutils literal"><span class="pre">pygp.covar.combinators.SumCF</span></tt></a>).
+We will shift two input replicates against each other, to make them fit to each other.</p>
+<p>First of all we have to import all important packages:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">PL</span>
+<span class="kn">import</span> <span class="nn">scipy</span> <span class="kn">as</span> <span class="nn">SP</span>
+<span class="kn">import</span> <span class="nn">numpy.random</span> <span class="kn">as</span> <span class="nn">random</span>
+</pre></div>
+</div>
+<p>Now import the Covariance Functions and Combinators:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">pygp.covar</span> <span class="kn">import</span> <span class="n">se</span><span class="p">,</span> <span class="n">noise</span><span class="p">,</span> <span class="n">combinators</span>
+</pre></div>
+</div>
+<p>And additionally the GP regression framework (<a class="reference internal" href="gp.html#module-pygp.gp" title="pygp.gp"><tt class="xref py py-class docutils literal"><span class="pre">pygp.gp</span></tt></a>, <a class="reference internal" href="priors.html#module-pygp.priors" title="pygp.priors"><tt class="xref py py-class docutils literal"><span class="pre">pygp.priors</span></tt></a> for the priors and <a class="reference internal" href="plot_gpr.html#module-pygp.plot.gpr_plot" title="pygp.plot.gpr_plot"><tt class="xref py py-class docutils literal"><span class="pre">pygp.plot.gpr_plot</span></tt></a> for plotting the results):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">pygp.gp.basic_gp</span> <span class="kn">import</span> <span class="n">GP</span>
+<span class="kn">from</span> <span class="nn">pygp.optimize.optimize</span> <span class="kn">import</span> <span class="n">opt_hyper</span>
+<span class="kn">from</span> <span class="nn">pygp.priors</span> <span class="kn">import</span> <span class="n">lnpriors</span>
+<span class="kn">import</span> <span class="nn">pygp.plot.gpr_plot</span> <span class="kn">as</span> <span class="nn">gpr_plot</span>
+</pre></div>
+</div>
+<p>For this particular example we generate some simulated random sinus
+data; just samples from a superposition of a <cite>sin + linear</cite> trend:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">xmin</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">xmax</span> <span class="o">=</span> <span class="mf">2.5</span><span class="o">*</span><span class="n">SP</span><span class="o">.</span><span class="n">pi</span>
+<span class="n">x1</span> <span class="o">=</span> <span class="n">SP</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">xmin</span><span class="p">,</span><span class="n">xmax</span><span class="p">,</span><span class="o">.</span><span class="mi">7</span><span class="p">)</span>
+<span class="n">x2</span> <span class="o">=</span> <span class="n">SP</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">xmin</span><span class="p">,</span><span class="n">xmax</span><span class="p">,</span><span class="o">.</span><span class="mi">4</span><span class="p">)</span>
+
+<span class="n">C</span> <span class="o">=</span> <span class="mi">2</span>       <span class="c">#offset</span>
+<span class="n">b</span> <span class="o">=</span> <span class="mf">0.5</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="mf">0.1</span>
+
+<span class="n">b</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="n">y1</span>  <span class="o">=</span> <span class="n">b</span><span class="o">*</span><span class="n">x1</span> <span class="o">+</span> <span class="n">C</span> <span class="o">+</span> <span class="mi">1</span><span class="o">*</span><span class="n">SP</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
+<span class="n">dy1</span> <span class="o">=</span> <span class="n">b</span>   <span class="o">+</span>     <span class="mi">1</span><span class="o">*</span><span class="n">SP</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
+<span class="n">y1</span> <span class="o">+=</span> <span class="n">sigma</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">y1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">y1</span><span class="o">-=</span> <span class="n">y1</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+<span class="n">y2</span>  <span class="o">=</span> <span class="n">b</span><span class="o">*</span><span class="n">x2</span> <span class="o">+</span> <span class="n">C</span> <span class="o">+</span> <span class="mi">1</span><span class="o">*</span><span class="n">SP</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
+<span class="n">dy2</span> <span class="o">=</span> <span class="n">b</span>   <span class="o">+</span>     <span class="mi">1</span><span class="o">*</span><span class="n">SP</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
+<span class="n">y2</span> <span class="o">+=</span> <span class="n">sigma</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">y2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">y2</span><span class="o">-=</span> <span class="n">y2</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+<span class="n">x1</span> <span class="o">=</span> <span class="n">x1</span><span class="p">[:,</span><span class="n">SP</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+<span class="n">x2</span> <span class="o">=</span> <span class="p">(</span><span class="n">x2</span><span class="o">-</span><span class="mi">1</span><span class="p">)[:,</span><span class="n">SP</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">SP</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">x1</span><span class="p">,</span><span class="n">x2</span><span class="p">),</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">SP</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">y1</span><span class="p">,</span><span class="n">y2</span><span class="p">),</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The predictions we will make on the interpolation interval</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">X</span> <span class="o">=</span> <span class="n">SP</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">100</span><span class="p">)[:,</span><span class="n">SP</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>For the calculation of the replicates, we need to give the replicate indices per input x:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">dim</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">replicate_indices</span> <span class="o">=</span> <span class="n">SP</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">SP</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">xi</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">xi</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">((</span><span class="n">x1</span><span class="p">,</span><span class="n">x2</span><span class="p">))])</span>
+<span class="n">n_replicates</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">SP</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">replicate_indices</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Thus, our starting hyperparameters are:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">logthetaCOVAR</span> <span class="o">=</span> <span class="n">SP</span><span class="o">.</span><span class="n">log</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">sigma</span><span class="p">])</span>
+<span class="n">hyperparams</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;covar&#39;</span><span class="p">:</span><span class="n">logthetaCOVAR</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Now the interesting point: creating the sumCF by combining noise and se:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">SECF</span> <span class="o">=</span> <span class="n">se</span><span class="o">.</span><span class="n">SEARDCF</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
+<span class="n">noiseCF</span> <span class="o">=</span> <span class="n">noise</span><span class="o">.</span><span class="n">NoiseISOCF</span><span class="p">()</span>
+<span class="n">shiftCF</span> <span class="o">=</span> <span class="n">combinators</span><span class="o">.</span><span class="n">ShiftCF</span><span class="p">(</span><span class="n">SECF</span><span class="p">,</span><span class="n">replicate_indices</span><span class="p">)</span>
+<span class="n">covar</span> <span class="o">=</span> <span class="n">combinators</span><span class="o">.</span><span class="n">SumCF</span><span class="p">((</span><span class="n">shiftCF</span><span class="p">,</span><span class="n">noiseCF</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>And the prior believes, we have about the hyperparameters:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">covar_priors</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="c">#Length-Scale</span>
+<span class="n">covar_priors</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">lnpriors</span><span class="o">.</span><span class="n">lngammapdf</span><span class="p">,[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]])</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dim</span><span class="p">):</span>
+    <span class="n">covar_priors</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">lnpriors</span><span class="o">.</span><span class="n">lngammapdf</span><span class="p">,[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+
+<span class="c">#X-Shift</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_replicates</span><span class="p">):</span>
+    <span class="n">covar_priors</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">lnpriors</span><span class="o">.</span><span class="n">lngausspdf</span><span class="p">,[</span><span class="mi">0</span><span class="p">,</span><span class="o">.</span><span class="mi">5</span><span class="p">]])</span>
+
+<span class="c">#Noise</span>
+<span class="n">covar_priors</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">lnpriors</span><span class="o">.</span><span class="n">lngammapdf</span><span class="p">,[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="n">priors</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;covar&#39;</span><span class="p">:</span><span class="n">covar_priors</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>We want all hyperparameters to be optimized:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Ifilter</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;covar&#39;</span><span class="p">:</span> <span class="n">SP</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="s">&#39;int&#39;</span><span class="p">)}</span>
+</pre></div>
+</div>
+<p>Create the GP regression class for further usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">gpr</span> <span class="o">=</span> <span class="n">GP</span><span class="p">(</span><span class="n">covar</span><span class="p">,</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>And optimize the hyperparameters:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="n">opt_model_params</span><span class="p">,</span><span class="n">opt_lml</span><span class="p">]</span><span class="o">=</span><span class="n">opt_hyper</span><span class="p">(</span><span class="n">gpr</span><span class="p">,</span><span class="n">hyperparams</span><span class="p">,</span><span class="n">priors</span><span class="o">=</span><span class="n">priors</span><span class="p">,</span><span class="n">gradcheck</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">Ifilter</span><span class="o">=</span><span class="n">Ifilter</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>With these optimized hyperparameters we can now predict the point-wise mean M and deviance S of the training data:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="n">M</span><span class="p">,</span><span class="n">S</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpr</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">opt_model_params</span><span class="p">,</span><span class="n">X</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For the sake of beauty plot the mean M and deviance S:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">T</span> <span class="o">=</span> <span class="n">opt_model_params</span><span class="p">[</span><span class="s">&#39;covar&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span>
+<span class="n">gpr_plot</span><span class="o">.</span><span class="n">plot_sausage</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">M</span><span class="p">,</span><span class="n">SP</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">S</span><span class="p">))</span>
+<span class="n">gpr_plot</span><span class="o">.</span><span class="n">plot_training_data</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">shift</span><span class="o">=</span><span class="n">T</span><span class="p">,</span><span class="n">replicate_indices</span><span class="o">=</span><span class="n">replicate_indices</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The resulting plot is:</p>
+<img alt="_images/TimeShiftExample.png" src="_images/TimeShiftExample.png" />
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="demo_gpr.html"
+                        title="previous chapter">Application Example of GP regression</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="demo_gpr.html" title="Application Example of GP regression"
+             >previous</a> |</li>
+        <li><a href="index.html">PythonGPRegression 0.7.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Oliver Stegle, Max Zwießele.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

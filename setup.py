@@ -16,7 +16,6 @@ gpr_ep.py GP regression with EP likelihood models
 covar: covariance functions"""
 
 setup(name='pygp',
-      #namespace_packages=['covar'],
       version = '1.0.0',
       description = __description__,
       #summary = __description__.split("\n")[0],
@@ -24,6 +23,6 @@ setup(name='pygp',
       author = "Oliver Stegle, Max Zwiessele",
       #author_email = 'email_not_yet@support.ed',
       #url = 'no.url.given'
-      packages = find_packages("."),
+      packages = packages=['pygp', 'demo'],
       install_requires = ['numpy','scipy']
       )

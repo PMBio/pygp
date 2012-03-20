@@ -1,0 +1,188 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Package for Gaussian Process Optimization &mdash; PythonGPRegression 0.7.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.7.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PythonGPRegression 0.7.0 documentation" href="index.html" />
+    <link rel="next" title="Package for Priors of Gaussian Processes" href="priors.html" />
+    <link rel="prev" title="Covariance Functions" href="covars.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="priors.html" title="Package for Priors of Gaussian Processes"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="covars.html" title="Covariance Functions"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">PythonGPRegression 0.7.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-pygp.optimize"></span><div class="section" id="package-for-gaussian-process-optimization">
+<h1>Package for Gaussian Process Optimization<a class="headerlink" href="#package-for-gaussian-process-optimization" title="Permalink to this headline">¶</a></h1>
+<p>This package provides optimization functionality
+for hyperparameters of covariance functions
+<a class="reference internal" href="covars.html#module-pygp.covar" title="pygp.covar"><tt class="xref py py-class docutils literal"><span class="pre">pygp.covar</span></tt></a> given.</p>
+<span class="target" id="module-pygp.optimize.optimize_base"></span><div class="section" id="id1">
+<h2>Package for Gaussian Process Optimization<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>This package provides optimization functionality
+for hyperparameters of covariance functions
+<a class="reference internal" href="covars.html#module-pygp.covar" title="pygp.covar"><tt class="xref py py-class docutils literal"><span class="pre">pygp.covar</span></tt></a> given.</p>
+<dl class="function">
+<dt id="pygp.optimize.optimize_base.checkgrad">
+<tt class="descclassname">pygp.optimize.optimize_base.</tt><tt class="descname">checkgrad</tt><big>(</big><em>f</em>, <em>fprime</em>, <em>x</em>, <em>*args</em>, <em>**kw_args</em><big>)</big><a class="headerlink" href="#pygp.optimize.optimize_base.checkgrad" title="Permalink to this definition">¶</a></dt>
+<dd><p>Analytical gradient calculation using a 3-point method</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pygp.optimize.optimize_base.opt_hyper">
+<tt class="descclassname">pygp.optimize.optimize_base.</tt><tt class="descname">opt_hyper</tt><big>(</big><em>gpr</em>, <em>hyperparams</em>, <em>Ifilter=None</em>, <em>maxiter=1000</em>, <em>gradcheck=False</em>, <em>bounds=None</em>, <em>optimizer=&lt;function fmin_tnc at 0x10ce5ab18&gt;</em>, <em>gradient_tolerance=0.0001</em>, <em>*args</em>, <em>**kw_args</em><big>)</big><a class="headerlink" href="#pygp.optimize.optimize_base.opt_hyper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optimize hyperparemters of <tt class="xref py py-class docutils literal"><span class="pre">pygp.gp.basic_gp.GP</span></tt> <tt class="docutils literal"><span class="pre">gpr</span></tt> starting from given hyperparameters <tt class="docutils literal"><span class="pre">hyperparams</span></tt>.</p>
+<p><strong>Parameters:</strong></p>
+<dl class="docutils">
+<dt>gpr <span class="classifier-delimiter">:</span> <span class="classifier"><tt class="xref py py-class docutils literal"><span class="pre">pygp.gp.basic_gp</span></tt></span></dt>
+<dd>GP regression class</dd>
+<dt>hyperparams <span class="classifier-delimiter">:</span> <span class="classifier">{&#8216;covar&#8217;:logtheta, ...}</span></dt>
+<dd>Dictionary filled with starting hyperparameters
+for optimization. logtheta are the CF hyperparameters.</dd>
+<dt>Ifilter <span class="classifier-delimiter">:</span> <span class="classifier">[boolean]</span></dt>
+<dd><p class="first">Index vector, indicating which hyperparameters shall
+be optimized. For instance:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">logtheta</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span>
+<span class="n">Ifilter</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+<p class="last">means that only the second entry (which equals 2 in
+this example) of logtheta will be optimized
+and the others remain untouched.</p>
+</dd>
+<dt>bounds <span class="classifier-delimiter">:</span> <span class="classifier">[[min,max]]</span></dt>
+<dd>Array with min and max value that can be attained for any hyperparameter</dd>
+<dt>maxiter: int</dt>
+<dd>maximum number of function evaluations</dd>
+<dt>gradcheck: boolean </dt>
+<dd>check gradients comparing the analytical gradients to their approximations</dd>
+<dt>optimizer: <tt class="xref py py-class docutils literal"><span class="pre">scipy.optimize</span></tt></dt>
+<dd>which scipy optimizer to use? (standard lbfgsb)</dd>
+</dl>
+<p>** argument passed onto LML**</p>
+<dl class="docutils">
+<dt>priors <span class="classifier-delimiter">:</span> <span class="classifier">[<a class="reference internal" href="priors.html#module-pygp.priors" title="pygp.priors"><tt class="xref py py-class docutils literal"><span class="pre">pygp.priors</span></tt></a>]</span></dt>
+<dd>non-default prior, otherwise assume
+first index amplitude, last noise, rest:lengthscales</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pygp.optimize.optimize_base.param_dict_to_list">
+<tt class="descclassname">pygp.optimize.optimize_base.</tt><tt class="descname">param_dict_to_list</tt><big>(</big><em>dict</em>, <em>skeys=None</em><big>)</big><a class="headerlink" href="#pygp.optimize.optimize_base.param_dict_to_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert from param dictionary to list</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pygp.optimize.optimize_base.param_list_to_dict">
+<tt class="descclassname">pygp.optimize.optimize_base.</tt><tt class="descname">param_list_to_dict</tt><big>(</big><em>list</em>, <em>param_struct</em>, <em>skeys</em><big>)</big><a class="headerlink" href="#pygp.optimize.optimize_base.param_list_to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert from param dictionary to list
+param_struct: structure of parameter array</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Package for Gaussian Process Optimization</a><ul>
+<li><a class="reference internal" href="#id1">Package for Gaussian Process Optimization</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="covars.html"
+                        title="previous chapter">Covariance Functions</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="priors.html"
+                        title="next chapter">Package for Priors of Gaussian Processes</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="priors.html" title="Package for Priors of Gaussian Processes"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="covars.html" title="Covariance Functions"
+             >previous</a> |</li>
+        <li><a href="index.html">PythonGPRegression 0.7.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Oliver Stegle, Max Zwießele.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

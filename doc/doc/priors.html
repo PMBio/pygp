@@ -1,0 +1,195 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Package for Priors of Gaussian Processes &mdash; PythonGPRegression 0.7.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.7.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PythonGPRegression 0.7.0 documentation" href="index.html" />
+    <link rel="next" title="Package for plotting GPRegression results" href="plot_gpr.html" />
+    <link rel="prev" title="Package for Gaussian Process Optimization" href="opt_hyper.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="plot_gpr.html" title="Package for plotting GPRegression results"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="opt_hyper.html" title="Package for Gaussian Process Optimization"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">PythonGPRegression 0.7.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-pygp.priors"></span><div class="section" id="package-for-priors-of-gaussian-processes">
+<h1>Package for Priors of Gaussian Processes<a class="headerlink" href="#package-for-priors-of-gaussian-processes" title="Permalink to this headline">¶</a></h1>
+<p>This package provides priors for gaussian processes in which
+you can declare your prior beliefs of the hyperparameter
+distribution.</p>
+<span class="target" id="module-pygp.priors.lnpriors"></span><div class="section" id="hyperpriors-for-log-likelihood-calculation">
+<h2>Hyperpriors for log likelihood calculation<a class="headerlink" href="#hyperpriors-for-log-likelihood-calculation" title="Permalink to this headline">¶</a></h2>
+<p>This module contains a set of commonly used priors for GP models.
+Note some priors are available in a log transformed space and non-transformed space</p>
+<dl class="function">
+<dt id="pygp.priors.lnpriors.lnGamma">
+<tt class="descclassname">pygp.priors.lnpriors.</tt><tt class="descname">lnGamma</tt><big>(</big><em>x</em>, <em>params</em><big>)</big><a class="headerlink" href="#pygp.priors.lnpriors.lnGamma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the <tt class="docutils literal"><span class="pre">log</span> <span class="pre">gamma</span> <span class="pre">(x,k,t)</span></tt> distribution and its derivation with:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">lngamma</span>     <span class="o">=</span> <span class="p">(</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">x</span><span class="o">/</span><span class="n">t</span> <span class="o">-</span><span class="n">gammaln</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">-</span> <span class="n">k</span><span class="o">*</span><span class="n">log</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="n">dlngamma</span>    <span class="o">=</span> <span class="p">(</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="o">/</span><span class="n">t</span>
+</pre></div>
+</div>
+<p><strong>Parameters:</strong></p>
+<dl class="docutils">
+<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">[double]</span></dt>
+<dd>the interval in which the distribution shall be computed.</dd>
+<dt>params <span class="classifier-delimiter">:</span> <span class="classifier">[k, t]</span></dt>
+<dd>the distribution parameters k and t.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pygp.priors.lnpriors.lnGammaExp">
+<tt class="descclassname">pygp.priors.lnpriors.</tt><tt class="descname">lnGammaExp</tt><big>(</big><em>x</em>, <em>params</em><big>)</big><a class="headerlink" href="#pygp.priors.lnpriors.lnGammaExp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the <tt class="docutils literal"><span class="pre">log</span> <span class="pre">gamma</span> <span class="pre">(exp(x),k,t)</span></tt> distribution and its derivation with:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">lngamma</span>     <span class="o">=</span> <span class="p">(</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">x</span><span class="o">/</span><span class="n">t</span> <span class="o">-</span><span class="n">gammaln</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">-</span> <span class="n">k</span><span class="o">*</span><span class="n">log</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="n">dlngamma</span>    <span class="o">=</span> <span class="p">(</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="o">/</span><span class="n">t</span>
+</pre></div>
+</div>
+<p><strong>Parameters:</strong></p>
+<dl class="docutils">
+<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">[double]</span></dt>
+<dd>the interval in which the distribution shall be computed.</dd>
+<dt>params <span class="classifier-delimiter">:</span> <span class="classifier">[k, t]</span></dt>
+<dd>the distribution parameters k and t.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pygp.priors.lnpriors.lnGauss">
+<tt class="descclassname">pygp.priors.lnpriors.</tt><tt class="descname">lnGauss</tt><big>(</big><em>x</em>, <em>params</em><big>)</big><a class="headerlink" href="#pygp.priors.lnpriors.lnGauss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the <tt class="docutils literal"><span class="pre">log</span> <span class="pre">normal</span> <span class="pre">distribution</span></tt> and its derivation in interval x,
+given mean mu and variance sigma:</p>
+<div class="highlight-python"><pre>[N(params), d/dx N(params)] = N(mu,sigma|x).</pre>
+</div>
+<p><strong>Note</strong>: Give mu and sigma as mean and variance, the result will be logarithmic!</p>
+<p><strong>Parameters:</strong></p>
+<dl class="docutils">
+<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">[double]</span></dt>
+<dd>the interval in which the distribution shall be computed.</dd>
+<dt>params <span class="classifier-delimiter">:</span> <span class="classifier">[k, t]</span></dt>
+<dd>the distribution parameters k and t.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pygp.priors.lnpriors.lnL1">
+<tt class="descclassname">pygp.priors.lnpriors.</tt><tt class="descname">lnL1</tt><big>(</big><em>x</em>, <em>params</em><big>)</big><a class="headerlink" href="#pygp.priors.lnpriors.lnL1" title="Permalink to this definition">¶</a></dt>
+<dd><p>L1 type prior defined on the non-log weights
+params[0]: prior cost
+Note: this prior only works if the paramter is constraint to be strictly positive</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pygp.priors.lnpriors.lnuniformpdf">
+<tt class="descclassname">pygp.priors.lnpriors.</tt><tt class="descname">lnuniformpdf</tt><big>(</big><em>x</em>, <em>params</em><big>)</big><a class="headerlink" href="#pygp.priors.lnpriors.lnuniformpdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implementation of <tt class="docutils literal"><span class="pre">lnzeropdf</span></tt> for development purpose only. This
+pdf returns always <tt class="docutils literal"><span class="pre">[0,0]</span></tt>.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Package for Priors of Gaussian Processes</a><ul>
+<li><a class="reference internal" href="#hyperpriors-for-log-likelihood-calculation">Hyperpriors for log likelihood calculation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="opt_hyper.html"
+                        title="previous chapter">Package for Gaussian Process Optimization</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="plot_gpr.html"
+                        title="next chapter">Package for plotting GPRegression results</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="plot_gpr.html" title="Package for plotting GPRegression results"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="opt_hyper.html" title="Package for Gaussian Process Optimization"
+             >previous</a> |</li>
+        <li><a href="index.html">PythonGPRegression 0.7.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Oliver Stegle, Max Zwießele.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>
