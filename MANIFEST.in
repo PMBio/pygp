@@ -1,2 +1,2 @@
 include pygp/*.txt
-recursive-include pygp/doc html/*.html html/_static/* html/_sources/*
+recursive-include pygp/doc html/*.html html/_static/* html/_sources/* html/_images/*
