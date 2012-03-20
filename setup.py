@@ -23,6 +23,7 @@ setup(name='pygp',
       author = "Oliver Stegle, Max Zwiessele",
       #author_email = 'email_not_yet@support.ed',
       #url = 'no.url.given'
-      packages = packages=['pygp', 'demo'],
+      packages = ['pygp', 'demo','doc'],
+      package_data={'doc': ['doc/doc/*.html']},
       install_requires = ['numpy','scipy']
       )
