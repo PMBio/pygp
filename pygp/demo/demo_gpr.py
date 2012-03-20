@@ -95,7 +95,7 @@ if __name__ == '__main__':
 
     
     gp = GP(covar,likelihood=likelihood,x=x,y=y)
-    opt_model_params = opt.opt_hyper(gp,hyperparams,priors=priors,gradcheck=True)[0]
+    opt_model_params = opt.opt_hyper(gp,hyperparams,priors=priors,gradcheck=False)[0]
     
     #predict
     [M,S] = gp.predict(opt_model_params,X)
