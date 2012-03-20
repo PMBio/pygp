@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
-
+from sphinx.setup_command import BuildDoc
 
 __description__ = """Python package for Gaussian process regression in python 
 
@@ -18,12 +18,16 @@ covar: covariance functions"""
 setup(name='pygp',
       version = '1.0.0',
       description = __description__,
-      #summary = __description__.split("\n")[0],
-      #platform = "Linux/MaxOSX/Windows"
       author = "Oliver Stegle, Max Zwiessele",
-      #author_email = 'email_not_yet@support.ed',
-      #url = 'no.url.given'
-      packages = ['pygp', 'demo','doc'],
-      package_data={'doc': ['doc/doc/*.html']},
-      install_requires = ['numpy','scipy']
+      packages = ['pygp', 'pygp.covar', 'pygp.gp', 'pygp.likelihood', 'pygp.linalg',
+      		  'pygp.optimize', 'pygp.plot', 'pygp.priors', 'pygp.demo', 'pygp.doc'],
+      package_dir = {'pygp': 'pygp'},
+      package_data = {'pygp.doc': ['html/*.html',
+      				 'html/_static/*',
+      				 'html/_sources/*'],
+		      '' : ['*.txt']},
+      install_requires = ['numpy','scipy'],
+      include_package_data = True,
+      cmdclass = {'build_sphinx': BuildDoc},
+      license = 'GPLv2',
       )
