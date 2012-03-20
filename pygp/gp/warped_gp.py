@@ -352,7 +352,7 @@ if __name__ == '__main__':
     X = SP.linspace(0,10,100)[:,SP.newaxis] # predictions
     
     b = 1
-    C = 2
+    C = 0
     SNR = 0.1
     y  = b*x + C + 1*SP.sin(x) 
 
@@ -377,14 +377,15 @@ if __name__ == '__main__':
     n_terms = 3
     # build GP
     likelihood = lik.GaussLikISO()
-    covar_parms = SP.log([1,1,1E-5])
+    # covar_parms = SP.log([1,1,1E-5])
+    covar_parms = SP.log([1,1])
     hyperparams = {'covar':covar_parms,'lik':SP.log([sigma])}
 
     
     SECF = se.SqexpCFARD(n_dimensions=n_dimensions)
     muCF = mu.MuCF(N=X.shape[0])
-    covar = combinators.SumCF([SECF,muCF])
-
+    #covar = combinators.SumCF([SECF,muCF])
+    covar = SECF
     warping_function = None
     mean_function = None
     bounds = {}
@@ -393,7 +394,7 @@ if __name__ == '__main__':
         hyperparams['warping'] = 1E-2*SP.random.randn(n_terms,3)
         bounds.update(warping_function.get_bounds())
         
-    if 1:
+    if 0:
         mean_function    = LinMeanFunction(X= SP.ones([x.shape[0],1]))
         hyperparams['mean'] = 1E-2* SP.randn(1)
 
@@ -449,6 +450,7 @@ if __name__ == '__main__':
     #gp = GP(covar,likelihood=likelihood,x=x,y=y)    
     opt_model_params = opt_hyper(gp, hyperparams,
 				 bounds = bounds,
+				 maxiter=10000,
 				 gradcheck=True)[0]
 
     
