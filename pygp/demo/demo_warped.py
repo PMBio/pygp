@@ -49,7 +49,7 @@ def create_toy_data():
 
     return x, y, z, sigma, X, Itrafo(z), L
 
-if __name__ == '__main__':
+def run_demo():
     LG.basicConfig(level=LG.DEBUG)
     SP.random.seed(10)
 
@@ -95,5 +95,9 @@ if __name__ == '__main__':
     hyperparams.pop("mean")    
     gp = GP(covar,likelihood=likelihood,x=x,y=y)
     opt_model_params = opt.opt_hyper(gp,hyperparams,
-				     gradcheck=True)[0]
+				     gradcheck=False)[0]
     print "GP (neg) likelihood: ", gp.LML(hyperparams)
+
+
+if __name__ == '__main__':
+    run_demo()

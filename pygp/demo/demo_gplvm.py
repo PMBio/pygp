@@ -20,12 +20,11 @@ import pylab as PL
 import scipy as SP
 import pdb
 
-
-if __name__ == '__main__':
+def run_demo():
     LG.basicConfig(level=LG.INFO)
 
     #1. simulate data from a linear PCA model
-    N = 50
+    N = 25
     K = 5
     D = 200
 
@@ -72,3 +71,6 @@ if __name__ == '__main__':
 
     print "optimized latent X:"
     print opt_hyperparams['x']
+
+if __name__ == '__main__':
+    run_demo()

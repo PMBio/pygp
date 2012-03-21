@@ -44,7 +44,7 @@ def create_toy_data():
     return [x,y]
 
 
-if __name__ == '__main__':
+def run_demo():
     LG.basicConfig(level=LG.INFO)
     random.seed(1)
 
@@ -105,3 +105,7 @@ if __name__ == '__main__':
     gpr_plot.plot_training_data(x,y)
     PL.show()
     
+
+
+if __name__ == '__main__':
+    run_demo()
