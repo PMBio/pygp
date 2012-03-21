@@ -25,7 +25,7 @@ setup(name='pygp',
       package_data = {'pygp.doc': ['html/*.html',
 				   'html/_static/*',
 				   'html/_sources/*',
-				   'html/_images/*']
+				   'html/_images/*'],
 		      '' : ['*.txt']},
       install_requires = ['numpy','scipy'],
       include_package_data = True,
