@@ -24,6 +24,7 @@ import scipy as SP
 
 def run_demo():
     LG.basicConfig(level=LG.INFO)
+    PL.figure()
     
     random.seed(1)
     
@@ -31,9 +32,17 @@ def run_demo():
     n_replicates = 4
     xmin = 1
     xmax = 2.5*SP.pi
-    x1 = SP.tile(SP.arange(xmin,xmax,.7), n_replicates)
-    x2 = SP.tile(SP.arange(xmin,xmax,.4), n_replicates)
+
+    x1_time_steps = 10
+    x2_time_steps = 20
     
+    x1 = SP.zeros(x1_time_steps*n_replicates)
+    x2 = SP.zeros(x2_time_steps*n_replicates)
+
+    for i in xrange(n_replicates):
+	x1[i*x1_time_steps:(i+1)*x1_time_steps] = SP.linspace(xmin,xmax,x1_time_steps)
+	x2[i*x2_time_steps:(i+1)*x2_time_steps] = SP.linspace(xmin,xmax,x2_time_steps)
+
     C = 2       #offset
     #b = 0.5
     sigma1 = 0.15
@@ -52,21 +61,25 @@ def run_demo():
     y2 += sigma2*random.randn(y2.shape[0])
     y2-= y2.mean()
     
+    for i in xrange(n_replicates):
+	x1[i*x1_time_steps:(i+1)*x1_time_steps] += .7 + (i/2.)
+	x2[i*x2_time_steps:(i+1)*x2_time_steps] -= .7 + (i/2.)  
+
     x1 = x1[:,SP.newaxis]
-    x2 = (x2-2)[:,SP.newaxis]
+    x2 = x2[:,SP.newaxis]
     
     x = SP.concatenate((x1,x2),axis=0)
     y = SP.concatenate((y1,y2),axis=0)
     
     #predictions:
-    X = SP.linspace(-2,10,100*n_replicates)[:,SP.newaxis]
+    X = SP.linspace(xmin-n_replicates,xmax+n_replicates,100*n_replicates)[:,SP.newaxis]
     
     #hyperparamters
     dim = 1
     replicate_indices = []
     for i,xi in enumerate((x1,x2)):
         for rep in SP.arange(i*n_replicates, (i+1)*n_replicates):
-            replicate_indices.extend(SP.repeat(rep,len(SP.unique(xi))))
+            replicate_indices.extend(SP.repeat(rep,len(xi)/n_replicates))
     replicate_indices = SP.array(replicate_indices)
     n_replicates = len(SP.unique(replicate_indices))
     

@@ -108,7 +108,7 @@ Create the GP regression class for further usage::
 
 And optimize the hyperparameters::
 
-   [opt_model_params,opt_lml]=opt_hyper(gpr,hyperparams,priors=priors,gradcheck=True,Ifilter=Ifilter)
+   [opt_model_params,opt_lml]=opt_hyper(gpr,hyperparams,priors=priors,gradcheck=False,Ifilter=Ifilter)
 
 With these optimized hyperparameters we can now predict the point-wise mean M and deviance S of the training data::
 
