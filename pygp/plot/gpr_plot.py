@@ -57,8 +57,8 @@ def plot_training_data(x, y,
         Arrows will show the time shift for time points, respectively.
         
     """
-    x = S.array(x).reshape(-1)
-    y = S.array(y).reshape(-1)
+    x = S.array(x)
+    y = S.array(y)
 
     x_shift = S.array(x.copy())
 
@@ -99,9 +99,6 @@ def plot_training_data(x, y,
                                                 headwidth=11,
                                                 width=11))
             #PL.plot(x,y,**_format_data)
-
-        
-
     if(replicate_indices is not None):
         number_of_groups = len(S.unique(replicate_indices))
         #format_data['markersize'] = 13
@@ -110,13 +107,15 @@ def plot_training_data(x, y,
             col = matplotlib.cm.jet(i / (2. * number_of_groups))
             format_data['color'] = col
             PL.plot(x_shift[replicate_indices == i], y[replicate_indices == i], **format_data)
-    else:
-	number_of_groups = x_shift.shape[1]
-	for i in xrange(number_of_groups):
-	    col = matplotlib.cm.jet(i / (2. * number_of_groups))
+    elif len(x_shift.shape) > 1:
+        number_of_groups = x_shift.shape[1]
+        for i in xrange(number_of_groups):
+            col = matplotlib.cm.jet(i / (2. * number_of_groups))
             format_data['color'] = col
-	    PL.plot(x_shift[:,i], y[:,i], **format_data)
-        
+            PL.plot(x_shift[:,i], y[:,i], **format_data)
+    else:
+        PL.plot(x_shift, y, **format_data)
+    
 #    return PL.plot(x_shift,y,**format_data)
 
 def plot_sausage(X, mean, std, alpha=None, format_fill={'alpha':0.3, 'facecolor':'k'}, format_line=dict(alpha=1, color='g', lw=3, ls='dashed')):

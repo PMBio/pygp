@@ -20,10 +20,8 @@ class VarGP(GP):
         super(VarGP, self).__init__(**kwargs)
     
     def LML(self, hyperparams, priors=None, **kw_args):
-        #LML = super(VarGP, self).LML(hyperparams, priors=priors, **kw_args)
-        
-        LML = self._LML_Xm(hyperparams)
-        return LML
+        # LML = super(VarGP, self).LML(hyperparams, priors=priors, **kw_args)
+        return self._LML_Xm(hyperparams)
     
     def LMLgrad(self, hyperparams, priors=None, **kw_args):
 #        pdb.set_trace()
@@ -59,7 +57,7 @@ class VarGP(GP):
     def _LML_Xm(self, hyperparams):
         if 'Xm' not in hyperparams.keys():
             return {}
-        Q = self._compute_sparsified_covariance(hyperparams)
+        Q, determinant = self._compute_sparsified_covariance(hyperparams)
         
         # get correction term:
         correction_term = (1./(2.*scipy.power(self.jitter,2))) * scipy.sum(self.covar.Kdiag(hyperparams['covar'], self._get_x()) - scipy.diag(Q, 0))
@@ -74,14 +72,11 @@ class VarGP(GP):
 
         import pdb;pdb.set_trace()
         
-        rv  = -y.shape[0]*scipy.log(2*scipy.pi)
+        rv  = -.5*y.shape[0]*scipy.log(2*scipy.pi)
+        rv -= determinant
+        rv -= .5*scipy.dot(y.T, linalg.solve(Q, y))
         
-        
-        #rv -= scipy.log(linalg.det(Q)) # >>>>>> allways zero <<<<< ????
-        
-        rv -= scipy.dot(y.T, linalg.solve(Q, y))
-        
-        return .5*rv - correction_term
+        return rv - correction_term
 
     def _LMLgrad_Xm(self, hyperparams):
         if 'Xm' not in hyperparams.keys():
@@ -94,16 +89,27 @@ class VarGP(GP):
         cross_covariance = self.covar.K(hyperparams['covar'], self._get_x(), Xm) # Knm
         sparse_covariance = self.covar.K(hyperparams['covar'], Xm) # Kmm
         # cholesky lower triangular matrix
-        L = jitChol(sparse_covariance)
-        # invert by dpotri
+        L = jitChol(sparse_covariance)[0].T
         
-        Linv = flapack.dpotri(L)[0]
-        A = scipy.dot(cross_covariance, Linv)
+        # invert by dpotri
+        #Linv = scipy.lib.lapack.flapack.dpotri(L)[0]
+        Linv = linalg.inv(L)
+        A = scipy.dot(cross_covariance, Linv.T)
+        
+        determinant = scipy.sum(scipy.log(scipy.diag(Linv)))
+        
+        # Copy the matrix and kill the diagonal (we don't want to have 2*var)
+        # Kinv = Linv.copy()
+        # scipy.fill_diagonal(Kinv, 0)
+        # build the full inverse covariance matrix. This is correct: verified
+        # by doing SP.allclose(Kinv, linalg.inv(K))
+        # Kinv += Linv.T
+        
         Q1 = scipy.dot(A,A.T)
-        Q2 = scipy.dot(cross_covariance, linalg.solve(sparse_covariance, cross_covariance.T))
+        # Q2 = scipy.dot(cross_covariance, linalg.solve(sparse_covariance, cross_covariance.T))
         import pdb;pdb.set_trace()
         #             Knm        dot           Kmm^-1 dot Kmn
-        return Q1
+        return Q1, determinant
     
 
         
