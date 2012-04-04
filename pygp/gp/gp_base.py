@@ -159,7 +159,7 @@ class GP(object):
 
     def LMLgrad(self, hyperparams, priors=None, **kw_args):
         """
-        Returns the log Marginal likelihood for the given logtheta.
+        Returns the gradient of the log Marginal likelihood for the given hyperparameters hyperparams.
 
         **Parameters:**
 
@@ -167,7 +167,7 @@ class GP(object):
             The hyperparameters which shall be optimized and derived
 
         priors : [:py:class:`pygp.priors`]
-            The hyperparameters which shall be optimized and derived
+            Priors which shall be optimized and derived
 
         """
         # Ideriv : 
@@ -213,7 +213,7 @@ class GP(object):
             K = self.covar.K(hyperparams['covar'], self._get_x())
             K+= Knoise
             L = jitChol(K)[0].T # lower triangular
-            alpha = solve_chol(L, self._get_y(hyperparams)) # TODO: not sure about this one
+            alpha = solve_chol(L, self._get_y(hyperparams)) 
 
 	    # DPOTRI computes the inverse of a real symmetric positive definite
 	    # matrix A using the Cholesky factorization 

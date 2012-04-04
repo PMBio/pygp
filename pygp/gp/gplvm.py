@@ -5,7 +5,6 @@ This is really not ready for release yet but is used by the gpasso model
 import sys
 sys.path.append('./../..')
 from pygp.gp import GP
-import pdb
 from pygp.optimize.optimize_base import opt_hyper
 import scipy as SP
 import scipy.linalg as linalg
