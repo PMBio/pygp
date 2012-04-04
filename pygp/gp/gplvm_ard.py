@@ -42,7 +42,7 @@ class GPLVMARD(GPLVM.GPLVM):
             #update covariance structure
             K = self.covar.K(hyperparams['covar'],self.x)
             #calc eigenvalue decomposition
-            [S,U] = SP.linalg.eigh(K)
+            [S,U] = linalg.eigh(K)
             #noise diagonal
             #depending on noise model this may be either a vector or a matrix 
             Knoise = self.likelihood.Kdiag(hyperparams['lik'],self.x)
