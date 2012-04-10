@@ -7,11 +7,11 @@ These SEs do not model noise, so combine them by a :py:class:`pygp.covar.combina
 or :py:class:`pygp.covar.combinators.ProductCF` with the :py:class:`pygp.covar.noise.NoiseISOCF`, if you want noise to be modelled by this GP.
 """
 
-import scipy as SP
 import logging as LG
 from pygp.covar import CovarianceFunction
 import dist
 import pdb
+import numpy
 
 class SqexpCFARD(CovarianceFunction):
     """
@@ -64,11 +64,11 @@ class SqexpCFARD(CovarianceFunction):
         #1. get inputs
         x1, x2 = self._filter_input_dimensions(x1,x2)
         #2. exponentialte parameters
-        V0 = SP.exp(2*theta[0])
-        L  = SP.exp(theta[1:1+self.n_dimensions])
+        V0 = numpy.exp(2*theta[0])
+        L  = numpy.exp(theta[1:1+self.n_dimensions])
         sqd = dist.sq_dist(x1/L,x2/L)
         #3. calculate the whole covariance matrix:
-        rv = V0*SP.exp(-0.5*sqd)
+        rv = V0*numpy.exp(-0.5*sqd)
         return rv
 
     def Kdiag(self,theta, x1):
@@ -80,28 +80,28 @@ class SqexpCFARD(CovarianceFunction):
         """
         #diagonal is independent of data
         x1 = self._filter_x(x1)
-        V0 = SP.exp(2*theta[0])
-        return V0*SP.exp(0)*SP.ones([x1.shape[0]])
+        V0 = numpy.exp(2*theta[0])
+        return V0*numpy.exp(0)*numpy.ones([x1.shape[0]])
     
     def Kgrad_theta(self, theta, x1, i):
         """
         The derivatives of the covariance matrix for
-        each hyperparameter, respectively.
+        each hyperparameter, renumpyectively.
 
         **Parameters:**
         See :py:class:`pygp.covar.CovarianceFunction`
         """
         x1 = self._filter_x(x1)
         # 2. exponentiate params:
-        V0 = SP.exp(2*theta[0])
-        L  = SP.exp(theta[1:1+self.n_dimensions])
+        V0 = numpy.exp(2*theta[0])
+        L  = numpy.exp(theta[1:1+self.n_dimensions])
         # calculate squared distance manually as we need to dissect this below
         x1_ = x1/L
         d  = dist.dist(x1_,x1_)
         sqd = (d*d)
         sqdd = sqd.sum(axis=2)
         #3. calcualte withotu derivatives, need this anyway:
-        rv0 = V0*SP.exp(-0.5*sqdd)
+        rv0 = V0*numpy.exp(-0.5*sqdd)
         if i==0:
             return 2*rv0
         else:
@@ -111,26 +111,26 @@ class SqexpCFARD(CovarianceFunction):
     def Kgrad_x(self,theta,x1,x2,d):
         """
         The partial derivative of the covariance matrix with
-        respect to x, given hyperparameters `theta`.
+        renumpyect to x, given hyperparameters `theta`.
 
         **Parameters:**
         See :py:class:`pygp.covar.CovarianceFunction`
         """
         # if we are not meant return zeros:
         if(d not in self.dimension_indices):
-            return SP.zeros([x1.shape[0],x2.shape[0]])
+            return numpy.zeros([x1.shape[0],x2.shape[0]])
         rv = self.K(theta,x1,x2)
 #        #1. get inputs and dimension
         x1, x2 = self._filter_input_dimensions(x1,x2)
         d -= self.dimension_indices.min()
 #        #2. exponentialte parameters
-#        V0 = SP.exp(2*theta[0])
-#        L  = SP.exp(theta[1:1+self.n_dimensions])[d]
-        L2 = SP.exp(2*theta[1:1+self.n_dimensions])
+#        V0 = numpy.exp(2*theta[0])
+#        L  = numpy.exp(theta[1:1+self.n_dimensions])[d]
+        L2 = numpy.exp(2*theta[1:1+self.n_dimensions])
 #        # get squared distance in right dimension:
 #        sqd = dist.sq_dist(x1[:,d]/L,x2[:,d]/L)
 #        #3. calculate the whole covariance matrix:
-#        rv = V0*SP.exp(-0.5*sqd)
+#        rv = V0*numpy.exp(-0.5*sqd)
         #4. get non-squared distance in right dimesnion:
         nsdist = -dist.dist(x1,x2)[:,:,d]/L2[d]
         
@@ -140,5 +140,62 @@ class SqexpCFARD(CovarianceFunction):
         """"""
         #digaonal derivative is zero because d/dx1 (x1-x2)^2 = 0
         #because (x1^d-x1^d) = 0
-        RV = SP.zeros([x1.shape[0]])
+        RV = numpy.zeros([x1.shape[0]])
         return RV
+
+
+class SqexpCFARDwPsyStat(SqexpCFARD):
+    def psi_0(self, theta, mean, variance, inducing_points):
+        return mean.shape[0] * theta[0]
+    
+    def psi_1(self, theta, mean, variance, inducing_points):
+        alpha = theta[1:1+self.get_n_dimensions()]
+        summ = numpy.add.reduce([self._inner_sum_psi_1(alpha[q], 
+                                                      numpy.atleast_2d(mean[:,q]), 
+                                                      numpy.atleast_2d(variance[:,q]), 
+                                                      numpy.atleast_2d(inducing_points[:,q])) for q in xrange(self.n_dimensions)], 
+                            axis=0)
+        return theta[0] * numpy.exp(summ)
+        
+    def _inner_sum_psi_1(self, alpha, mean, variance, inducing_points):
+        distances = alpha*numpy.power((mean.T - inducing_points),2)
+        normalizing_factor = (alpha * variance) + 1
+        summand = -.5 * ((distances / normalizing_factor.T) + numpy.log(normalizing_factor.T))
+        return summand
+        
+    def psi_2(self, theta, mean, variance, inducing_points):
+        alpha = theta[1:1+self.get_n_dimensions()]
+        summ = numpy.add.reduce([
+                              numpy.exp(numpy.add.reduce( [
+                                                        self._inner_sum_wrapper_psi_2(q, n, alpha, mean, variance, inducing_points) 
+                                                        for q in xrange(self.n_dimensions)
+                                                        ], 
+                                                      axis = 0))
+                              for n in xrange(mean.shape[0])
+                              ], axis = 0)
+#        summ = numpy.zeros((inducing_points.shape[0], inducing_points.shape[0]))
+#        for n in xrange(mean.shape[0]):
+#            inner_inner = numpy.zeros((inducing_points.shape[0], inducing_points.shape[0]))
+#            for q in xrange(self.n_dimensions):
+#                inner_inner += self._inner_sum_wrapper_psi_2(q, n, alpha, mean, variance, inducing_points)
+#            summ += numpy.exp(inner_inner)
+            
+        return mean.shape[0] * theta[0]**2 * summ
+
+    def _inner_sum_psi_2(self, alpha, mean, variance, inducing_points):
+        inducing_points_distances = ((inducing_points.T - inducing_points)**2 ) / 2.
+        normalizing_factor = (alpha * variance) + .5
+        
+        inducing_points_cross_means = (inducing_points.T + inducing_points) / 2.
+        inducing_points_cross_distances = ((mean - inducing_points_cross_means)**2) / normalizing_factor
+        
+        summand = -.5 * ( alpha * (inducing_points_distances + inducing_points_cross_distances) + numpy.log(2 * normalizing_factor.T))
+        if numpy.iscomplex(summand).any():
+            import pdb;pdb.set_trace()
+        return summand
+    
+    def _inner_sum_wrapper_psi_2(self, q, n, alpha, mean, variance, inducing_points):
+        return self._inner_sum_psi_2(alpha[q],
+                                     numpy.atleast_2d(mean[n,q]), 
+                                     numpy.atleast_2d(variance[n,q]), 
+                                     numpy.atleast_2d(inducing_points[:,q]))

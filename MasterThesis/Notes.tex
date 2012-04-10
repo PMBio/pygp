@@ -1,0 +1,57 @@
+\documentclass[11pt, a4paper]{article}
+
+\usepackage{amsmath,amssymb}
+\usepackage{MnSymbol}
+
+\begin{document}
+
+\section{Theory}
+\label{sec:theory}
+
+Allways try to fit the data: $p({\bf f|x}) = \mathcal N({\bf y|0,K_{xx}})$. While ${\bf y}$ are the noisy observations of $\bf f$
+
+\subsection{Variational GP}
+\label{sec:vargpp}
+Try to sparsen the input matrix $X$ to be able to calculate the inverse of the covariance matrix more efficient. By introducing inducing inputs ${\bf u}$ we can rewrite the log marginal likelihood as
+\begin{equation}
+  \label{eq:gplvm_marginal}
+  \log p({\bf y|x}) = \log \int p({\bf f|u})p({\bf y|f})p({\bf u})d{\bf f}d{\bf u}\enspace.
+\end{equation}
+We want to minimize the KL divergence between the variational distribution $q({\bf f, u})=p({\bf f|u})\phi({\bf u})$ (where $\phi({\bf u})$ is unconstrained variational distribution over the latent inputs $\bf u$) and the ``exact'' marginal likelihood. By introducing Jenson's inequality and some linear algebra this whole likelihood can be lower bounded by
+\begin{equation}
+  \label{eq:varGPlowerbound}
+  LML({\bf u}) = \log[\mathcal N({\bf y|0,}\sigma^2{\bf I+Q})] - \frac 1{2\sigma^2}Tr({\bf K_{xx}-Q})\enspace, 
+\end{equation}
+where ${\bf Q=K_{xu}K_{uu}K_{ux}}$. This can now be optimized w.r.t. the ${\bf u}$s and even the number of inducing inputs.
+
+\subsection{Bayesian GPLVM }
+\label{sec:vargplvm}
+Considering multidimensional timeseries $\{{\bf y}\}_n$ of $N$ samples with outputs $Y\in\mathbb R^{D\times N}$. Search for low dimensional input space $X\in\mathbb R^{Q\times N}$ and function $f(X)$ generating higher dimensional outputs $f(X) = Y$. We assume independence over latent features given latent variables, leading to
+\begin{equation}
+  \label{eq:vargplvmmodel}
+  p(X,F,Y|{\bf t})=p(Y|F)p(F|X)p(X|{\bf t})=\prod_{d=1}^Dp({\bf y}_d|{\bf f}_d)p({\bf f}_d|X)\prod_{q=1}^Qp({\bf x}_q)|{\bf t})\enspace.
+\end{equation}
+It is intractable to marginalize out $X$, as it appears non-linearly in the GP prior over the function values ${\bf f}_d|X\tilde{}\mathcal{N}({\bf f}_d|{\bf 0,K}_{XX})$. Thus, marginalize out $F$ and learn latent variables $X$. This leads to the marginal likelihood over the outputs
+\begin{equation}
+  \label{eq:lmlvargplvm}
+  p(Y|{\bf t}) = \int p(Y|F)p(F|X)p(X|{\bf t}) dXdF\enspace.
+\end{equation}
+This integral is analytically intractable and for that reason we introduce the variational part here. As in variational GP $M$ inducing inputs ${\bf u}_m\in\mathbb R^{D}$ and the variational density $q(F,U,X)=q(F|U,X)q(U)q(X))$ ($q(U)$ arbitrary variational and $q(X)=\prod_{q=1}^Q\mathcal N({\bf x}_q|{\bf \mu}_q,S_q)$) are introduced. Applying Jenson's inequality gives us a lower bound on the log marginal likelihood as
+\begin{equation}
+  \label{eq:lowerboundlml}
+  p(Y|{\bf t})\geq \mathcal F(q) = \int q(X)\log (Y|F)p(F|X) dXdF - \text{KL}(q(X) || p(X|{\bf t})\enspace.
+\end{equation}
+Thus, as a summary, we now approximate the true posterior for the latent variables $p(X|Y)$ by the variational distribution $q(X)$. See details in 
+\section{Applications}
+\label{sec:applications}
+
+
+\section{Plans}
+\label{sec:plans}
+
+
+
+\bibliography{MasterThesis}
+\bibliographystyle{alpha}
+
+\end{document}
