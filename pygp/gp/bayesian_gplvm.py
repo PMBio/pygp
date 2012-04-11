@@ -69,13 +69,13 @@ class BayesianGPLVM(GPLVM):
         LMLgrad = {}
         # {covar, Xm}: 
         LMLgrad[variational_gplvm_inducing_variables_id] = 0
-        import pdb;pdb.set_trace()
-        glml_theta = self._LMLgrad_wrt(hyperparams['beta'][0], 
+        glml_theta = [self._LMLgrad_wrt(hyperparams['beta'][0], 
                                        self._get_y(), 
-                                       psi_0, 
-                                       psi_1, 
-                                       psi_2, 
-                                       numpy.array([self.covar.Kgrad_theta(hyperparams['covar'], hyperparams[variational_gplvm_inducing_variables_id], i) for i in xrange(len(hyperparams['covar']))]))
+                                       self._compute_psi_zero_grad(hyperparams, i), 
+                                       self._compute_psi_one_grad(hyperparams, i), 
+                                       0, 
+                                       self.covar.Kgrad_theta(hyperparams['covar'], hyperparams[variational_gplvm_inducing_variables_id], i))
+                      for i in xrange(len(hyperparams['covar']))]
                                          
         LMLgrad['covar'] = glml_theta
         # beta:
@@ -87,11 +87,11 @@ class BayesianGPLVM(GPLVM):
         return LMLgrad
     
     def _LMLgrad_wrt(self, beta, y, psi_0, psi_1, psi_2, K):
-        glml_theta = ( (self.d(self.n - self.m) / 2.) * numpy.log(beta) 
+        glml_theta = ( (self.d * (self.n - self.m) / 2.) * numpy.log(beta) 
                        - (beta / 2.) * (numpy.dot(y.T, y) 
                                         - self.d * psi_0
                                         - numpy.trace(numpy.dot(psi_2, self.T1)))
-                       + beta * numpy.trace(numpy.dot(psi_1.T, numpy.dot(y, self.B.T))) 
+                       + beta * numpy.trace(numpy.dot(psi_1.T, numpy.dot(y, self.B.T)))
                        + .5 * numpy.trace( numpy.dot(K, 
                                                      (self.T1 - beta * self.d * numpy.dot(self.LmInv.T, 
                                                                                           numpy.dot(self.C, 
@@ -158,12 +158,24 @@ class BayesianGPLVM(GPLVM):
                                 hyperparams[variational_gplvm_hyperparam_means_id], 
                                 hyperparams[variational_gplvm_hyperparam_vars_id], 
                                 hyperparams[variational_gplvm_inducing_variables_id])
+    def _compute_psi_zero_grad(self, hyperparams,i):
+        return self.covar.psi_0grad_theta(hyperparams['covar'], 
+                                hyperparams[variational_gplvm_hyperparam_means_id], 
+                                hyperparams[variational_gplvm_hyperparam_vars_id], 
+                                hyperparams[variational_gplvm_inducing_variables_id],
+                                i)
 
     def _compute_psi_one(self, hyperparams):
         return self.covar.psi_1(hyperparams['covar'], 
                                 hyperparams[variational_gplvm_hyperparam_means_id], 
                                 hyperparams[variational_gplvm_hyperparam_vars_id], 
                                 hyperparams[variational_gplvm_inducing_variables_id])
+    def _compute_psi_one_grad(self, hyperparams, i):
+        return self.covar.psi_1grad_theta(hyperparams['covar'], 
+                                hyperparams[variational_gplvm_hyperparam_means_id], 
+                                hyperparams[variational_gplvm_hyperparam_vars_id], 
+                                hyperparams[variational_gplvm_inducing_variables_id],
+                                i)
 
     def _compute_psi_two(self, hyperparams):
         return self.covar.psi_2(hyperparams['covar'], 

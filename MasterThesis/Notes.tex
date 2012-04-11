@@ -75,13 +75,14 @@ Derivatives w.r.t hyperparameters $\sigma^2_f, \alpha_q$ and $\bf z$:
   \frac{\partial\psi_0}{\partial\sigma_f^2} & = N & \frac{\partial\psi_0}{\partial\alpha_q} & = 0\\
   \frac{\partial(\Psi_1)_{nm}}{\partial\sigma_f^2} & = \exp_{\Psi_1} 
   & \frac{\partial(\Psi_1)_{nm}}{\partial\alpha_q} & = (\Psi_1)_{nm}\frac{\partial\exp_{\Psi_1}}{\partial\alpha_q} \\
-  \frac{\partial(\Psi_2^n)_{mm'}}{\partial\sigma_f^2} & = \exp_{\Psi_2} 
+  \frac{\partial(\Psi_2^n)_{mm'}}{\partial\sigma_f^2} & = 2\sigma_f^2\exp_{\Psi_2} 
   & \frac{\partial(\Psi_2^n)_{mm'}}{\partial\alpha_q} & = (\Psi_2^n)_{mm'}\frac{\partial\exp_{\Psi_2}}{\partial\alpha_q} 
 \end{align*}
 \begin{align*}
-    \frac{\partial\exp_{\Psi_1}}{\partial\alpha_q} & = & -\frac12\left(\frac{(\boldsymbol{\mu}_{nq} - {\bf z}_{mq})^2\cdot(\alpha_qS_{nq}+1)-\alpha_q(\boldsymbol{\mu}_{nq} - {\bf z}_{mq})^2S_{nq}}{(\alpha_qS_{nq}+1)^2} + \frac{S_{nq}}{\alpha_qS_{nq}+1} \right)\\
-  \frac{\partial\exp_{\Psi_2}}{\partial\alpha_q} & = & -\frac12\left(\frac{(z_m-z_{m'})^2}2 + \frac{(\mu_{nq} - \bar z_q)^2(\alpha_qS_{nq}+1) - S_{nq}\alpha_1(\mu_{nq} - \bar z_q)^2}{(\alpha_qS_{nq}+\frac12)^2}\right)\\
-  & & - \frac{S_{nq}}{\alpha_qS_{nq}+1}
+    \frac{\partial\exp_{\Psi_1}}{\partial\alpha_q} &= -\frac12\left(\frac{(\boldsymbol{\mu}_{nq} - {\bf z}_{mq})^2\cdot(\alpha_qS_{nq}+1)-\alpha_q(\boldsymbol{\mu}_{nq} - {\bf z}_{mq})^2S_{nq}}{(\alpha_qS_{nq}+1)^2} + \frac{S_{nq}}{\alpha_qS_{nq}+1} \right)\\
+    &= -\frac12\left(\frac{(\boldsymbol{\mu}_{nq} - {\bf z}_{mq})^2}{(\alpha_qS_{nq}+1)^2} + \frac{S_{nq}}{\alpha_qS_{nq}+1} \right)\\
+  \frac{\partial\exp_{\Psi_2}}{\partial\alpha_q} &= -\frac12\left(\frac{(z_m-z_{m'})^2}2 + \frac{(\mu_{nq} - \bar z_q)^2(\alpha_qS_{nq}+1) - S_{nq}\alpha_1(\mu_{nq} - \bar z_q)^2}{(\alpha_qS_{nq}+\frac12)^2}\right)\\
+  & - \frac{S_{nq}}{\alpha_qS_{nq}+1}
 \end{align*}
 \section{Applications}
 \label{sec:applications}

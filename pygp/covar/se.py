@@ -159,14 +159,7 @@ class SqexpCFARDwPsyStat(SqexpCFARD):
     
     def psi_1(self, theta, mean, variance, inducing_points):
         alpha = theta[1:1+self.get_n_dimensions()]
-        summ = numpy.add.reduce(\
-                [self._inner_sum_psi_1(alpha[q], 
-                                       numpy.atleast_2d(mean[:,q]), 
-                                       numpy.atleast_2d(variance[:,q]), 
-                                       numpy.atleast_2d(inducing_points[:,q]))\
-                 for q in xrange(self.get_n_dimensions())], 
-                            axis=0)
-        return theta[0] * numpy.exp(summ)
+        return theta[0] * self._exp_psi_1(alpha, mean, variance, inducing_points)
         
     def _inner_sum_psi_1(self, alpha, mean, variance, inducing_points):
         distances = alpha * (mean.T - inducing_points)**2
@@ -176,7 +169,25 @@ class SqexpCFARDwPsyStat(SqexpCFARD):
         return summand
     
     def psi_1grad_theta(self, theta, mean, variance, inducing_points, i):
-        
+        if i==0:
+            return self._exp_psi_1(theta[1:1+self.get_n_dimensions()], mean, variance, inducing_points)
+        q = i-1
+        distances = (numpy.atleast_2d(mean[:,q]).T - numpy.atleast_2d(inducing_points[:,q]))**2
+        alpha_q = theta[i]
+        S_q = numpy.atleast_2d(variance[:,q]).T
+        normalizing_factor = (alpha_q * S_q) + 1
+        dexp_psi_1 = -.5 * ( (distances / normalizing_factor**2) + (S_q / normalizing_factor))  
+        return self.psi_1(theta, mean, variance, inducing_points) * dexp_psi_1
+
+    def _exp_psi_1(self, alpha, mean, variance, inducing_points):
+        return numpy.exp(numpy.add.reduce(\
+                                [self._inner_sum_psi_1(alpha[q], 
+                                                       numpy.atleast_2d(mean[:,q]), 
+                                                       numpy.atleast_2d(variance[:,q]), 
+                                                       numpy.atleast_2d(inducing_points[:,q]))\
+                                 for q in xrange(self.get_n_dimensions())], 
+                                axis=0))
+
     
     def psi_2(self, theta, mean, variance, inducing_points):
         alpha = theta[1:1+self.get_n_dimensions()]
