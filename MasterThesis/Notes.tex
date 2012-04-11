@@ -41,7 +41,48 @@ This integral is analytically intractable and for that reason we introduce the v
   \label{eq:lowerboundlml}
   p(Y|{\bf t})\geq \mathcal F(q) = \int q(X)\log (Y|F)p(F|X) dXdF - \text{KL}(q(X) || p(X|{\bf t})\enspace.
 \end{equation}
-Thus, as a summary, we now approximate the true posterior for the latent variables $p(X|Y)$ by the variational distribution $q(X)$. See details in 
+Thus, as a summary, we now approximate the true posterior for the latent variables $p(X|Y)$ by the variational distribution $q(X)$. 
+
+\subsection{Derivatives and technical details}
+\label{sec:vargplvml:derv_techdet}
+To be able to compute log marginal likelihood and derivates of it we need to compute $\psi$ statistics, because latent variables are given as distributions. 
+
+\subsubsection{Squared exponential $\psi$ statistics}
+\label{sec:SEpsi}
+Computation of $\Psi$ statistics:
+\begin{align*}
+  \label{eq:psi_se}
+  \psi_0 & = N\sigma_f^2\\
+  (\Psi_1)_{nm} & = \sigma^2_f \prod_{q=1}^Q
+  \frac{ e^{ - \frac{1}{2} \frac{ \alpha_q ({\boldsymbol{\mu}}_{nq}  -
+        {\bf z}_{mq})^2}{\alpha_q S_{nq} + 1}}}
+  {( \alpha_q S_{nq} + 1)^{\frac{1}{2}}} \\
+  & = \sigma^2 \exp\left\{
+    \sum_{q=1}^Q-\frac12 
+    \left( \frac{\alpha_q({\boldsymbol{\mu}}_{nq} - {\bf z}_{mq})^2} {\alpha_qS_{nq}+1} 
+      + \log(\alpha_qS_{nq}+1)
+    \right)
+  \right\}\\
+  (\Psi^n_2)_{m m'} & = \sigma_f^4 
+  \prod_{q=1}^Q \frac{ e^{-  \frac{\alpha_q (z_{mq} -
+        z_{m'q})^2}{4} - \frac{\alpha_q \left(\mu_{nq} -
+          \bar{z}_{q} \right)^2}{2 \alpha_q S_{nq} + 1}}}
+  {(2 \alpha_q S_{nq} + 1)^{\frac{1}{2}}}\\
+  & = \sigma_f^4\exp\left\{\sum_{q=1}^Q-\frac12\left(\alpha_q\left(\frac{(z_{mq}-z_{m'q})^2}2 + \frac{(\mu_{nq}-\bar z_q)^2}{\alpha_qS_{nq}+\frac12}\right) + \log(2\alpha_qS_{nq}+1)\right)\right\}
+\end{align*}
+Derivatives w.r.t hyperparameters $\sigma^2_f, \alpha_q$ and $\bf z$:
+\begin{align*}
+  \frac{\partial\psi_0}{\partial\sigma_f^2} & = N & \frac{\partial\psi_0}{\partial\alpha_q} & = 0\\
+  \frac{\partial(\Psi_1)_{nm}}{\partial\sigma_f^2} & = \exp_{\Psi_1} 
+  & \frac{\partial(\Psi_1)_{nm}}{\partial\alpha_q} & = (\Psi_1)_{nm}\frac{\partial\exp_{\Psi_1}}{\partial\alpha_q} \\
+  \frac{\partial(\Psi_2^n)_{mm'}}{\partial\sigma_f^2} & = \exp_{\Psi_2} 
+  & \frac{\partial(\Psi_2^n)_{mm'}}{\partial\alpha_q} & = (\Psi_2^n)_{mm'}\frac{\partial\exp_{\Psi_2}}{\partial\alpha_q} 
+\end{align*}
+\begin{align*}
+    \frac{\partial\exp_{\Psi_1}}{\partial\alpha_q} & = & -\frac12\left(\frac{(\boldsymbol{\mu}_{nq} - {\bf z}_{mq})^2\cdot(\alpha_qS_{nq}+1)-\alpha_q(\boldsymbol{\mu}_{nq} - {\bf z}_{mq})^2S_{nq}}{(\alpha_qS_{nq}+1)^2} + \frac{S_{nq}}{\alpha_qS_{nq}+1} \right)\\
+  \frac{\partial\exp_{\Psi_2}}{\partial\alpha_q} & = & -\frac12\left(\frac{(z_m-z_{m'})^2}2 + \frac{(\mu_{nq} - \bar z_q)^2(\alpha_qS_{nq}+1) - S_{nq}\alpha_1(\mu_{nq} - \bar z_q)^2}{(\alpha_qS_{nq}+\frac12)^2}\right)\\
+  & & - \frac{S_{nq}}{\alpha_qS_{nq}+1}
+\end{align*}
 \section{Applications}
 \label{sec:applications}
 

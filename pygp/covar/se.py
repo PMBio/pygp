@@ -86,7 +86,7 @@ class SqexpCFARD(CovarianceFunction):
     def Kgrad_theta(self, theta, x1, i):
         """
         The derivatives of the covariance matrix for
-        each hyperparameter, renumpyectively.
+        each hyperparameter, respectively.
 
         **Parameters:**
         See :py:class:`pygp.covar.CovarianceFunction`
@@ -111,7 +111,7 @@ class SqexpCFARD(CovarianceFunction):
     def Kgrad_x(self,theta,x1,x2,d):
         """
         The partial derivative of the covariance matrix with
-        renumpyect to x, given hyperparameters `theta`.
+        respect to x, given hyperparameters `theta`.
 
         **Parameters:**
         See :py:class:`pygp.covar.CovarianceFunction`
@@ -147,28 +147,43 @@ class SqexpCFARD(CovarianceFunction):
 class SqexpCFARDwPsyStat(SqexpCFARD):
     def psi_0(self, theta, mean, variance, inducing_points):
         return mean.shape[0] * theta[0]
+
+    def psi_0grad_theta(self, theta, mean, variance, inducing_points, i):
+        """
+        Gradients with respect to each hyperparameter, respectively. 
+        """
+        # no gradients except of A
+        if i == 0:
+            return mean.shape[0]
+        return 0
     
     def psi_1(self, theta, mean, variance, inducing_points):
         alpha = theta[1:1+self.get_n_dimensions()]
-        summ = numpy.add.reduce([self._inner_sum_psi_1(alpha[q], 
-                                                      numpy.atleast_2d(mean[:,q]), 
-                                                      numpy.atleast_2d(variance[:,q]), 
-                                                      numpy.atleast_2d(inducing_points[:,q])) for q in xrange(self.n_dimensions)], 
+        summ = numpy.add.reduce(\
+                [self._inner_sum_psi_1(alpha[q], 
+                                       numpy.atleast_2d(mean[:,q]), 
+                                       numpy.atleast_2d(variance[:,q]), 
+                                       numpy.atleast_2d(inducing_points[:,q]))\
+                 for q in xrange(self.get_n_dimensions())], 
                             axis=0)
         return theta[0] * numpy.exp(summ)
         
     def _inner_sum_psi_1(self, alpha, mean, variance, inducing_points):
-        distances = alpha*numpy.power((mean.T - inducing_points),2)
+        distances = alpha * (mean.T - inducing_points)**2
         normalizing_factor = (alpha * variance) + 1
         summand = -.5 * ((distances / normalizing_factor.T) + numpy.log(normalizing_factor.T))
+        #import pdb;pdb.set_trace()
         return summand
+    
+    def psi_1grad_theta(self, theta, mean, variance, inducing_points, i):
         
+    
     def psi_2(self, theta, mean, variance, inducing_points):
         alpha = theta[1:1+self.get_n_dimensions()]
         summ = numpy.add.reduce([
                               numpy.exp(numpy.add.reduce( [
                                                         self._inner_sum_wrapper_psi_2(q, n, alpha, mean, variance, inducing_points) 
-                                                        for q in xrange(self.n_dimensions)
+                                                        for q in xrange(self.get_n_dimensions())
                                                         ], 
                                                       axis = 0))
                               for n in xrange(mean.shape[0])
@@ -190,7 +205,7 @@ class SqexpCFARDwPsyStat(SqexpCFARD):
         inducing_points_cross_distances = ((mean - inducing_points_cross_means)**2) / normalizing_factor
         
         summand = -.5 * ( alpha * (inducing_points_distances + inducing_points_cross_distances) + numpy.log(2 * normalizing_factor.T))
-        if numpy.iscomplex(summand).any():
+        if 0 or numpy.iscomplex(summand).any():
             import pdb;pdb.set_trace()
         return summand
     
@@ -199,3 +214,4 @@ class SqexpCFARDwPsyStat(SqexpCFARD):
                                      numpy.atleast_2d(mean[n,q]), 
                                      numpy.atleast_2d(variance[n,q]), 
                                      numpy.atleast_2d(inducing_points[:,q]))
+        

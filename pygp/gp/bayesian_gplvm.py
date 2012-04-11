@@ -8,6 +8,7 @@ import numpy
 from pygp.linalg.linalg_matrix import jitChol
 from copy import deepcopy
 import scipy
+from numpy.linalg import linalg
 
 variational_gplvm_hyperparam_means_id = 'X'
 variational_gplvm_hyperparam_vars_id = 'S'
@@ -49,29 +50,74 @@ class BayesianGPLVM(GPLVM):
             pass
         else:
             self._update_stats(hyperparams)
+            bound  = self._compute_variational_bound(hyperparams)
+            bound += self._compute_kl_divergence(hyperparams)
         
-        bound  = self._compute_variational_bound(hyperparams)
-        bound += self._compute_kl_divergence(hyperparams)
-        
-        self._covar_cache['bound'] = bound
-        
+            self._covar_cache['bound'] = bound
+            
+        bound = self._covar_cache['bound']   
 #        #account for prior
 #        if priors is not None:
 #            plml = self._LML_prior(hyperparams, priors=priors)
-#            bound -= numpy.array([p[:, 0].sum() for p in plml.values()]).sum()
-
+#            bound -= numpy.array([p[:, 0].sum() for p in plml.values()]).su
         return - bound
+    
+    def LMLgrad(self, hyperparams, priors=None, **kw_args):
+        """
+        gradients w.r.t hyperparams.keys() = ['covar', 'X', 'beta', 'S', 'Xm']:
+        """
+        LMLgrad = {}
+        # {covar, Xm}: 
+        LMLgrad[variational_gplvm_inducing_variables_id] = 0
+        import pdb;pdb.set_trace()
+        glml_theta = self._LMLgrad_wrt(hyperparams['beta'][0], 
+                                       self._get_y(), 
+                                       psi_0, 
+                                       psi_1, 
+                                       psi_2, 
+                                       numpy.array([self.covar.Kgrad_theta(hyperparams['covar'], hyperparams[variational_gplvm_inducing_variables_id], i) for i in xrange(len(hyperparams['covar']))]))
+                                         
+        LMLgrad['covar'] = glml_theta
+        # beta:
+        LMLgrad['beta'] = self._LMLgrad_beta(hyperparams)
+        # X:
+        LMLgrad[variational_gplvm_hyperparam_means_id] = - hyperparams[variational_gplvm_hyperparam_means_id].T
+        # S:
+        LMLgrad[variational_gplvm_hyperparam_vars_id] = .5 - .5 * hyperparams[variational_gplvm_hyperparam_vars_id].T
+        return LMLgrad
+    
+    def _LMLgrad_wrt(self, beta, y, psi_0, psi_1, psi_2, K):
+        glml_theta = ( (self.d(self.n - self.m) / 2.) * numpy.log(beta) 
+                       - (beta / 2.) * (numpy.dot(y.T, y) 
+                                        - self.d * psi_0
+                                        - numpy.trace(numpy.dot(psi_2, self.T1)))
+                       + beta * numpy.trace(numpy.dot(psi_1.T, numpy.dot(y, self.B.T))) 
+                       + .5 * numpy.trace( numpy.dot(K, 
+                                                     (self.T1 - beta * self.d * numpy.dot(self.LmInv.T, 
+                                                                                          numpy.dot(self.C, 
+                                                                                                    self.LmInv)))))
+                       )
+        return glml_theta
+
+    def _LMLgrad_beta(self, hyperparams):
+        beta_inv = 1. / hyperparams['beta'][0]
+        LATildeInfTP = numpy.dot(self.LAtildeInv.T, self.P)
+        gBeta = .5 * (self.d * (numpy.trace(self.C) + (self.n - self.m) * beta_inv - self.psi_0)
+                      - self.TrYY + self.TrPP 
+                      + beta_inv**2 * self.d * numpy.trace(self.LAtildeInv * self.LAtildeInv) 
+                      + beta_inv * numpy.trace(LATildeInfTP ** 2))
+        return gBeta
     
     def _compute_variational_bound(self, hyperparams):
         logDAtilde = 2 * numpy.sum(numpy.log(numpy.diag(self.LAtilde)))            
         beta = hyperparams['beta'][0]
         
-        bound  = -.5 * ( ( self.d * ( - (self.n - self.m) * numpy.log(beta) + logDAtilde) )
-                         - beta * ( numpy.trace(numpy.dot(self.P, self.P.T) ) - self.TrYY )
-                         - self.d * beta * (self._compute_psi_zero(hyperparams) - numpy.trace(self.C) )
+        bound  = -.5 * ( self.d * ( - (self.n - self.m) * numpy.log(beta) + logDAtilde)
+                         - beta * ( self.TrPP - self.TrYY )
+                         + self.d * beta * ( self.psi_0 - numpy.trace(self.C) )
                          )
 
-        bound -= self.n * self.d / 2. * numpy.log(2 * (numpy.pi))
+        bound -= self.n * self.d / (2. * numpy.log(2 * (numpy.pi)))
         return bound
     
     def _compute_kl_divergence(self, hyperparams):
@@ -84,15 +130,24 @@ class BayesianGPLVM(GPLVM):
     def _update_stats(self, hyperparams):
         self.Kmm = self.covar.K(hyperparams['covar'], hyperparams[variational_gplvm_inducing_variables_id])
         self.Lm = jitChol(self.Kmm)[0].T # lower triangular
-        self.LmInv = scipy.lib.lapack.flapack.dpotri(self.Lm)[0]
+        #self.LmInv = scipy.lib.lapack.flapack.dpotri(self.Lm)[0]
+        self.LmInv = linalg.inv(self.Lm)
+        self.KmmInf = numpy.dot(self.LmInv.T, self.LmInv)
         self.C = numpy.dot(numpy.dot(self.LmInv, 
                                      self._compute_psi_two(hyperparams)),
                            self.LmInv.T)
-        self.Atilde = self.jitter * numpy.eye(self.m) + self.C
+        self.Atilde = (1./hyperparams['beta'][0]) * numpy.eye(self.m) + self.C
         self.LAtilde = jitChol(self.Atilde)[0].T
-        self.LAtildeInv = scipy.lib.lapack.flapack.dpotri(self.LAtilde)[0]
+        #self.LAtildeInv = scipy.lib.lapack.flapack.dpotri(self.LAtilde)[0]
+        self.LAtildeInv = linalg.inv(self.LAtilde)
         self.P1 = numpy.dot(self.LAtildeInv, self.LmInv)
         self.P = numpy.dot(self.P1, numpy.dot(self._compute_psi_one(hyperparams).T, self._get_y()))
+        self.B = numpy.dot(self.P1.T, self.P)
+        self.T1 = self.d * (self.KmmInf - (1./hyperparams['beta'][0]) * numpy.dot(self.P1.T,self.P1)) 
+        self.TrPP = numpy.trace(self.P * self.P) # sum?
+        self.psi_0 = self._compute_psi_zero(hyperparams)
+        
+        #import pdb;pdb.set_trace()
         #store hyperparameters for cachine
         self._covar_cache = {}
         self._covar_cache['hyperparams'] = deepcopy(hyperparams)
@@ -117,4 +172,5 @@ class BayesianGPLVM(GPLVM):
                                 hyperparams[variational_gplvm_inducing_variables_id])
     
     def _LMLgrad_x(self, hyperparams):
-        pass
+        
+        return super(BayesianGPLVM, self)._LMLgrad_x(hyperparams)
