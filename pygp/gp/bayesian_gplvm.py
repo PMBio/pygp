@@ -91,9 +91,9 @@ class BayesianGPLVM(GPLVM):
             
             # covar (theta):
             Kmmgrad_theta = numpy.array([self.covar.Kgrad_theta(hyperparams['covar'], 
-                                                                inducing_variables,
+                                                               inducing_variables,
                                                                 i) 
-                                         for i in xrange(len(theta))])
+                                         for i in xrange(len(theta))]).T
             
             LMLgrad['covar'] = self._LMLgrad_wrt(hyperparams['beta'], self._get_y(), 
                                                  self.covar.psi_0grad_theta(theta,mean,variance,inducing_variables), 
