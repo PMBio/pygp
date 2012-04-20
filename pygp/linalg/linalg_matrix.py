@@ -68,10 +68,10 @@ def jitChol(A, maxTries=10, warning=True):
             else:
                 if warning:
                     # pdb.set_trace()
-		    # plt.figure()
-		    # plt.imshow(A, interpolation="nearest")
-		    # plt.colorbar()
-		    # plt.show()
+                    # plt.figure()
+                    # plt.imshow(A, interpolation="nearest")
+                    # plt.colorbar()
+                    # plt.show()
                     logging.error("Adding jitter of %f in jitChol()." % jitter)
                 LC = linalg.cholesky(A+jitter*SP.eye(A.shape[0]), lower=True)
 

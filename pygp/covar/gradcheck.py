@@ -64,7 +64,7 @@ def grad_check_Kx(K,logtheta,x0,dimensions=None):
             dKxn[iin, :] = 1.*dKx[iin, :]
             dKxn[:, iin] += 1.*dKx[iin, :]
             ana[iin,iid,:,:] = dKxn
-            
+    
     delta = ((ana -diff)**2).sum()
     print "delta %.2f" % SP.absolute(delta).max()
     pdb.set_trace()

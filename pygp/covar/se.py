@@ -144,7 +144,7 @@ class SqexpCFARD(CovarianceFunction):
         return RV
 
 
-class SqexpCFARDwPsyStat(SqexpCFARD):
+class SqexpCFARDwPsiStat(SqexpCFARD):
     def psi_0(self, theta, mean, variance, inducing_points):
         return mean.shape[0] * theta[0]
 

@@ -17,14 +17,14 @@ import pdb
 
 # LG.basicConfig(level=LG.INFO)
 
-def param_dict_to_list(dict,skeys=None):
+def param_dict_to_list(di,skeys=None):
     """convert from param dictionary to list"""
     #sort keys
-    RV = SP.concatenate([dict[key].flatten() for key in skeys])
+    RV = SP.concatenate([di[key].flatten() for key in skeys])
     return RV
     pass
 
-def param_list_to_dict(list,param_struct,skeys):
+def param_list_to_dict(li,param_struct,skeys):
     """convert from param dictionary to list
     param_struct: structure of parameter array
     """
@@ -35,12 +35,12 @@ def param_list_to_dict(list,param_struct,skeys):
         shape = SP.array(val) 
         np = shape.prod()
         i1 = i0+np
-        params = list[i0:i1].reshape(shape)
+        params = li[i0:i1].reshape(shape)
         RV.append((key,params))
         i0 = i1
     return dict(RV)
 
-def checkgrad(f, fprime, x, *args,**kw_args):
+def checkgrad(f, fprime, x, verbose=True, *args,**kw_args):
     """
     Analytical gradient calculation using a 3-point method
     
@@ -52,32 +52,41 @@ def checkgrad(f, fprime, x, *args,**kw_args):
     eps = np.finfo(float).eps
     step = np.sqrt(eps)*(x.min())
     # shake things up a bit by taking random steps for each x dimension
-    h = step*np.sign(np.random.uniform(-1, 1, x.size))
+    h = step*np.sign(np.random.uniform(-1, 1, x.shape))
     
     f_ph = f(x+h, *args, **kw_args)
     f_mh = f(x-h, *args, **kw_args)
     numerical_gradient = (f_ph - f_mh)/(2*h)
     analytical_gradient = fprime(x, *args, **kw_args)
-    ratio = (f_ph - f_mh)/(2*np.dot(h, analytical_gradient))
 
-    if True:
-	h = np.zeros_like(x)
-	
-	for i in range(len(x)):
-	    h[i] = step
-	    f_ph = f(x+h, *args, **kw_args)
-	    f_mh = f(x-h, *args, **kw_args)
+    #ratio = (f_ph - f_mh)/(2*np.dot(h.T, analytical_gradient))
 
-	    numerical_gradient = (f_ph - f_mh)/(2*step)
-	    analytical_gradient = fprime(x, *args, **kw_args)[i]
-	    ratio = (f_ph - f_mh)/(2*step*analytical_gradient)
-	    
-	    h[i] = 0
-
-	    print "[%d] numerical: %f, analytical: %f, ratio: %f" % (i, numerical_gradient,
+    #if True:
+    h = np.zeros_like(x)
+    dim = 1
+    if f_ph.shape:
+        dim = len(f_mh)
+    res = np.zeros((len(x),3,dim))
+    
+    for i in range(len(x)):
+        h[i] = step
+        f_ph = f(x+h, *args, **kw_args)
+        f_mh = f(x-h, *args, **kw_args)
+        
+        numerical_gradient = (f_ph - f_mh)/(2*step)
+        analytical_gradient = fprime(x, *args, **kw_args)[i]
+        ratio = (f_ph - f_mh)/(2*step*analytical_gradient)
+        
+        h[i] = 0
+        if verbose:
+            print "[%d]\tnumerical: %s\n\tanalytical: %s\n\tratio: %s" % (i, numerical_gradient,
 								     analytical_gradient,
 								     ratio)
-	    
+        res[i,0,:] = numerical_gradient.squeeze()
+        res[i,1,:] = analytical_gradient.squeeze()
+        res[i,2,:] = ratio.squeeze()
+        
+    return res
 
 
 def opt_hyper(gpr,hyperparams,Ifilter=None,maxiter=1000,gradcheck=False,bounds = None,optimizer=OPT.fmin_tnc,gradient_tolerance=1E-4,*args,**kw_args):

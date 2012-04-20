@@ -49,6 +49,10 @@ To be able to compute log marginal likelihood and derivates of it we need to com
 
 \subsubsection{Squared exponential $\psi$ statistics}
 \label{sec:SEpsi}
+Computation of kernel:
+\begin{equation}
+  k(x_q,x_q') = \sigma^2_f \cdot \exp\left\{-\frac12\frac{||x_q - x_q'||^2}{\alpha_q}\right\}
+\end{equation}
 Computation of $\Psi$ statistics:
 \begin{align*}
   \label{eq:psi_se}
@@ -84,6 +88,25 @@ Derivatives w.r.t hyperparameters $\sigma^2_f, \alpha_q$ and $\bf z$:
   \frac{\partial\exp_{\Psi_2}}{\partial\alpha_q} &= -\frac12\left(\frac{(z_m-z_{m'})^2}2 + \frac{(\mu_{nq} - \bar z_q)^2(\alpha_qS_{nq}+1) - S_{nq}\alpha_1(\mu_{nq} - \bar z_q)^2}{(\alpha_qS_{nq}+\frac12)^2}\right)\\
   & - \frac{S_{nq}}{\alpha_qS_{nq}+1}
 \end{align*}
+
+\subsubsection{Linear $\Psi$ statistics}
+\label{sec:linpsistat}
+Kernel computation:
+\begin{equation}
+  k({\bf x,x}') = {\bf x}^T A {\bf x}'
+\end{equation}
+$\Psi$ statistic computation:
+\begin{equation}
+  \psi_0 = \text{tr}[A(\boldsymbol{\mu}_n\boldsymbol{\mu}^T_n+S_n)]
+\end{equation}
+\begin{equation}
+  (\Psi_1)_{nm} = \boldsymbol{\mu}_n^TA{\bf z}_m
+\end{equation}
+\begin{equation}
+  (\Psi_2)_{mm'} = {\bf z}^T_mA(\boldsymbol{\mu}_n\boldsymbol{\mu}_n^T+S_n)A{\bf z}_{m'}
+\end{equation}
+Derivatives w.r.t parameters:
+
 \section{Applications}
 \label{sec:applications}
 
